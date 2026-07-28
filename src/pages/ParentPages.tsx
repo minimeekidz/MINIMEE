@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { AlertTriangle, Archive, Bell, BookOpen, CalendarClock, Download, Film, HeartHandshake, Image, Plus, QrCode, ShieldCheck, Trash2, Users } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { AlertTriangle, Archive, BookOpen, CalendarClock, Film, HeartHandshake, Plus, QrCode, ShieldCheck, Trash2, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 import { DashboardHeader, DemoBadge, EmptyState, FeatureCard, IntegrationNotice, Progress, Shell, StatusPill } from "../components/UI";
 import { activeFriends, demoChild, friendHistory, notifications, topics } from "../data/mock";
 import { MAX_CHILDREN_PER_PARENT } from "../domain/rules";
@@ -80,13 +80,6 @@ export function ThemesPage() {
   </Shell>;
 }
 
-export function SubscriptionPage() {
-  return <Shell surface="parent"><DashboardHeader title="Mimi 的訂閱" /><div className="split-cards">
-    <article><DemoBadge /><StatusPill tone="green">ACTIVE</StatusPill><h2>3 個月收藏方案</h2><p>按月派發，每月 2 個小主題。MEE FLASH 機率 30%。</p><dl><div><dt>今期狀態</dt><dd>合成示範</dd></div><div><dt>下次結算</dt><dd>待 Stripe 連接</dd></div></dl><button className="button" disabled>管理付款方式</button></article>
-    <article><CalendarClock /><h2>取消與保留規則</h2><p>取消不等於即時終止。180 日倒數由已付服務期的 <code>current_period_end</code> 開始。</p><ul className="plain-list"><li>唯讀期仍可查看及下載</li><li>第 0、90、150、173 日提醒</li><li>第 180 日撤銷分享並刪除兒童媒體</li></ul></article>
-  </div></Shell>;
-}
-
 export function ParentAlbums() {
   return <Shell surface="parent"><DashboardHeader title="MEE 紀念冊" /><div className="album-teasers">
     {["01–06 城市出發", "07–12 海洋與夜行", "13–18 尚待正式底圖", "19–24 尚待正式底圖"].map((x, i) => <Link to="/child/albums" key={x} style={i < 2 ? { backgroundImage: `linear-gradient(0deg, rgba(25,18,58,.75), transparent), url(/assets/${i ? "album-ocean" : "album-night"}.webp)` } : undefined}><span>BOOK {i + 1}</span><h2>{x}</h2><small>{i < 2 ? "查看示範卡位" : "缺少正式資產"}</small></Link>)}
@@ -146,24 +139,5 @@ export function FriendsSharingPage() {
         </div>
       </section>
     </div>}
-  </Shell>;
-}
-
-const parentRouteInfo: Record<string, [string, string, string]> = {
-  media: ["影片與相片", "每項素材會使用私有儲存及短效查看連結。", "Supabase Storage"],
-  sharing: ["好友與分享", "好友關係及每段 AI 影片分享是兩種獨立權限。", "Share API"],
-  "lost-items": ["失物 QR", "公開失物頁不可顯示孩子資料或家長電話。", "Lost-item token"],
-  privacy: ["私隱與完整下載", "查看同意紀錄、建立完整紀念包及提出刪除要求。", "Export / Retention"],
-  notifications: ["通知中心", "權益、期限、影片、付款、朋友與客服通知。", "Notification service"]
-};
-
-export function ParentRoutePlaceholder({ kind }: { kind: string }) {
-  const [title, detail, dependency] = parentRouteInfo[kind] ?? ["家長功能", "此路由已建立。", "Backend"];
-  const params = useParams();
-  return <Shell surface="parent"><DashboardHeader title={title} />
-    {kind === "media" && <section className="ai-failure-card">
-      <AlertTriangle /><div><StatusPill tone="gold">需要人工處理</StatusPill><h2>我們正在為你仔細處理影片</h2><p>製作時遇到了一點情況，團隊已收到通知。暫時毋須重新提交資料，主題權益會保持預留。</p><small>示範狀態：系統會建立人工個案並通知Em，不向家長顯示技術錯誤。</small></div>
-    </section>}
-    <section className="placeholder-panel"><span className="placeholder-icon">{kind === "privacy" ? <Download /> : kind === "media" ? <Image /> : <Bell />}</span><DemoBadge label="ROUTE READY" /><h2>{detail}</h2><p>需要連接：{dependency}。現時不會把按鈕導向假成功狀態。</p>{params.caseId && <StatusPill>Case {params.caseId}</StatusPill>}<button className="button" disabled><Plus />尚未接通</button></section>
   </Shell>;
 }

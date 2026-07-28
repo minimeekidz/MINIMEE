@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle2, Clock3, Database, FileWarning, Gauge, ShieldCheck, WalletCards } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, CheckCircle2, Clock3, Database, FileWarning, Gauge, Search, ShieldCheck, WalletCards } from "lucide-react";
 import { Link } from "react-router-dom";
-import { DashboardHeader, DemoBadge, EmptyState, IntegrationNotice, Progress, Shell, StatusPill } from "../components/UI";
+import { DashboardHeader, DemoBadge, IntegrationNotice, Progress, Shell, StatusPill } from "../components/UI";
 import { adminModules } from "../data/mock";
 
 export function AdminDashboard() {
@@ -26,10 +27,22 @@ const adminInfo: Record<string, [string, string, string[]]> = {
 
 export function AdminModulePage({ kind }: { kind: string }) {
   const [title, detail, checks] = adminInfo[kind];
+  const [filter, setFilter] = useState("全部");
+  const workspaceRows: Record<string, string[][]> = {
+    content: [["城市小冒險 v1","已發布","4詞／4題"],["海洋研究所 v2","草稿","4詞／4題"]],
+    assets: [["MEE Card 09","已備妥","WebP"],["MEE Card 12–24","缺少","待正式資產"]],
+    "ai-jobs": [["AI-DEMO-104","需要人工處理","權益已預留"],["AI-DEMO-103","QC檢查","不派卡"]],
+    qc: [["QC-DEMO-88","待身份連續性檢查","1280×720／30fps"],["QC-DEMO-87","通過","可派發"]],
+    support: [["CASE-DEMO-21","處理中","AI影片失敗"],["CASE-DEMO-20","已解決","家長已通知"]],
+    commerce: [["SUB-DEMO-MIMI","有效","獨立孩子訂閱"],["EVT-DEMO-001","已去重","Webhook"]],
+    privacy: [["PRIV-DEMO-9","Day 90","下載提醒"],["EXPORT-DEMO-4","待處理","短效連結"]],
+    audit: [["AUDIT-DEMO-31","管理員人工接管","CASE-DEMO-21"],["AUDIT-DEMO-30","分享撤銷","已遮罩"]]
+  };
+  const rows = workspaceRows[kind];
   return <Shell surface="admin"><DashboardHeader title={title} /><div className="admin-workspace">
-    <div className="workspace-head"><div><DemoBadge label="FRONTEND SHELL" /><h2>{detail}</h2></div><button className="button" disabled>待 Supabase 連接</button></div>
+    <div className="workspace-head"><div><DemoBadge label="SYNTHETIC OPERATIONS" /><h2>{detail}</h2></div><div className="admin-toolbar"><label><Search /><input aria-label="搜尋工作台" placeholder="搜尋ID或狀態" /></label><select aria-label="工作台篩選" value={filter} onChange={event => setFilter(event.target.value)}><option>全部</option><option>待處理</option><option>已完成</option></select></div></div>
     <div className="workspace-columns"><article><StatusPill tone="green">已鎖定規格</StatusPill><h3>驗收護欄</h3>{checks.map((x, i) => <div className="check-row" key={x}>{i === 0 ? <CheckCircle2 /> : <Clock3 />}<span>{x}</span></div>)}</article>
-    <article><Gauge /><h3>數據來源未接通</h3><Progress value={0} label="真實整合" /><p>頁面不會以 mock button 偽裝資料已寫入。</p></article></div>
-    <EmptyState title="暫無營運資料" detail="這是合成前台狀態；接入經 RLS 保護的資料源後再啟用列表及操作。" />
+    <article><Gauge /><h3>數據來源未接通</h3><Progress value={0} label="真實整合" /><p>工作台使用合成資料，只驗證營運版面及狀態。</p></article></div>
+    <section className="admin-table" aria-label={`${title}示範列表`}><div className="admin-table-head"><span>記錄</span><span>狀態</span><span>詳情</span><span>操作</span></div>{rows.map(([id,status,meta]) => <div className="admin-table-row" key={id}><strong>{id}</strong><StatusPill tone={status.includes("通過") || status.includes("有效") || status.includes("已發布") ? "green" : status.includes("人工") || status.includes("待") ? "gold" : "violet"}>{status}</StatusPill><small>{meta}</small><button disabled>待資料接駁</button></div>)}</section>
   </div></Shell>;
 }

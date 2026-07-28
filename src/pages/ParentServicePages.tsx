@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { AlertTriangle, Bell, Check, Download, KeyRound, LockKeyhole, Mail, MapPin, MessageCircle, PackageSearch, QrCode, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, Bell, Check, Download, LockKeyhole, Mail, MessageCircle, PackageSearch, QrCode, ShieldCheck, Trash2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, DemoBadge, Shell, StatusPill } from "../components/UI";
 

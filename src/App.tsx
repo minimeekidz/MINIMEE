@@ -1,10 +1,11 @@
 import { Route, Routes } from "react-router-dom";
 import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
-import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, SubscriptionPage, ThemesPage } from "./pages/ParentPages";
+import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ThemesPage } from "./pages/ParentPages";
 import { AuthPage, FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
 import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
 import { LostItemsPage, NotificationsPage, PrivacyCenterPage, PublicLostItemPage, SupportCasePage } from "./pages/ParentServicePages";
+import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
 
 function NotFound() {
   return <main className="not-found"><span>404</span><h1>這條小路還未開放</h1><a className="button" href="/">返回 MINIMEE</a></main>;
@@ -32,7 +33,8 @@ export default function App() {
       <Route path="/parent-gate" element={<ParentGatePage />} />
       <Route path="/parent/children/:id" element={<ChildProfilePage />} />
       <Route path="/parent/children/:id/themes" element={<ThemesPage />} />
-      <Route path="/parent/children/:id/subscription" element={<SubscriptionPage />} />
+      <Route path="/parent/children/:id/subscription" element={<SubscriptionStatesPage />} />
+      <Route path="/parent/children/:id/checkout" element={<CheckoutPage />} />
       <Route path="/parent/albums" element={<ParentAlbums />} />
       <Route path="/parent/media" element={<MediaWorkflowPage />} />
       <Route path="/parent/children/:id/sharing" element={<FriendsSharingPage />} />

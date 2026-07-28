@@ -104,4 +104,34 @@ describe("MINIMEE route shells", () => {
     fireEvent.click(screen.getByRole("button", { name: "查看影響並繼續" }));
     expect(screen.getByText(/不會永久刪除任何資料/)).toBeInTheDocument();
   });
+
+  it("supports login, registration and password reset frontend states", () => {
+    render(<MemoryRouter initialEntries={["/forgot-password"]}><App /></MemoryRouter>);
+    fireEvent.change(screen.getByLabelText("家長電郵地址"), { target: { value: "parent@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "發送示範重設要求" }));
+    expect(screen.getByRole("status")).toHaveTextContent("重設要求已準備");
+  });
+
+  it("keeps checkout pending until a verified webhook", () => {
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/checkout"]}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "進入示範付款" }));
+    expect(screen.getByText(/只信已驗證Webhook/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "模擬成功" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Webhook確認後");
+  });
+
+  it("requires two steps to cancel renewal", () => {
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/subscription"]}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "取消續訂" }));
+    fireEvent.click(screen.getByRole("button", { name: "繼續" }));
+    fireEvent.click(screen.getByRole("button", { name: "確認停止續訂" }));
+    expect(screen.getAllByText("已取消續訂").length).toBeGreaterThan(0);
+  });
+
+  it("renders actionable synthetic rows in every admin workspace", () => {
+    render(<MemoryRouter initialEntries={["/admin/ai-jobs"]}><App /></MemoryRouter>);
+    expect(screen.getByText("AI-DEMO-104")).toBeInTheDocument();
+    expect(screen.getByText("權益已預留")).toBeInTheDocument();
+    expect(screen.getByLabelText("工作台篩選")).toBeInTheDocument();
+  });
 });
