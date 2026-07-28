@@ -8,6 +8,9 @@ export function ParentDashboard() {
     <Shell surface="parent">
       <DashboardHeader title="早晨，Em" />
       <IntegrationNotice />
+      <Link className="parent-world-banner" to="/parent/children/demo-child-01">
+        <div><DemoBadge label="親子天地" /><h2>孩子的學習與童年回憶，都在同一個地方。</h2><span>打開 Mimi 的成長檔案 →</span></div>
+      </Link>
       <section className="dashboard-grid">
         <article className="child-overview">
           <div className="child-profile">

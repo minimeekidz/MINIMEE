@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
-import { AlbumsPage, BuddyCafe, ChildRoutePage, HeroStudio, PixelWorld } from "./pages/ChildPages";
+import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
 import { ChildProfilePage, ParentAlbums, ParentDashboard, ParentRoutePlaceholder, SubscriptionPage, ThemesPage } from "./pages/ParentPages";
 import { AuthPage, FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
 
@@ -44,6 +44,7 @@ export default function App() {
       <Route path="/child/hero-studio" element={<HeroStudio />} />
       <Route path="/child/albums" element={<AlbumsPage />} />
       <Route path="/child/buddy" element={<BuddyCafe />} />
+      <Route path="/child/harbor-market" element={<HarborMarket />} />
 
       <Route path="/admin" element={<AdminDashboard />} />
       {adminKinds.map(kind => <Route key={kind} path={`/admin/${kind}`} element={<AdminModulePage kind={kind} />} />)}
