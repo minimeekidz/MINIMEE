@@ -63,7 +63,7 @@ export function DashboardHeader({ title, child = false }: { title: string; child
 
 export function SideNav({ surface }: { surface: "parent" | "admin" }) {
   const parent = [
-    ["總覽", "/parent/dashboard"], ["小朋友", "/parent/children/demo-child-01"],
+    ["總覽", "/parent/dashboard"], ["首次設定", "/parent/setup"], ["小朋友", "/parent/children/demo-child-01"],
     ["學習主題", "/parent/children/demo-child-01/themes"], ["影片與相片", "/parent/media"],
     ["MEE 紀念冊", "/parent/albums"], ["好友及分享", "/parent/children/demo-child-01/sharing"],
     ["付款與訂閱", "/parent/children/demo-child-01/subscription"], ["私隱與下載", "/parent/privacy"]

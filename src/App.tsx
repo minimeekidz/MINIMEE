@@ -3,6 +3,7 @@ import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
 import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ParentRoutePlaceholder, SubscriptionPage, ThemesPage } from "./pages/ParentPages";
 import { AuthPage, FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
+import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
 
 function NotFound() {
   return <main className="not-found"><span>404</span><h1>這條小路還未開放</h1><a className="button" href="/">返回 MINIMEE</a></main>;
@@ -26,11 +27,13 @@ export default function App() {
       <Route path="/lost/:token" element={<LegalPage title="遺失物件通知" />} />
 
       <Route path="/parent/dashboard" element={<ParentDashboard />} />
+      <Route path="/parent/setup" element={<ParentSetupPage />} />
+      <Route path="/parent-gate" element={<ParentGatePage />} />
       <Route path="/parent/children/:id" element={<ChildProfilePage />} />
       <Route path="/parent/children/:id/themes" element={<ThemesPage />} />
       <Route path="/parent/children/:id/subscription" element={<SubscriptionPage />} />
       <Route path="/parent/albums" element={<ParentAlbums />} />
-      <Route path="/parent/media" element={<ParentRoutePlaceholder kind="media" />} />
+      <Route path="/parent/media" element={<MediaWorkflowPage />} />
       <Route path="/parent/children/:id/sharing" element={<FriendsSharingPage />} />
       <Route path="/parent/children/:id/lost-items" element={<ParentRoutePlaceholder kind="lost-items" />} />
       <Route path="/parent/privacy" element={<ParentRoutePlaceholder kind="privacy" />} />
