@@ -68,7 +68,7 @@ export function PricingPage() {
   return (
     <div className="public-page"><PublicHeader /><main className="content-page">
       <DemoBadge label="價格待正式確認" /><h1>為每位小朋友獨立選方案</h1>
-      <p className="lead">每個家長帳戶最多管理兩名小朋友；每名小朋友獨立訂閱。</p>
+      <p className="lead">每個家長帳戶最多管理三名小朋友；每名小朋友都需要獨立訂閱。</p>
       <div className="pricing-grid">{plans.map(([name, issue, odds], i) =>
         <article className={i === 2 ? "featured" : ""} key={name}>
           {i === 2 && <StatusPill tone="gold">完整收藏</StatusPill>}<h2>{name}</h2><div className="price-placeholder">HK$ —</div>
@@ -83,6 +83,7 @@ export function PricingPage() {
 export function FaqPage() {
   const faqs = [
     ["小朋友會有自己的公開登入嗎？", "不會。孩子必須在家長登入的 session 內切換 child context。"],
+    ["一個家長可以管理多少名小朋友？", "最多三名；每名小朋友擁有獨立檔案、學習進度及訂閱。"],
     ["取消後會即時刪除成果嗎？", "不會。已付服務期完結後進入 180 日唯讀期，期間仍可查看及下載。"],
     ["每張卡可以重抽嗎？", "不可。卡號與 NORMAL／FLASH 在主題權益派發時鎖定。"],
     ["朋友可以直接看影片嗎？", "不可。每段影片都要由卡主家長獨立批准分享。"]

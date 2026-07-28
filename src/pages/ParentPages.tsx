@@ -1,7 +1,9 @@
-import { Archive, Bell, BookOpen, CalendarClock, Download, Film, HeartHandshake, Image, Plus, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Archive, Bell, BookOpen, CalendarClock, Download, Film, HeartHandshake, Image, Plus, QrCode, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, DemoBadge, EmptyState, FeatureCard, IntegrationNotice, Progress, Shell, StatusPill } from "../components/UI";
-import { demoChild, notifications, topics } from "../data/mock";
+import { activeFriends, demoChild, friendHistory, notifications, topics } from "../data/mock";
+import { MAX_CHILDREN_PER_PARENT } from "../domain/rules";
 
 export function ParentDashboard() {
   return (
@@ -15,7 +17,7 @@ export function ParentDashboard() {
         <article className="child-overview">
           <div className="child-profile">
             <img src="/assets/hero-girl.webp" alt="合成示範英雄角色" />
-            <div><DemoBadge label="CHILD 1 OF 2" /><h2>{demoChild.displayName}</h2><p>{demoChild.heroName} · {demoChild.ageBand}</p></div>
+            <div><DemoBadge label={`CHILD 1 OF ${MAX_CHILDREN_PER_PARENT}`} /><h2>{demoChild.displayName}</h2><p>{demoChild.heroName} · {demoChild.ageBand}</p></div>
           </div>
           <Progress value={75} label="今期主題進度" />
           <div className="stats-row"><div><strong>3/4</strong><span>學習節點</span></div><div><strong>4</strong><span>MEE 卡</span></div><div><strong>6</strong><span>連續學習日</span></div></div>
@@ -26,6 +28,10 @@ export function ParentDashboard() {
           <div className="shards">{["✓", "✓", "✓", "?"].map((x, i) => <span className={i < 3 ? "done" : ""} key={i}>{x}</span>)}</div>
           <Link className="button secondary" to="/child/hero-studio">進入 Hero Studio</Link>
         </article>
+      </section>
+      <section className="child-account-summary">
+        <div><Users /><span><strong>1／{MAX_CHILDREN_PER_PARENT} 名孩子</strong><small>同一家長管理；每名孩子獨立訂閱</small></span></div>
+        <button className="button secondary" disabled><Plus />新增孩子</button>
       </section>
       <section className="section-block"><div className="block-heading"><div><span className="eyebrow">通知中心</span><h2>需要你留意</h2></div><Link to="/parent/notifications">全部通知</Link></div>
         <div className="notification-list">{notifications.map(n => <div key={n.title}><span className={`notice-dot ${n.tone}`} /><div><strong>{n.title}</strong><small>{n.meta}</small></div></div>)}</div>
@@ -67,6 +73,62 @@ export function ParentAlbums() {
   </div></Shell>;
 }
 
+export function FriendsSharingPage() {
+  const [friends, setFriends] = useState(activeFriends);
+  const [history, setHistory] = useState(friendHistory);
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const [scanState, setScanState] = useState<"idle" | "pending">("idle");
+  const selected = friends[0];
+
+  function confirmDelete() {
+    if (!selected) return;
+    setFriends([]);
+    setHistory(current => [
+      ...current,
+      { id: selected.id, displayName: selected.displayName, icon: selected.icon, disconnectedAt: "剛剛" }
+    ]);
+    setDeleteStep(0);
+  }
+
+  return <Shell surface="parent">
+    <DashboardHeader title="好友與分享" />
+    <section className="friend-policy-strip"><ShieldCheck /><div><strong>孩子不會獨立登入或自行授權</strong><p>掃描QR只會建立請求；對方家長批准後才會連接，影片仍需逐段授權。</p></div></section>
+    <div className="friend-manager-grid">
+      <section className="friend-panel">
+        <div className="block-heading"><div><span className="eyebrow">目前好友</span><h2>{friends.length} 位已連接</h2></div><button className="button secondary" onClick={() => setScanState("pending")}><QrCode />掃描QR</button></div>
+        {friends.map(friend => <article className="friend-row" key={friend.id}>
+          <span className="friend-avatar">{friend.icon}</span>
+          <div><strong>{friend.displayName}</strong><small>已連接 · 影片逐段批准</small></div>
+          <button className="danger-link" onClick={() => setDeleteStep(1)}><Trash2 />刪除</button>
+        </article>)}
+        {!friends.length && <EmptyState title="目前沒有已連接好友" detail="已刪除的好友只會留在歷史紀錄，不佔相簿Quota。" />}
+        {scanState === "pending" && <div className="pending-consent"><QrCode /><div><strong>等待對方家長重新授權</strong><p>重新掃描不會恢復舊影片權限；每段影片仍需重新批准。</p></div><button onClick={() => setScanState("idle")}>關閉</button></div>}
+      </section>
+      <section className="friend-panel">
+        <span className="eyebrow">歷史紀錄</span><h2>已中斷連接</h2>
+        <p className="panel-intro">孩子可以看到朋友名字，但紀錄不會出現在好友相簿，也不佔任何Quota。</p>
+        {history.map(friend => <article className="history-row" key={`${friend.id}-${friend.disconnectedAt}`}>
+          <span>{friend.icon}</span><div><strong>{friend.displayName}</strong><small>已中斷 · {friend.disconnectedAt}</small></div><StatusPill>無存取權</StatusPill>
+        </article>)}
+      </section>
+    </div>
+    {deleteStep > 0 && <div className="confirm-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-friend-title">
+      <section className="confirm-card">
+        <AlertTriangle />
+        <DemoBadge label={`STEP ${deleteStep} OF 2`} />
+        <h2 id="delete-friend-title">{deleteStep === 1 ? "你是否不小心按到刪除？" : `確定刪除 ${selected?.displayName}？`}</h2>
+        <p>{deleteStep === 1 ? "返回不會更改任何資料。" : "刪除後會立即中斷連接、撤銷所有影片權限，並移到歷史紀錄。"}</p>
+        <div className="confirm-actions">
+          <button className="button secondary" onClick={() => setDeleteStep(0)}>返回，不刪除</button>
+          {deleteStep === 1
+            ? <button className="button" onClick={() => setDeleteStep(2)}>我想繼續</button>
+            : <button className="button danger-button" onClick={confirmDelete}>確認刪除好友</button>}
+        </div>
+      </section>
+    </div>}
+  </Shell>;
+}
+
 const parentRouteInfo: Record<string, [string, string, string]> = {
   media: ["影片與相片", "每項素材會使用私有儲存及短效查看連結。", "Supabase Storage"],
   sharing: ["好友與分享", "好友關係及每段 AI 影片分享是兩種獨立權限。", "Share API"],
@@ -78,5 +140,10 @@ const parentRouteInfo: Record<string, [string, string, string]> = {
 export function ParentRoutePlaceholder({ kind }: { kind: string }) {
   const [title, detail, dependency] = parentRouteInfo[kind] ?? ["家長功能", "此路由已建立。", "Backend"];
   const params = useParams();
-  return <Shell surface="parent"><DashboardHeader title={title} /><section className="placeholder-panel"><span className="placeholder-icon">{kind === "privacy" ? <Download /> : kind === "media" ? <Image /> : <Bell />}</span><DemoBadge label="ROUTE READY" /><h2>{detail}</h2><p>需要連接：{dependency}。現時不會把按鈕導向假成功狀態。</p>{params.caseId && <StatusPill>Case {params.caseId}</StatusPill>}<button className="button" disabled><Plus />尚未接通</button></section></Shell>;
+  return <Shell surface="parent"><DashboardHeader title={title} />
+    {kind === "media" && <section className="ai-failure-card">
+      <AlertTriangle /><div><StatusPill tone="gold">需要人工處理</StatusPill><h2>我們正在為你仔細處理影片</h2><p>製作時遇到了一點情況，團隊已收到通知。暫時毋須重新提交資料，主題權益會保持預留。</p><small>示範狀態：系統會建立人工個案並通知Em，不向家長顯示技術錯誤。</small></div>
+    </section>}
+    <section className="placeholder-panel"><span className="placeholder-icon">{kind === "privacy" ? <Download /> : kind === "media" ? <Image /> : <Bell />}</span><DemoBadge label="ROUTE READY" /><h2>{detail}</h2><p>需要連接：{dependency}。現時不會把按鈕導向假成功狀態。</p>{params.caseId && <StatusPill>Case {params.caseId}</StatusPill>}<button className="button" disabled><Plus />尚未接通</button></section>
+  </Shell>;
 }

@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
-import { ChildProfilePage, ParentAlbums, ParentDashboard, ParentRoutePlaceholder, SubscriptionPage, ThemesPage } from "./pages/ParentPages";
+import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ParentRoutePlaceholder, SubscriptionPage, ThemesPage } from "./pages/ParentPages";
 import { AuthPage, FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
 
 function NotFound() {
@@ -31,7 +31,7 @@ export default function App() {
       <Route path="/parent/children/:id/subscription" element={<SubscriptionPage />} />
       <Route path="/parent/albums" element={<ParentAlbums />} />
       <Route path="/parent/media" element={<ParentRoutePlaceholder kind="media" />} />
-      <Route path="/parent/children/:id/sharing" element={<ParentRoutePlaceholder kind="sharing" />} />
+      <Route path="/parent/children/:id/sharing" element={<FriendsSharingPage />} />
       <Route path="/parent/children/:id/lost-items" element={<ParentRoutePlaceholder kind="lost-items" />} />
       <Route path="/parent/privacy" element={<ParentRoutePlaceholder kind="privacy" />} />
       <Route path="/parent/notifications" element={<ParentRoutePlaceholder kind="notifications" />} />
