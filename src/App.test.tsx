@@ -42,4 +42,43 @@ describe("MINIMEE route shells", () => {
     expect(screen.getAllByText(/Ava/).length).toBeGreaterThan(0);
     expect(screen.getByText(/不佔朋友相簿位置/)).toBeInTheDocument();
   });
+
+  it("requires the demo parent PIN before returning from the child world", () => {
+    render(<MemoryRouter initialEntries={["/parent-gate"]}><App /></MemoryRouter>);
+    const input = screen.getByLabelText("4位數家長PIN");
+    fireEvent.change(input, { target: { value: "1111" } });
+    fireEvent.click(screen.getByRole("button", { name: "驗證PIN" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("PIN不正確");
+    fireEvent.change(input, { target: { value: "2468" } });
+    fireEvent.click(screen.getByRole("button", { name: "驗證PIN" }));
+    expect(screen.getByRole("link", { name: /驗證成功/ })).toBeInTheDocument();
+  });
+
+  it("completes the parent setup only after consent", () => {
+    render(<MemoryRouter initialEntries={["/parent/setup"]}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: /下一步/ }));
+    fireEvent.click(screen.getByRole("button", { name: /下一步/ }));
+    fireEvent.click(screen.getByRole("button", { name: /下一步/ }));
+    const next = screen.getByRole("button", { name: /下一步/ });
+    expect(next).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(next);
+    expect(screen.getByRole("heading", { name: /前台設定已準備/ })).toBeInTheDocument();
+  });
+
+  it("keeps media creation blocked until demo asset and consent are ready", () => {
+    render(<MemoryRouter initialEntries={["/parent/media"]}><App /></MemoryRouter>);
+    const create = screen.getByRole("button", { name: "建立示範工作" });
+    expect(create).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "使用合成示範素材" }));
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(create).toBeEnabled();
+    expect(screen.getByText(/主題權益保持「已預留」/)).toBeInTheDocument();
+  });
+
+  it("moves an available theme entitlement into reserved state", () => {
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/themes"]}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "選擇這個主題" }));
+    expect(screen.getByRole("button", { name: "權益已預留" })).toBeDisabled();
+  });
 });
