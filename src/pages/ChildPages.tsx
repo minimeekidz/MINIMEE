@@ -10,7 +10,7 @@ function ChildFrame({ children, title }: { children: React.ReactNode; title: str
       <div className="child-topbar">
         <Link to="/child" aria-label="返回 Pixel World"><ChevronLeft /></Link>
         <div><small>MINIMEE PIXEL WORLD</small><strong>{title}</strong></div>
-        <Link to="/parent/dashboard" className="parent-gate"><ShieldCheck /><span>家長</span></Link>
+        <Link to="/parent-gate" className="parent-gate"><ShieldCheck /><span>家長</span></Link>
       </div>
       <main className="child-frame">{children}</main>
       <div className="child-dock">
