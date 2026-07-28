@@ -26,5 +26,10 @@ export const apiContracts = {
   createAiJob: "POST /ai/jobs",
   escalateAiJob: "POST /ai/jobs/:id/escalate",
   notifyParent: "POST /notifications/parent",
+  createLostItemMessage: "POST /lost-items/:token/messages",
+  relayLostItemEmail: "POST /lost-items/:token/email-relay",
+  updateNotificationPreferences: "PATCH /notification-preferences",
+  createSupportCase: "POST /support/cases",
+  createDeletionRequest: "POST /privacy/deletion-requests",
   createExport: "POST /exports"
 } as const;
