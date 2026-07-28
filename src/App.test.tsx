@@ -81,4 +81,27 @@ describe("MINIMEE route shells", () => {
     fireEvent.click(screen.getByRole("button", { name: "選擇這個主題" }));
     expect(screen.getByRole("button", { name: "權益已預留" })).toBeDisabled();
   });
+
+  it("keeps the public lost-item message anonymous and uses both channels", () => {
+    render(<MemoryRouter initialEntries={["/lost/demo-safe-token"]}><App /></MemoryRouter>);
+    expect(screen.getByText(/不會顯示孩子姓名、家長電話、地址或電郵/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("找到物品的位置"), { target: { value: "九龍公園入口" } });
+    fireEvent.change(screen.getByLabelText("匿名訊息"), { target: { value: "已交到服務台" } });
+    fireEvent.click(screen.getByRole("button", { name: "通知物主家長" }));
+    expect(screen.getByRole("status")).toHaveTextContent("站內訊息及匿名電郵轉寄");
+  });
+
+  it("shows in-app and anonymous email as enabled lost-item channels", () => {
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/lost-items"]}><App /></MemoryRouter>);
+    expect(screen.getByText("站內通知")).toBeInTheDocument();
+    expect(screen.getByText("匿名電郵")).toBeInTheDocument();
+  });
+
+  it("requires two privacy steps without deleting real data", () => {
+    render(<MemoryRouter initialEntries={["/parent/privacy"]}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "開始刪除流程" }));
+    expect(screen.getByRole("heading", { name: "這不是即時刪除按鈕" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "查看影響並繼續" }));
+    expect(screen.getByText(/不會永久刪除任何資料/)).toBeInTheDocument();
+  });
 });
