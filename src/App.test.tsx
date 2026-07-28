@@ -24,6 +24,14 @@ describe("MINIMEE route shells", () => {
     render(<MemoryRouter initialEntries={["/pricing"]}><App /></MemoryRouter>);
     expect(screen.getByText(/最多管理三名小朋友/)).toBeInTheDocument();
     expect(screen.getByText(/每名小朋友都需要獨立訂閱/)).toBeInTheDocument();
+    expect(screen.getByText("HK$324")).toBeInTheDocument();
+    expect(screen.getByText("HK$1,188")).toBeInTheDocument();
+  });
+
+  it("publishes substantive privacy, terms and refund documents", () => {
+    render(<MemoryRouter initialEntries={["/privacy"]}><App /></MemoryRouter>);
+    expect(screen.getByRole("heading", { name: "5. 保存、取消與刪除" })).toBeInTheDocument();
+    expect(screen.getByText(/180日唯讀期/)).toBeInTheDocument();
   });
 
   it("requires two confirmations before moving a friend to history", () => {
