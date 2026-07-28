@@ -14,11 +14,17 @@ export async function demoRequest<T>(payload: T): Promise<{ ok: true; data: T }>
 
 export const apiContracts = {
   createChild: "POST /children",
+  listChildren: "GET /children",
+  createChildSubscription: "POST /children/:id/subscriptions",
   verifyPin: "POST /parent-pin/verify",
+  recordConsent: "POST /children/:id/consents",
+  createPrivateUpload: "POST /children/:id/uploads",
   createTopicRun: "POST /topic-runs",
   answerLearningNode: "POST /learning/answer",
   createCheckout: "POST /stripe/checkout",
   issueCard: "POST /cards/issue",
   createAiJob: "POST /ai/jobs",
+  escalateAiJob: "POST /ai/jobs/:id/escalate",
+  notifyParent: "POST /notifications/parent",
   createExport: "POST /exports"
 } as const;
