@@ -31,7 +31,7 @@ export function ParentDashboard() {
       </section>
       <section className="child-account-summary">
         <div><Users /><span><strong>1／{MAX_CHILDREN_PER_PARENT} 名孩子</strong><small>同一家長管理；每名孩子獨立訂閱</small></span></div>
-        <button className="button secondary" disabled><Plus />新增孩子</button>
+        <Link className="button secondary" to="/parent/setup"><Plus />新增孩子</Link>
       </section>
       <section className="section-block"><div className="block-heading"><div><span className="eyebrow">通知中心</span><h2>需要你留意</h2></div><Link to="/parent/notifications">全部通知</Link></div>
         <div className="notification-list">{notifications.map(n => <div key={n.title}><span className={`notice-dot ${n.tone}`} /><div><strong>{n.title}</strong><small>{n.meta}</small></div></div>)}</div>
@@ -57,7 +57,27 @@ export function ChildProfilePage() {
 }
 
 export function ThemesPage() {
-  return <Shell surface="parent"><DashboardHeader title="Mimi 的學習主題" /><div className="topic-grid">{topics.map(t => <article key={t.title}><StatusPill tone={t.color}>{t.status}</StatusPill><h2>{t.title}</h2><Progress value={t.progress} label="完成進度" /><button className="button secondary" disabled={t.progress === 100}>{t.progress ? "查看進度" : "待後端啟用"}</button></article>)}</div><EmptyState title="主題選擇尚未接通" detail="接入 Supabase 後，未使用、已預留、已消耗及鎖定權益會在此顯示。" /></Shell>;
+  const [oceanState, setOceanState] = useState<"未使用" | "已預留">("未使用");
+  const entitlementLegend = [
+    ["未使用", "可由家長選擇"],
+    ["已預留", "已選主題，完成或人工處理前不可重複使用"],
+    ["已消耗", "影片完成並通過QC"],
+    ["已鎖定", "付款或服務期狀態不允許使用"]
+  ];
+  return <Shell surface="parent">
+    <DashboardHeader title="Mimi 的學習主題" />
+    <section className="entitlement-legend">{entitlementLegend.map(([state, detail]) => <div key={state}><StatusPill tone={state === "已預留" ? "gold" : state === "已消耗" ? "green" : "violet"}>{state}</StatusPill><small>{detail}</small></div>)}</section>
+    <div className="topic-grid">{topics.map(t => {
+      const isOcean = t.title === "海洋研究所";
+      const status = isOcean ? oceanState : t.progress === 100 ? "已消耗" : "已預留";
+      return <article key={t.title}><StatusPill tone={status === "已消耗" ? "green" : status === "已預留" ? "gold" : t.color}>{status}</StatusPill><h2>{t.title}</h2><Progress value={t.progress} label="完成進度" />
+        {isOcean
+          ? <button className="button secondary" onClick={() => setOceanState("已預留")} disabled={oceanState === "已預留"}>{oceanState === "未使用" ? "選擇這個主題" : "權益已預留"}</button>
+          : <button className="button secondary" disabled>{t.progress === 100 ? "已完成" : "進行中"}</button>}
+      </article>;
+    })}</div>
+    <EmptyState title="尚未連接權益交易記錄" detail="正式接入後，所有預留、消耗、退回及人工處理都會寫入不可重複的權益交易。" />
+  </Shell>;
 }
 
 export function SubscriptionPage() {
