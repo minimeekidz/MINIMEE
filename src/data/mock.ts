@@ -32,6 +32,14 @@ export const notifications = [
   { title: "MEE 卡 09 已加入紀念冊", meta: "Album House · 2 日前", tone: "gold" }
 ];
 
+export const activeFriends = [
+  { id: "friend-01", displayName: "Noah", icon: "🐧", connectedAt: "2026-06-18" }
+];
+
+export const friendHistory = [
+  { id: "friend-history-01", displayName: "Ava", icon: "🐰", disconnectedAt: "2026-05-02" }
+];
+
 export const adminModules = [
   ["內容與主題", "36 個主題版本、詞彙、問題與發布狀態", "/admin/content"],
   ["資產中心", "卡牌、角色、影片與缺檔追蹤", "/admin/assets"],
