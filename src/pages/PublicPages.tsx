@@ -1,5 +1,6 @@
 import { Check, Heart, Play, ShieldCheck, Sparkles, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { FormEvent, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { DemoBadge, IntegrationNotice, PublicHeader, StatusPill } from "../components/UI";
 
 export function HomePage() {
@@ -92,17 +93,31 @@ export function FaqPage() {
 }
 
 export function AuthPage() {
+  const { pathname } = useLocation();
+  const mode = pathname.includes("register") ? "register" : pathname.includes("forgot") ? "forgot" : "login";
+  const [submitted, setSubmitted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const title = mode === "register" ? "建立家長帳戶" : mode === "forgot" ? "重設密碼" : "歡迎家長回來";
+  const detail = mode === "register" ? "只有家長擁有登入帳戶；孩子不會建立獨立登入。" : mode === "forgot" ? "輸入家長電郵，正式連接後會寄出短效重設連結。" : "登入後管理孩子的主題、影片、收藏及分享權限。";
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    setSubmitted(true);
+  }
   return (
     <div className="auth-page">
       <Link className="brand" to="/"><span className="brand-mark">M</span><span>MINIMEE</span></Link>
-      <div className="auth-card">
-        <DemoBadge label="AUTH NOT CONNECTED" />
-        <h1>歡迎家長回來</h1><p>登入後管理孩子的主題、影片、收藏及分享權限。</p>
-        <label>電郵地址<input type="email" placeholder="parent@example.com" /></label>
-        <label>密碼<input type="password" placeholder="••••••••" /></label>
-        <button className="button" disabled>待 Supabase Auth 連接</button>
+      <form className="auth-card" onSubmit={submit}>
+        <DemoBadge label="AUTH FRONTEND READY" />
+        <h1>{title}</h1><p>{detail}</p>
+        {!submitted ? <>
+          <label>電郵地址<input aria-label="家長電郵地址" type="email" required placeholder="parent@example.com" /></label>
+          {mode !== "forgot" && <label>密碼<div className="password-field"><input aria-label="家長密碼" type={showPassword ? "text" : "password"} minLength={8} required placeholder="最少8個字元" /><button type="button" onClick={() => setShowPassword(value => !value)}>{showPassword ? "隱藏" : "顯示"}</button></div></label>}
+          {mode === "register" && <label className="check-label"><input type="checkbox" required />我確認這是家長帳戶，並同意在上載兒童資料前閱讀私隱條款</label>}
+          <button className="button" type="submit">{mode === "register" ? "建立示範帳戶" : mode === "forgot" ? "發送示範重設要求" : "示範登入"}</button>
+        </> : <div className="auth-success" role="status"><Check /><div><strong>{mode === "forgot" ? "重設要求已準備" : mode === "register" ? "請驗證家長電郵" : "示範登入完成"}</strong><p>{mode === "forgot" ? "正式連接後，重設連結會設有效期並只能使用一次。" : "Supabase連接後才會建立真實Session。"}</p></div></div>}
+        <div className="auth-links">{mode !== "login" && <Link to="/login">返回登入</Link>}{mode === "login" && <><Link to="/forgot-password">忘記密碼</Link><Link to="/register">建立家長帳戶</Link></>}</div>
         <Link to="/parent/dashboard" className="demo-entry">使用合成資料預覽家長端</Link>
-      </div>
+      </form>
     </div>
   );
 }
