@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Heart, LockKeyhole, Mic, Moon, Play, ShieldCheck, Sparkles, Sun } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DemoBadge, Progress, StatusPill } from "../components/UI";
-import { cards, demoChild, locations, topics } from "../data/mock";
+import { activeFriends, cards, demoChild, friendHistory, locations, topics } from "../data/mock";
 
 function ChildFrame({ children, title }: { children: React.ReactNode; title: string }) {
   return (
@@ -97,6 +97,15 @@ export function BuddyCafe() {
     <div className="pet-stats scene-stats"><span><Heart />心情 82</span><span>🍪 飽足 68</span><span>✨ 親密 74</span></div>
   </SceneHero>
   <div className="buddy-actions"><button><Heart />摸摸 Pip</button><button>🍪 餵小食</button><button disabled>掃描朋友 QR</button></div>
+  <section className="child-friends" aria-label="朋友">
+    <div className="child-friend-heading"><strong>我的朋友</strong><span>{activeFriends.length} 位已連接</span></div>
+    {activeFriends.map(friend => <div className="child-friend-card" key={friend.id}><span>{friend.icon}</span><strong>{friend.displayName}</strong><small>影片要由家長逐段批准</small></div>)}
+    <div className="child-history-line">
+      <small>以前認識過</small>
+      {friendHistory.map(friend => <span key={friend.id}>{friend.icon} {friend.displayName}</span>)}
+    </div>
+    <p className="quota-note">歷史名字只是一行紀錄，不佔朋友相簿位置。</p>
+  </section>
   <div className="friend-rule"><LockKeyhole /><div><strong>影片不會自動分享</strong><p>建立朋友關係後，每段影片仍要由卡主家長逐條批准。</p></div></div></ChildFrame>;
 }
 
