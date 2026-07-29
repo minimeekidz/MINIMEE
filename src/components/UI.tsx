@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import {
   Bell, ChevronRight, CloudOff, LockKeyhole, Menu, ShieldCheck, Sparkles
 } from "lucide-react";
+import { useFamily } from "../contexts/FamilyContext";
 
 export function DemoBadge({ label = "DEMO DATA" }: { label?: string }) {
   return <span className="demo-badge">{label}</span>;
@@ -45,11 +46,11 @@ export function PublicHeader() {
   );
 }
 
-export function DashboardHeader({ title, child = false }: { title: string; child?: boolean }) {
+export function DashboardHeader({ title, child = false, demo = false }: { title: string; child?: boolean; demo?: boolean }) {
   return (
     <header className="dashboard-header">
       <div>
-        <DemoBadge />
+        <DemoBadge label={demo ? "DEMO DATA" : "SECURE PARENT ACCOUNT"} />
         <h1>{title}</h1>
       </div>
       <div className="header-actions">
@@ -62,11 +63,14 @@ export function DashboardHeader({ title, child = false }: { title: string; child
 }
 
 export function SideNav({ surface }: { surface: "parent" | "admin" }) {
+  const { children } = useFamily();
+  const childId = children[0]?.id;
+  const childPath = childId ? `/parent/children/${childId}` : "/parent/setup";
   const parent = [
-    ["總覽", "/parent/dashboard"], ["首次設定", "/parent/setup"], ["小朋友", "/parent/children/demo-child-01"],
-    ["學習主題", "/parent/children/demo-child-01/themes"], ["影片與相片", "/parent/media"],
-    ["MEE 紀念冊", "/parent/albums"], ["好友及分享", "/parent/children/demo-child-01/sharing"],
-    ["付款與訂閱", "/parent/children/demo-child-01/subscription"], ["私隱與下載", "/parent/privacy"]
+    ["總覽", "/parent/dashboard"], ["新增孩子", "/parent/setup"], ["小朋友", childPath],
+    ["學習主題", childId ? `${childPath}/themes` : "/parent/setup"], ["影片與相片", "/parent/media"],
+    ["MEE 紀念冊", "/parent/albums"], ["好友及分享", childId ? `${childPath}/sharing` : "/parent/setup"],
+    ["付款與訂閱", childId ? `${childPath}/subscription` : "/parent/setup"], ["私隱與下載", "/parent/privacy"]
   ];
   const admin = [
     ["營運總覽", "/admin"], ["內容管理", "/admin/content"], ["資產中心", "/admin/assets"],
@@ -85,7 +89,7 @@ export function SideNav({ surface }: { surface: "parent" | "admin" }) {
           </NavLink>
         ))}
       </nav>
-      <div className="secure-note"><ShieldCheck size={18} /><span>兒童資料不存於此 Demo</span></div>
+      <div className="secure-note"><ShieldCheck size={18} /><span>孩子資料受家長帳戶及資料庫權限保護</span></div>
     </aside>
   );
 }
@@ -108,7 +112,7 @@ export function IntegrationNotice() {
   return (
     <div className="integration-notice">
       <LockKeyhole size={20} />
-      <div><strong>前台示範模式</strong><p>介面與路由可操作；登入、付款、媒體、AI 及資料庫尚未連接。</p></div>
+      <div><strong>安全帳戶及家庭資料已連接</strong><p>登入、家長角色及孩子檔案已使用 Supabase；付款、媒體上載、AI 製作及分享仍未啟用。</p></div>
     </div>
   );
 }
