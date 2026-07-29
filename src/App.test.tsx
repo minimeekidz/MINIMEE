@@ -1,7 +1,27 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import App from "./App";
+
+vi.mock("./contexts/AuthContext", () => ({
+  useAuth: () => ({
+    configured: true,
+    loading: false,
+    session: { user: { id: "test-parent" } },
+    user: { id: "test-parent" },
+    role: "admin",
+    refreshRole: vi.fn(),
+    signOut: vi.fn(),
+  }),
+}));
+
+vi.mock("./lib/supabase", () => ({
+  supabase: {
+    auth: {
+      resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
+    },
+  },
+}));
 
 describe("MINIMEE route shells", () => {
   it("renders the public home page", () => {
@@ -113,11 +133,11 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByText(/不會永久刪除任何資料/)).toBeInTheDocument();
   });
 
-  it("supports login, registration and password reset frontend states", () => {
+  it("supports login, registration and password reset frontend states", async () => {
     render(<MemoryRouter initialEntries={["/forgot-password"]}><App /></MemoryRouter>);
     fireEvent.change(screen.getByLabelText("家長電郵地址"), { target: { value: "parent@example.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "發送示範重設要求" }));
-    expect(screen.getByRole("status")).toHaveTextContent("重設要求已準備");
+    fireEvent.click(screen.getByRole("button", { name: "發送重設連結" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("重設連結已寄出");
   });
 
   it("keeps checkout pending until a verified webhook", () => {
