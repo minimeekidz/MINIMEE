@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /parent
+Disallow: /child
+Disallow: /f/
+Disallow: /lost/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+
+Sitemap: https://minimee.me/sitemap.xml
