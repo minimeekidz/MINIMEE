@@ -15,6 +15,39 @@ vi.mock("./contexts/AuthContext", () => ({
   }),
 }));
 
+const createChild = vi.fn().mockResolvedValue({
+  id: "child-1",
+  parent_id: "test-parent",
+  nickname: "Mimi",
+  birth_year: null,
+  age_group: "6-8",
+  interests: [],
+  preferred_language: "zh-HK",
+  created_at: "2026-07-30T00:00:00Z",
+  updated_at: "2026-07-30T00:00:00Z",
+});
+
+vi.mock("./contexts/FamilyContext", () => ({
+  useFamily: () => ({
+    children: [{
+      id: "demo-child-01",
+      parent_id: "test-parent",
+      nickname: "Mimi",
+      birth_year: null,
+      age_group: "6-8",
+      interests: [],
+      preferred_language: "zh-HK",
+      created_at: "2026-07-30T00:00:00Z",
+      updated_at: "2026-07-30T00:00:00Z",
+    }],
+    loading: false,
+    error: null,
+    canAddChild: true,
+    refresh: vi.fn(),
+    createChild,
+  }),
+}));
+
 vi.mock("./lib/supabase", () => ({
   supabase: {
     auth: {
@@ -29,10 +62,11 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByRole("heading", { name: /每次學習/ })).toBeInTheDocument();
   });
 
-  it("renders the parent dashboard with demo disclosure", () => {
+  it("renders the parent dashboard with the connected child profile", () => {
     render(<MemoryRouter initialEntries={["/parent/dashboard"]}><App /></MemoryRouter>);
-    expect(screen.getByRole("heading", { name: "早晨，Em" })).toBeInTheDocument();
-    expect(screen.getAllByText("DEMO DATA").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "你好，家長" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mimi" })).toBeInTheDocument();
+    expect(screen.getByText(/安全帳戶及家庭資料已連接/)).toBeInTheDocument();
   });
 
   it("keeps missing MEE card assets explicit", () => {
@@ -82,16 +116,14 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByRole("link", { name: /驗證成功/ })).toBeInTheDocument();
   });
 
-  it("completes the parent setup only after consent", () => {
+  it("creates a real child profile from the parent setup form", () => {
     render(<MemoryRouter initialEntries={["/parent/setup"]}><App /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("button", { name: /下一步/ }));
-    fireEvent.click(screen.getByRole("button", { name: /下一步/ }));
-    fireEvent.click(screen.getByRole("button", { name: /下一步/ }));
-    const next = screen.getByRole("button", { name: /下一步/ });
-    expect(next).toBeDisabled();
-    fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(next);
-    expect(screen.getByRole("heading", { name: /前台設定已準備/ })).toBeInTheDocument();
+    const submit = screen.getByRole("button", { name: /建立孩子檔案/ });
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("孩子顯示名稱"), { target: { value: "Luna" } });
+    expect(submit).toBeEnabled();
+    fireEvent.click(submit);
+    expect(createChild).toHaveBeenCalledWith(expect.objectContaining({ nickname: "Luna" }));
   });
 
   it("keeps media creation blocked until demo asset and consent are ready", () => {
