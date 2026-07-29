@@ -1,37 +1,44 @@
 import { useState } from "react";
 import { AlertTriangle, Archive, BookOpen, CalendarClock, Film, HeartHandshake, Plus, QrCode, ShieldCheck, Trash2, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, DemoBadge, EmptyState, FeatureCard, IntegrationNotice, Progress, Shell, StatusPill } from "../components/UI";
-import { activeFriends, demoChild, friendHistory, notifications, topics } from "../data/mock";
+import { activeFriends, friendHistory, notifications, topics } from "../data/mock";
 import { MAX_CHILDREN_PER_PARENT } from "../domain/rules";
+import { useAuth } from "../contexts/AuthContext";
+import { useFamily } from "../contexts/FamilyContext";
+
+const languageLabels = { "zh-HK": "粵語", "zh-CN": "普通話", en: "English" };
 
 export function ParentDashboard() {
+  const { user } = useAuth();
+  const { children, loading, error, canAddChild } = useFamily();
+  const parentName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "家長";
+  const firstChild = children[0];
+
   return (
     <Shell surface="parent">
-      <DashboardHeader title="早晨，Em" />
+      <DashboardHeader title={`你好，${parentName}`} />
       <IntegrationNotice />
-      <Link className="parent-world-banner" to="/parent/children/demo-child-01">
-        <div><DemoBadge label="親子天地" /><h2>孩子的學習與童年回憶，都在同一個地方。</h2><span>打開 Mimi 的成長檔案 →</span></div>
+      <Link className="parent-world-banner" to={firstChild ? `/parent/children/${firstChild.id}` : "/parent/setup"}>
+        <div><DemoBadge label="親子天地" /><h2>孩子的學習與童年回憶，都在同一個地方。</h2><span>{firstChild ? `打開 ${firstChild.nickname} 的成長檔案` : "建立第一名孩子"} →</span></div>
       </Link>
-      <section className="dashboard-grid">
-        <article className="child-overview">
+      {loading && <EmptyState title="正在載入家庭資料" detail="我們正在安全地讀取你的孩子檔案。" />}
+      {error && <p className="form-error" role="alert">{error}</p>}
+      {!loading && !children.length && <EmptyState title="尚未建立孩子檔案" detail="建立第一名孩子後，家庭總覽會顯示在這裡。孩子不會有獨立登入。" />}
+      {!!children.length && <section className="family-child-grid">
+        {children.map((child, index) => <article className="child-overview" key={child.id}>
           <div className="child-profile">
-            <img src="/assets/hero-girl.webp" alt="合成示範英雄角色" />
-            <div><DemoBadge label={`CHILD 1 OF ${MAX_CHILDREN_PER_PARENT}`} /><h2>{demoChild.displayName}</h2><p>{demoChild.heroName} · {demoChild.ageBand}</p></div>
+            <img src="/assets/hero-girl.webp" alt="MINIMEE 合成角色示意" />
+            <div><DemoBadge label={`CHILD ${index + 1} OF ${MAX_CHILDREN_PER_PARENT}`} /><h2>{child.nickname}</h2><p>{child.age_group ? `${child.age_group} 歲組` : "年齡組未設定"} · {languageLabels[child.preferred_language]}</p></div>
           </div>
-          <Progress value={75} label="今期主題進度" />
-          <div className="stats-row"><div><strong>3/4</strong><span>學習節點</span></div><div><strong>4</strong><span>MEE 卡</span></div><div><strong>6</strong><span>連續學習日</span></div></div>
-          <Link className="button" to="/parent/children/demo-child-01">查看 Mimi</Link>
-        </article>
-        <article className="next-action">
-          <StatusPill tone="gold">今期下一步</StatusPill><h2>完成「巴士」小任務</h2><p>最後一塊 Mystery Shard 完成後，會解鎖個人化影片準備。</p>
-          <div className="shards">{["✓", "✓", "✓", "?"].map((x, i) => <span className={i < 3 ? "done" : ""} key={i}>{x}</span>)}</div>
-          <Link className="button secondary" to="/child/hero-studio">進入 Hero Studio</Link>
-        </article>
-      </section>
+          <Progress value={0} label="學習主題尚未啟用" />
+          <div className="stats-row"><div><strong>0</strong><span>學習節點</span></div><div><strong>0</strong><span>MEE 卡</span></div><div><strong>0</strong><span>連續學習日</span></div></div>
+          <Link className="button" to={`/parent/children/${child.id}`}>查看 {child.nickname}</Link>
+        </article>)}
+      </section>}
       <section className="child-account-summary">
-        <div><Users /><span><strong>1／{MAX_CHILDREN_PER_PARENT} 名孩子</strong><small>同一家長管理；每名孩子獨立訂閱</small></span></div>
-        <Link className="button secondary" to="/parent/setup"><Plus />新增孩子</Link>
+        <div><Users /><span><strong>{children.length}／{MAX_CHILDREN_PER_PARENT} 名孩子</strong><small>同一家長管理；每名孩子需要獨立訂閱</small></span></div>
+        {canAddChild ? <Link className="button secondary" to="/parent/setup"><Plus />新增孩子</Link> : <StatusPill tone="gold">已達上限</StatusPill>}
       </section>
       <section className="section-block"><div className="block-heading"><div><span className="eyebrow">通知中心</span><h2>需要你留意</h2></div><Link to="/parent/notifications">全部通知</Link></div>
         <div className="notification-list">{notifications.map(n => <div key={n.title}><span className={`notice-dot ${n.tone}`} /><div><strong>{n.title}</strong><small>{n.meta}</small></div></div>)}</div>
@@ -41,16 +48,22 @@ export function ParentDashboard() {
 }
 
 export function ChildProfilePage() {
+  const { id } = useParams();
+  const { children, loading } = useFamily();
+  const child = children.find(item => item.id === id);
+  if (loading) return <Shell surface="parent"><EmptyState title="正在載入孩子檔案" detail="請稍候。" /></Shell>;
+  if (!child) return <Shell surface="parent"><EmptyState title="找不到這名孩子" detail="這個檔案不存在，或不屬於目前登入的家長帳戶。" /></Shell>;
+  const base = `/parent/children/${child.id}`;
   return (
-    <Shell surface="parent"><DashboardHeader title="Mimi 的成長檔案" /><div className="profile-hero">
-      <img src="/assets/hero-girl.webp" alt="合成示範英雄角色" /><div><DemoBadge /><h2>Mimi · 星光探險家</h2><p>6–8 歲 · 粵語引領 · 寵物 Pip</p><div className="chip-row"><StatusPill tone="green">訂閱有效</StatusPill><StatusPill>家長控制</StatusPill></div></div>
+    <Shell surface="parent"><DashboardHeader title={`${child.nickname} 的成長檔案`} /><div className="profile-hero">
+      <img src="/assets/hero-girl.webp" alt="MINIMEE 合成角色示意" /><div><DemoBadge label="真實孩子檔案" /><h2>{child.nickname}</h2><p>{child.age_group ? `${child.age_group} 歲組` : "年齡組未設定"} · {languageLabels[child.preferred_language]}{child.interests.length ? ` · ${child.interests.join("、")}` : ""}</p><div className="chip-row"><StatusPill tone="gold">尚未訂閱</StatusPill><StatusPill>家長控制</StatusPill></div></div>
     </div>
     <div className="feature-grid">
-      <FeatureCard title="學習主題" detail="1 進行中 · 1 待選擇" to="/parent/children/demo-child-01/themes" icon={<BookOpen />} />
-      <FeatureCard title="訂閱管理" detail="方案、付款及取消" to="/parent/children/demo-child-01/subscription" icon={<CalendarClock />} />
-      <FeatureCard title="影片與相片" detail="私有素材與製作狀態" to="/parent/media" icon={<Film />} />
-      <FeatureCard title="好友與分享" detail="逐段影片獨立批准" to="/parent/children/demo-child-01/sharing" icon={<HeartHandshake />} />
-      <FeatureCard title="遺失物件" detail="匿名 QR 聯絡流程" to="/parent/children/demo-child-01/lost-items" icon={<Archive />} />
+      <FeatureCard title="學習主題" detail="產品資料尚未接駁" to={`${base}/themes`} icon={<BookOpen />} />
+      <FeatureCard title="訂閱管理" detail="付款服務尚未接駁" to={`${base}/subscription`} icon={<CalendarClock />} />
+      <FeatureCard title="影片與相片" detail="私人儲存尚未啟用" to="/parent/media" icon={<Film />} />
+      <FeatureCard title="好友與分享" detail="分享資料庫尚未接駁" to={`${base}/sharing`} icon={<HeartHandshake />} />
+      <FeatureCard title="遺失物件" detail="匿名通知服務尚未接駁" to={`${base}/lost-items`} icon={<Archive />} />
       <FeatureCard title="資料與私隱" detail="同意、匯出及刪除" to="/parent/privacy" icon={<ShieldCheck />} />
     </div></Shell>
   );
