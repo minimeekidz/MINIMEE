@@ -2,10 +2,12 @@ import { Route, Routes } from "react-router-dom";
 import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
 import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ThemesPage } from "./pages/ParentPages";
-import { AuthPage, FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
+import { AuthPage } from "./pages/AuthPages";
+import { FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
 import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
 import { LostItemsPage, NotificationsPage, PrivacyCenterPage, PublicLostItemPage, SupportCasePage } from "./pages/ParentServicePages";
 import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function NotFound() {
   return <main className="not-found"><span>404</span><h1>這條小路還未開放</h1><a className="button" href="/">返回 MINIMEE</a></main>;
@@ -22,38 +24,39 @@ export default function App() {
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register" element={<AuthPage />} />
       <Route path="/forgot-password" element={<AuthPage />} />
+      <Route path="/reset-password" element={<AuthPage />} />
       <Route path="/privacy" element={<LegalPage title="私隱政策" />} />
       <Route path="/terms" element={<LegalPage title="服務條款" />} />
       <Route path="/refund-policy" element={<LegalPage title="退款與重做政策" />} />
       <Route path="/f/:token" element={<LegalPage title="朋友邀請" />} />
       <Route path="/lost/:token" element={<PublicLostItemPage />} />
 
-      <Route path="/parent/dashboard" element={<ParentDashboard />} />
-      <Route path="/parent/setup" element={<ParentSetupPage />} />
-      <Route path="/parent-gate" element={<ParentGatePage />} />
-      <Route path="/parent/children/:id" element={<ChildProfilePage />} />
-      <Route path="/parent/children/:id/themes" element={<ThemesPage />} />
-      <Route path="/parent/children/:id/subscription" element={<SubscriptionStatesPage />} />
-      <Route path="/parent/children/:id/checkout" element={<CheckoutPage />} />
-      <Route path="/parent/albums" element={<ParentAlbums />} />
-      <Route path="/parent/media" element={<MediaWorkflowPage />} />
-      <Route path="/parent/children/:id/sharing" element={<FriendsSharingPage />} />
-      <Route path="/parent/children/:id/lost-items" element={<LostItemsPage />} />
-      <Route path="/parent/privacy" element={<PrivacyCenterPage />} />
-      <Route path="/parent/notifications" element={<NotificationsPage />} />
-      <Route path="/parent/support/:caseId" element={<SupportCasePage />} />
+      <Route path="/parent/dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
+      <Route path="/parent/setup" element={<ProtectedRoute><ParentSetupPage /></ProtectedRoute>} />
+      <Route path="/parent-gate" element={<ProtectedRoute><ParentGatePage /></ProtectedRoute>} />
+      <Route path="/parent/children/:id" element={<ProtectedRoute><ChildProfilePage /></ProtectedRoute>} />
+      <Route path="/parent/children/:id/themes" element={<ProtectedRoute><ThemesPage /></ProtectedRoute>} />
+      <Route path="/parent/children/:id/subscription" element={<ProtectedRoute><SubscriptionStatesPage /></ProtectedRoute>} />
+      <Route path="/parent/children/:id/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+      <Route path="/parent/albums" element={<ProtectedRoute><ParentAlbums /></ProtectedRoute>} />
+      <Route path="/parent/media" element={<ProtectedRoute><MediaWorkflowPage /></ProtectedRoute>} />
+      <Route path="/parent/children/:id/sharing" element={<ProtectedRoute><FriendsSharingPage /></ProtectedRoute>} />
+      <Route path="/parent/children/:id/lost-items" element={<ProtectedRoute><LostItemsPage /></ProtectedRoute>} />
+      <Route path="/parent/privacy" element={<ProtectedRoute><PrivacyCenterPage /></ProtectedRoute>} />
+      <Route path="/parent/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+      <Route path="/parent/support/:caseId" element={<ProtectedRoute><SupportCasePage /></ProtectedRoute>} />
 
-      <Route path="/child" element={<PixelWorld />} />
-      <Route path="/child/room" element={<ChildRoutePage kind="room" />} />
-      <Route path="/child/library" element={<ChildRoutePage kind="library" />} />
-      <Route path="/child/theatre" element={<ChildRoutePage kind="theatre" />} />
-      <Route path="/child/hero-studio" element={<HeroStudio />} />
-      <Route path="/child/albums" element={<AlbumsPage />} />
-      <Route path="/child/buddy" element={<BuddyCafe />} />
-      <Route path="/child/harbor-market" element={<HarborMarket />} />
+      <Route path="/child" element={<ProtectedRoute><PixelWorld /></ProtectedRoute>} />
+      <Route path="/child/room" element={<ProtectedRoute><ChildRoutePage kind="room" /></ProtectedRoute>} />
+      <Route path="/child/library" element={<ProtectedRoute><ChildRoutePage kind="library" /></ProtectedRoute>} />
+      <Route path="/child/theatre" element={<ProtectedRoute><ChildRoutePage kind="theatre" /></ProtectedRoute>} />
+      <Route path="/child/hero-studio" element={<ProtectedRoute><HeroStudio /></ProtectedRoute>} />
+      <Route path="/child/albums" element={<ProtectedRoute><AlbumsPage /></ProtectedRoute>} />
+      <Route path="/child/buddy" element={<ProtectedRoute><BuddyCafe /></ProtectedRoute>} />
+      <Route path="/child/harbor-market" element={<ProtectedRoute><HarborMarket /></ProtectedRoute>} />
 
-      <Route path="/admin" element={<AdminDashboard />} />
-      {adminKinds.map(kind => <Route key={kind} path={`/admin/${kind}`} element={<AdminModulePage kind={kind} />} />)}
+      <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+      {adminKinds.map(kind => <Route key={kind} path={`/admin/${kind}`} element={<ProtectedRoute requireAdmin><AdminModulePage kind={kind} /></ProtectedRoute>} />)}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
