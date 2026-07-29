@@ -3,6 +3,7 @@ interface Env {
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }
 
+// Pages Functions read these public client values from the deployment environment.
 export const onRequestGet = async ({ env }: { env: Env }) => {
   const url = env.VITE_SUPABASE_URL?.trim();
   const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
