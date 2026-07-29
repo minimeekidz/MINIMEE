@@ -145,7 +145,7 @@ export function AuthPage() {
           <button className="button" type="submit">{mode === "register" ? "建立示範帳戶" : mode === "forgot" ? "發送示範重設要求" : "示範登入"}</button>
         </> : <div className="auth-success" role="status"><Check /><div><strong>{mode === "forgot" ? "重設要求已準備" : mode === "register" ? "請驗證家長電郵" : "示範登入完成"}</strong><p>{mode === "forgot" ? "正式連接後，重設連結會設有效期並只能使用一次。" : "Supabase連接後才會建立真實Session。"}</p></div></div>}
         <div className="auth-links">{mode !== "login" && <Link to="/login">返回登入</Link>}{mode === "login" && <><Link to="/forgot-password">忘記密碼</Link><Link to="/register">建立家長帳戶</Link></>}</div>
-        <Link to="/parent/dashboard" className="demo-entry">使用合成資料預覽家長端</Link>
+        <Link to="/parent/dashboard" className="demo-entry">進入安全家長帳戶</Link>
       </form>
     </div>
   );
