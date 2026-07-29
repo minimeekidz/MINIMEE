@@ -1,10 +1,17 @@
 import { FormEvent, useState } from "react";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, ImagePlus, KeyRound, LockKeyhole, ShieldCheck, Sparkles, Upload, UserPlus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { AlertTriangle, Check, ChevronLeft, ImagePlus, KeyRound, LockKeyhole, ShieldCheck, Upload, UserPlus } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { DemoBadge, Progress, Shell, StatusPill } from "../components/UI";
 import { MAX_CHILDREN_PER_PARENT } from "../domain/rules";
+import { NewChild, useFamily } from "../contexts/FamilyContext";
 
-const setupSteps = ["家長帳戶", "孩子檔案", "獨立訂閱", "同意與安全"];
+const defaultChild: NewChild = {
+  nickname: "",
+  birth_year: null,
+  age_group: null,
+  interests: [],
+  preferred_language: "zh-HK",
+};
 
 export function ParentGatePage() {
   const [pin, setPin] = useState("");
@@ -35,30 +42,70 @@ export function ParentGatePage() {
 }
 
 export function ParentSetupPage() {
-  const [step, setStep] = useState(0);
-  const [childName, setChildName] = useState("Mimi");
-  const [accepted, setAccepted] = useState(false);
-  const complete = step === setupSteps.length;
+  const navigate = useNavigate();
+  const { children, canAddChild, createChild } = useFamily();
+  const [form, setForm] = useState<NewChild>(defaultChild);
+  const [interestText, setInterestText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function saveChild(event: FormEvent) {
+    event.preventDefault();
+    if (!form.nickname.trim() || !canAddChild) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const created = await createChild({
+        ...form,
+        interests: interestText.split(/[、,，]/).map(value => value.trim()).filter(Boolean).slice(0, 8),
+      });
+      navigate(`/parent/children/${created.id}`, { replace: true });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "未能建立孩子檔案。");
+      setSaving(false);
+    }
+  }
 
   return <Shell surface="parent">
     <header className="setup-header">
-      <div><DemoBadge label="FIRST-TIME SETUP" /><h1>建立MINIMEE家庭</h1><p>一個家長管理最多{MAX_CHILDREN_PER_PARENT}名孩子；每名孩子獨立訂閱及保存資料。</p></div>
-      <StatusPill tone={complete ? "green" : "violet"}>{complete ? "設定完成" : `${step + 1}／${setupSteps.length}`}</StatusPill>
+      <div><DemoBadge label="SECURE CHILD PROFILE" /><h1>新增孩子檔案</h1><p>一個家長管理最多{MAX_CHILDREN_PER_PARENT}名孩子；孩子沒有獨立登入，每名孩子的資料及日後訂閱互相獨立。</p></div>
+      <StatusPill tone={canAddChild ? "violet" : "gold"}>{children.length}／{MAX_CHILDREN_PER_PARENT} 名孩子</StatusPill>
     </header>
-    <Progress value={complete ? 100 : ((step + 1) / setupSteps.length) * 100} label="設定進度" />
-    <ol className="setup-stepper">{setupSteps.map((label, index) => <li className={index < step ? "done" : index === step ? "active" : ""} key={label}><span>{index < step ? "✓" : index + 1}</span>{label}</li>)}</ol>
-
-    {!complete && <section className="setup-card">
-      {step === 0 && <div className="setup-content"><ShieldCheck /><h2>家長是唯一帳戶持有人</h2><p>孩子不會取得電郵、密碼或獨立登入。所有孩子世界都在家長session內切換。</p><div className="rule-box"><LockKeyhole />付款、資料下載、分享及刪除必須重新驗證家長身份。</div></div>}
-      {step === 1 && <div className="setup-content"><UserPlus /><h2>建立第一名孩子</h2><label>孩子顯示名稱<input aria-label="孩子顯示名稱" value={childName} onChange={event => setChildName(event.target.value)} /></label><div className="slot-preview"><strong>孩子名額</strong><span className="filled">{childName || "未命名"}</span><span>名額2</span><span>名額3</span></div><small>孩子資料、學習進度、影片及好友不可在兄弟姊妹之間共用。</small></div>}
-      {step === 2 && <div className="setup-content"><Sparkles /><h2>{childName}的獨立訂閱</h2><div className="subscription-choice"><StatusPill tone="gold">示範方案</StatusPill><strong>3個月收藏方案</strong><p>此選擇只套用於{childName}。另外新增孩子時需要重新選擇及付款。</p></div><p className="quiet-note">Stripe尚未連接，現在不會收款或建立真實訂閱。</p></div>}
-      {step === 3 && <div className="setup-content"><ShieldCheck /><h2>兒童資料與AI製作同意</h2><ul className="consent-list"><li>只為已選主題製作個人化內容</li><li>素材使用私有儲存及短效查看連結</li><li>影片不會自動分享給朋友</li><li>家長可以撤回同意及提出完整下載／刪除</li></ul><label className="check-label"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} />我已閱讀示範同意範圍</label></div>}
-      <div className="setup-actions">
-        <button className="button secondary" onClick={() => setStep(current => Math.max(0, current - 1))} disabled={step === 0}><ChevronLeft />上一步</button>
-        <button className="button" onClick={() => setStep(current => current + 1)} disabled={(step === 1 && !childName.trim()) || (step === 3 && !accepted)}>下一步<ChevronRight /></button>
-      </div>
-    </section>}
-    {complete && <section className="setup-complete"><Check /><DemoBadge label="DEMO COMPLETE" /><h2>{childName}的前台設定已準備</h2><p>下一步是連接Supabase Auth、孩子資料、同意紀錄及每名孩子的Stripe訂閱。</p><Link className="button" to="/parent/dashboard">返回家庭總覽</Link></section>}
+    <Progress value={(children.length / MAX_CHILDREN_PER_PARENT) * 100} label="家庭孩子名額" />
+    {!canAddChild ? <section className="setup-complete"><ShieldCheck /><DemoBadge label="FAMILY LIMIT" /><h2>已建立 3 名孩子</h2><p>這是帳戶及資料庫共同執行的上限。每名孩子仍需獨立訂閱。</p><Link className="button" to="/parent/dashboard">返回家庭總覽</Link></section>
+      : <form className="setup-card" onSubmit={saveChild}>
+        <div className="setup-content child-form">
+          <UserPlus /><h2>孩子基本資料</h2>
+          <p>現階段只儲存基本檔案，不會收款、上載相片、建立 AI 影片或記錄媒體同意。</p>
+          <label>孩子顯示名稱（必填）
+            <input aria-label="孩子顯示名稱" maxLength={40} required value={form.nickname} onChange={event => setForm(current => ({ ...current, nickname: event.target.value }))} placeholder="例如：Mimi" />
+          </label>
+          <div className="form-pair">
+            <label>出生年份（選填）
+              <input aria-label="出生年份" inputMode="numeric" min="2000" max="2100" type="number" value={form.birth_year ?? ""} onChange={event => setForm(current => ({ ...current, birth_year: event.target.value ? Number(event.target.value) : null }))} />
+            </label>
+            <label>年齡組（選填）
+              <select aria-label="年齡組" value={form.age_group ?? ""} onChange={event => setForm(current => ({ ...current, age_group: (event.target.value || null) as NewChild["age_group"] }))}>
+                <option value="">稍後設定</option><option value="3-5">3–5 歲</option><option value="6-8">6–8 歲</option><option value="9-12">9–12 歲</option><option value="13+">13 歲或以上</option>
+              </select>
+            </label>
+          </div>
+          <label>主要語言
+            <select aria-label="主要語言" value={form.preferred_language} onChange={event => setForm(current => ({ ...current, preferred_language: event.target.value as NewChild["preferred_language"] }))}>
+              <option value="zh-HK">粵語</option><option value="zh-CN">普通話</option><option value="en">English</option>
+            </select>
+          </label>
+          <label>興趣（選填，以逗號或頓號分隔）
+            <input aria-label="孩子興趣" value={interestText} onChange={event => setInterestText(event.target.value)} placeholder="例如：恐龍、海洋、交通工具" />
+          </label>
+          <div className="rule-box"><LockKeyhole />只有目前登入的家長及獲授權管理員可讀取這個檔案。</div>
+          {error && <p className="form-error" role="alert">{error}</p>}
+        </div>
+        <div className="setup-actions">
+          <Link className="button secondary" to="/parent/dashboard"><ChevronLeft />返回</Link>
+          <button className="button" type="submit" disabled={saving || !form.nickname.trim()}>{saving ? "正在安全儲存…" : "建立孩子檔案"}<Check /></button>
+        </div>
+      </form>}
   </Shell>;
 }
 
