@@ -39,3 +39,5 @@ before connecting any additional external service.
 
 Do not accept live payment or real child media until RLS, private storage,
 verified webhooks, consent, export, and 180-day retention tests pass.
+
+Production deploys automatically from `main` to Cloudflare Pages.
