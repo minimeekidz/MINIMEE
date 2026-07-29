@@ -119,6 +119,7 @@ footer div { display: flex; gap: 20px; }
 .auth-card label { display: grid; gap: 8px; margin: 18px 0; font-size: 13px; font-weight: 700; }
 .auth-card input { width: 100%; min-height: 48px; border: 1px solid var(--line); border-radius: 13px; padding: 0 14px; }
 .auth-card .button { width: 100%; margin-top: 5px; }
+.auth-error { margin-top: 18px; padding: 13px 15px; border: 1px solid #f3b7b7; border-radius: 14px; color: #8f2525; background: #fff0f0; font-size: 12px; font-weight: 700; }
 .demo-entry { display: block; margin-top: 22px; text-align: center; color: var(--violet); font-size: 13px; font-weight: 800; }
 .password-field { display: grid; grid-template-columns: 1fr auto; gap: 7px; }.password-field button { border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; background: white; font-size: 10px; font-weight: 800; }.auth-links { display: flex; justify-content: space-between; gap: 12px; margin-top: 17px; font-size: 10px; font-weight: 800; color: var(--violet); }.auth-success { display: flex; gap: 11px; margin-top: 22px; padding: 16px; border-radius: 14px; color: #126949; background: #e0f5eb; }.auth-success p { margin: 3px 0; font-size: 9px; }
 
