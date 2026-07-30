@@ -7,7 +7,7 @@ vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
     configured: true,
     loading: false,
-    session: { user: { id: "test-parent" } },
+    session: { access_token: "test-access-token", user: { id: "test-parent" } },
     user: { id: "test-parent" },
     role: "admin",
     refreshRole: vi.fn(),
@@ -172,12 +172,23 @@ describe("MINIMEE route shells", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("重設連結已寄出");
   });
 
-  it("keeps checkout pending until a verified webhook", () => {
+  it("creates a server checkout but keeps entitlement pending until the webhook", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ url: "https://checkout.stripe.com/c/pay/test" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
     render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/checkout"]}><App /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("button", { name: "進入示範付款" }));
-    expect(screen.getByText(/只信已驗證Webhook/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "模擬成功" }));
-    expect(screen.getByRole("status")).toHaveTextContent("Webhook確認後");
+    fireEvent.click(screen.getByRole("button", { name: "建立 Stripe 安全付款頁" }));
+    expect(await screen.findByRole("link", { name: "前往 Stripe 付款" })).toHaveAttribute(
+      "href",
+      "https://checkout.stripe.com/c/pay/test",
+    );
+    expect(fetchMock).toHaveBeenCalledWith("/api/create-checkout", expect.objectContaining({
+      method: "POST",
+      headers: expect.objectContaining({ Authorization: "Bearer test-access-token" }),
+    }));
+    vi.unstubAllGlobals();
   });
 
   it("requires two steps to cancel renewal", () => {

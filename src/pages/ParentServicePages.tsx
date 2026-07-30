@@ -1,7 +1,17 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { AlertTriangle, Bell, Check, Download, LockKeyhole, Mail, MessageCircle, PackageSearch, QrCode, ShieldCheck, Trash2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, DemoBadge, Shell, StatusPill } from "../components/UI";
+import { supabase } from "../lib/supabase";
+
+type NotificationRecord = {
+  id: string;
+  title: string;
+  body: string;
+  email_status: "pending" | "sent" | "failed";
+  read_at: string | null;
+  created_at: string;
+};
 
 export function PublicLostItemPage() {
   const { token } = useParams();
@@ -51,6 +61,30 @@ export function LostItemsPage() {
 export function NotificationsPage() {
   const [inApp, setInApp] = useState(true);
   const [email, setEmail] = useState(true);
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function loadNotifications() {
+      if (!supabase?.from) {
+        setLoading(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id,title,body,email_status,read_at,created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (!active) return;
+      if (error) console.error("Unable to load MINIMEE notifications", error.message);
+      else setNotifications((data ?? []) as NotificationRecord[]);
+      setLoading(false);
+    }
+    void loadNotifications();
+    return () => { active = false; };
+  }, []);
+
   return <Shell surface="parent">
     <DashboardHeader title="通知中心" />
     <section className="notification-preferences">
@@ -59,11 +93,13 @@ export function NotificationsPage() {
     </section>
     <section className="service-card notification-centre">
       <span className="eyebrow">最近通知</span>
-      {[
-        ["影片需要額外處理", "團隊已收到通知，你毋須重新提交資料。", "今天"],
-        ["好友重新授權請求", "重新掃描不會恢復舊影片觀看權。", "昨日"],
-        ["MEE Card 09已加入紀念冊", "城市小冒險已完成。", "2日前"]
-      ].map(([title, detail, time]) => <article key={title}><span className="notice-dot" /><div><strong>{title}</strong><p>{detail}</p></div><small>{time}</small></article>)}
+      {loading && <p>正在載入通知…</p>}
+      {!loading && notifications.length === 0 && <p>目前沒有新通知。付款經 Stripe 核實後會在此顯示。</p>}
+      {notifications.map(notification => <article key={notification.id}>
+        <span className="notice-dot" />
+        <div><strong>{notification.title}</strong><p>{notification.body}</p></div>
+        <small>{new Date(notification.created_at).toLocaleDateString("zh-HK")}</small>
+      </article>)}
     </section>
   </Shell>;
 }
