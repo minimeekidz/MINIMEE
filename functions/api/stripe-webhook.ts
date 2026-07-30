@@ -36,7 +36,7 @@ async function notifyMake(env: Env, notification: {
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${secret}`,
+      "x-make-apikey": secret,
       "Content-Type": "application/json",
       "X-MINIMEE-Notification-Id": notification.notification_id,
     },

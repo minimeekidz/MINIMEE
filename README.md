@@ -48,10 +48,10 @@ Cloudflare Production and Preview environments with:
 Never expose `SUPABASE_SECRET_KEY`, `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, or `MAKE_SHARED_SECRET` through a `VITE_` variable.
 
-The Make custom webhook must require:
+Create an API key inside the Make custom webhook. The function sends it as:
 
 ```text
-Authorization: Bearer <MAKE_SHARED_SECRET>
+x-make-apikey: <MAKE_SHARED_SECRET>
 ```
 
 It should reject duplicate `notification_id` values, then send the anonymous
