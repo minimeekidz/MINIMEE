@@ -60,4 +60,8 @@ before connecting any additional external service.
 Do not accept live payment or real child media until RLS, private storage,
 verified webhooks, consent, export, and 180-day retention tests pass.
 
-Production deploys automatically from `main` to Cloudflare Pages.
+Vercel is still the live production host. `.github/workflows/deploy.yml` will
+deploy `main` to Cloudflare Workers automatically once
+`CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are added as GitHub secrets —
+until then it has never run. Do not point `minimee.me` at Cloudflare before
+testing the resulting preview URL (see `docs/MINIMEE_OPERATIONS.md` section 9).
