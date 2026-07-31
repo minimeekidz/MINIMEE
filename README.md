@@ -21,12 +21,32 @@ npm test
 npm run build
 ```
 
+## Deploy
+
+```bash
+npm run deploy:dry-run   # validate wrangler.jsonc without deploying
+npm run deploy           # build + wrangler deploy (needs `wrangler login` or CLOUDFLARE_API_TOKEN)
+```
+
+`.github/workflows/deploy.yml` runs the same thing on every push to `main`,
+given `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
+`VITE_SUPABASE_URL`, and `VITE_SUPABASE_PUBLISHABLE_KEY` as GitHub
+repository secrets. See `docs/MINIMEE_OPERATIONS.md` section 7 before
+pointing `minimee.me` at the result.
+
 ## Integration status
 
 Supabase parent authentication now supports build-time Vite variables and a
-Cloudflare Pages runtime configuration fallback at `/api/supabase-config`.
-Apply the migration in `supabase/migrations` before testing parent roles or
-child records.
+Cloudflare Workers runtime configuration fallback at `/api/supabase-config`
+(`worker/index.ts`). Apply the migrations in `supabase/migrations` before
+testing parent roles or child records.
+
+Stripe billing (`supabase/functions/create-billing-order`,
+`stripe-webhook`) and the AI video job pipeline
+(`supabase/functions/create-ai-video-jobs`, `ai-video-webhook`) are built
+and deployed against Supabase in Stripe test mode — see
+`docs/MINIMEE_OPERATIONS.md` sections 7a/7b for the secrets each needs and
+what is still outstanding before either can run for real.
 
 Parent authentication, roles, and child profile creation now use Supabase with
 Row Level Security. A parent can read and create only their own child profiles,
