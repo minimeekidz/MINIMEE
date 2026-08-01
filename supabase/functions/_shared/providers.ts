@@ -1,77 +1,45 @@
-// Dispatches to each AI video vendor's production REST API (not the Claude
-// MCP tool surface — this runs in the Supabase backend with the operator's
-// own provider API keys). Endpoint shapes below match each vendor's
-// published API as of this integration; HeyGen's HyperFrames render
-// endpoint is documented, but Higgsfield's video-generation application
-// slug is not publicly confirmed — HIGGSFIELD_APPLICATION_SLUG must be
-// verified against the operator's Higgsfield dashboard before going live,
-// and the first real webhook delivery from each vendor should be inspected
-// to confirm the payload shape parseProviderCallback() expects.
+// Dispatches AI video jobs to the MINIMEE Make.com scenario, which fans out
+// to HeyGen (learning_video) and Higgsfield (child_ai_video) and calls back
+// ai-video-webhook when each job finishes. This runs from the Supabase
+// backend, not the Claude MCP tool surface — Make holds its own HeyGen/
+// Higgsfield credentials inside the scenario, this function only needs the
+// Make webhook URL.
 
 export type DispatchResult = { ok: true; providerJobId: string } | { ok: false; error: string };
 
-export async function dispatchHeyGenRender(params: {
-  callbackUrl: string;
+export async function dispatchToMake(params: {
   jobId: string;
-  variables: Record<string, unknown>;
-}): Promise<DispatchResult> {
-  const apiKey = Deno.env.get("HEYGEN_API_KEY");
-  const assetId = Deno.env.get("HEYGEN_HYPERFRAMES_ASSET_ID");
-  if (!apiKey || !assetId) {
-    return { ok: false, error: "HeyGen HyperFrames is not configured (HEYGEN_API_KEY / HEYGEN_HYPERFRAMES_ASSET_ID)" };
-  }
-
-  try {
-    const response = await fetch("https://api.heygen.com/v3/hyperframes/renders", {
-      method: "POST",
-      headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        asset_id: assetId,
-        variables: params.variables,
-        callback_url: params.callbackUrl,
-        callback_id: params.jobId,
-      }),
-    });
-    if (!response.ok) return { ok: false, error: `HeyGen responded ${response.status}` };
-    const data = await response.json();
-    const renderId = data.render_id ?? data.id;
-    if (!renderId) return { ok: false, error: "HeyGen response missing render_id" };
-    return { ok: true, providerJobId: String(renderId) };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) };
-  }
-}
-
-export async function dispatchHiggsfieldJob(params: {
+  videoType: "learning_video" | "child_ai_video";
   callbackUrl: string;
   input: Record<string, unknown>;
 }): Promise<DispatchResult> {
-  const apiKey = Deno.env.get("HIGGSFIELD_API_KEY");
-  const apiSecret = Deno.env.get("HIGGSFIELD_API_SECRET");
-  const applicationSlug = Deno.env.get("HIGGSFIELD_APPLICATION_SLUG");
-  if (!apiKey || !apiSecret || !applicationSlug) {
-    return { ok: false, error: "Higgsfield is not configured (HIGGSFIELD_API_KEY / HIGGSFIELD_API_SECRET / HIGGSFIELD_APPLICATION_SLUG)" };
+  const webhookUrl = Deno.env.get("MAKE_AI_VIDEO_WEBHOOK_URL");
+  if (!webhookUrl) {
+    return { ok: false, error: "Make.com webhook is not configured (MAKE_AI_VIDEO_WEBHOOK_URL)" };
   }
 
   try {
-    const url = `https://platform.higgsfield.ai/${applicationSlug}?hf_webhook=${encodeURIComponent(params.callbackUrl)}`;
-    const response = await fetch(url, {
+    const response = await fetch(webhookUrl, {
       method: "POST",
-      headers: { Authorization: `Key ${apiKey}:${apiSecret}`, "Content-Type": "application/json" },
-      body: JSON.stringify(params.input),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        job_id: params.jobId,
+        video_type: params.videoType,
+        callback_url: params.callbackUrl,
+        input: params.input,
+      }),
     });
-    if (!response.ok) return { ok: false, error: `Higgsfield responded ${response.status}` };
-    const data = await response.json();
-    if (!data.request_id) return { ok: false, error: "Higgsfield response missing request_id" };
-    return { ok: true, providerJobId: String(data.request_id) };
+    if (!response.ok) return { ok: false, error: `Make.com webhook responded ${response.status}` };
+    return { ok: true, providerJobId: params.jobId };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
-// Best-effort parse of a provider callback body into a common shape, since
-// neither vendor's webhook payload is confirmed from primary sources yet.
-// Verify against a real test delivery and tighten this once confirmed.
+// Best-effort parse of the callback the Make scenario sends to
+// ai-video-webhook once its HeyGen/Higgsfield module finishes. Adjust the
+// field names below once the scenario's actual outgoing webhook shape is
+// built — this covers common naming, not a Make-specific guarantee.
 export function parseProviderCallback(body: Record<string, unknown>): {
   status: "completed" | "failed" | "processing" | "unknown";
   assetUrl: string | null;

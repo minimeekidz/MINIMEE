@@ -163,7 +163,7 @@ the secrets above with live values, and re-run the full section 9/10
 acceptance checklist. Do not do this until real families are actually
 being onboarded.
 
-### 7b. AI video workflow (backend wired, provider credentials pending)
+### 7b. AI video workflow (Make.com orchestrates HeyGen + Higgsfield)
 
 Each released `theme_entitlements` row drives two jobs in `ai_video_jobs`:
 `learning_video` (HeyGen HyperFrames) and `child_ai_video` (Higgsfield,
@@ -172,31 +172,52 @@ immediately, then one every 14 days — computed in
 `supabase/functions/_shared/release.ts`, matching the 每兩星期一個主題
 cadence in section 3.
 
-Edge Functions: `create-ai-video-jobs` (parent-triggered dispatch;
-idempotent per entitlement/video_type; only re-dispatches a job that
-previously failed) and `ai-video-webhook` (provider callback; marks the
-entitlement `consumed` only once both jobs succeed, and never consumes the
-entitlement on failure).
+Orchestration runs through Make.com rather than Supabase calling HeyGen/
+Higgsfield directly:
+
+1. `create-ai-video-jobs` (parent-triggered dispatch; idempotent per
+   entitlement/video_type; only re-dispatches a job that previously
+   failed) POSTs `{ job_id, video_type, callback_url, input }` to the
+   **"MINIMEE AI Video Workflow"** Make webhook
+   (`https://hook.us2.make.com/2hltixdy85on9pbyr85ruywspk8cio79`, team
+   "My Team" under Emily's Make org, Free plan — 2 scenarios / 1000
+   ops per month).
+2. The Make scenario (not yet built) must branch on `video_type`: call
+   Make's native **heygen** app (module "Create a Video from a Template"
+   or "Create an Avatar Video") for `learning_video`; call Higgsfield via
+   an HTTP module for `child_ai_video` (no native Higgsfield app in Make
+   as of this writing — `Authorization: Key <api_key>:<api_secret>` against
+   `https://platform.higgsfield.ai/<application_slug>`).
+3. When each provider finishes, the scenario must POST the result back to
+   the `callback_url` it received (this **is** `ai-video-webhook`'s full
+   URL with `job_id` already in the query string — just forward to it) with
+   a body `parseProviderCallback` can read: a `status` field
+   (`completed`/`failed`/one of the recognized synonyms) and a `video_url`
+   for the finished asset.
+
+`ai-video-webhook` marks the entitlement `consumed` only once both jobs for
+it succeed, and never consumes the entitlement on failure.
 
 Failure handling matches section 4 exactly: a failed job gets a polite
 parent-facing message, an in-site + anonymous-email `notifications` row,
 and an `admin_alerts` row for manual operator handling; the entitlement
 stays usable so the parent can retry.
 
-Required Supabase secrets: `HEYGEN_API_KEY`, `HEYGEN_HYPERFRAMES_ASSET_ID`;
-`HIGGSFIELD_API_KEY`, `HIGGSFIELD_API_SECRET`,
-`HIGGSFIELD_APPLICATION_SLUG`. None of these are set yet, so
-`create-ai-video-jobs` currently fails closed (marks the job failed with an
-operator alert) rather than silently doing nothing.
+Required Supabase secret: `MAKE_AI_VIDEO_WEBHOOK_URL` (the webhook URL
+above). Not set yet, so `create-ai-video-jobs` currently fails closed
+(marks the job failed with an operator alert) rather than silently doing
+nothing.
 
-**Known gap to close before relying on this in production:** neither
-vendor's webhook payload shape is confirmed from official documentation
-(HeyGen and Higgsfield's docs sites were not fetchable while building
-this). `supabase/functions/_shared/providers.ts` (`parseProviderCallback`)
-parses common field-name guesses defensively — trigger one real test job
-per provider once credentials are set, inspect the actual callback payload
-in `supabase functions logs ai-video-webhook`, and tighten that parser to
-match exactly.
+**Outstanding before this can run for real:**
+- Build the Make scenario described above (step 2/3) — only the webhook
+  trigger exists today, nothing consumes it yet.
+- Add `MAKE_AI_VIDEO_WEBHOOK_URL` as a Supabase Edge Function secret.
+- HeyGen/Higgsfield API keys live inside the Make scenario's own
+  connections, not as Supabase secrets.
+- `supabase/functions/_shared/providers.ts` (`parseProviderCallback`)
+  parses common field-name guesses defensively since the scenario's
+  outgoing payload shape doesn't exist yet — once built, either match the
+  callback body to what's already parsed, or adjust the parser to match.
 
 ## 8. Build and routing
 

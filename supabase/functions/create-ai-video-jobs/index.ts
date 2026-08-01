@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { getSupabaseAdmin, getSupabaseForRequest } from "../_shared/clients.ts";
 import { themeReleaseAt } from "../_shared/release.ts";
-import { dispatchHeyGenRender, dispatchHiggsfieldJob } from "../_shared/providers.ts";
+import { dispatchToMake } from "../_shared/providers.ts";
 
 const FAILURE_MESSAGE = "AI 影片製作遇到問題，我們已經記錄低呢次嘗試，會盡快人手處理，唔會扣減你嘅主題權益。";
 
@@ -92,9 +92,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const callbackUrl = `${supabaseUrl}/functions/v1/ai-video-webhook?job_id=${jobId}`;
-    const dispatch = videoType === "learning_video"
-      ? await dispatchHeyGenRender({ callbackUrl, jobId, variables: { entitlement_id: entitlement.id } })
-      : await dispatchHiggsfieldJob({ callbackUrl, input: { entitlement_id: entitlement.id, child_id: entitlement.child_id } });
+    const dispatch = await dispatchToMake({
+      jobId,
+      videoType,
+      callbackUrl,
+      input: { entitlement_id: entitlement.id, child_id: entitlement.child_id },
+    });
 
     if (dispatch.ok) {
       await admin.from("ai_video_jobs").update({ provider_job_id: dispatch.providerJobId }).eq("id", jobId);
