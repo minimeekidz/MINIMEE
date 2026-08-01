@@ -29,12 +29,12 @@ jobs:
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ cfat_yrRswneQuGxRPLseMu1YdNlL6NFEyjubRzu3YpKZ51f3c6b4 }}
-          accountId: ${{ 814c08124c28e6d94e3c482f018c01f1 }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           secrets: |
             VITE_SUPABASE_URL
             VITE_SUPABASE_PUBLISHABLE_KEY
         env:
-          VITE_SUPABASE_URL: ${{ https://cjsfpsbtohwgqwgtcjef.supabase.co }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ sb_publishable_Kg0IzMwaTIVLG9xT9aw2pw_xK0DR0gz }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
