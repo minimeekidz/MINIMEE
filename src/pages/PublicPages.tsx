@@ -76,18 +76,18 @@ export function HowItWorksPage() {
 export function PricingPage() {
   const plans = [
     {
-      type: "one_time_theme", emoji: "🎯", icon: <Zap />, title: "單次主題",
+      type: "one_time_theme", cardArt: "/assets/card-01.webp", emoji: "🎯", icon: <Zap />, title: "單次主題",
       subtitle: "One-time · 單次試試的MiniMEE~", price: "HK$128", priceNote: "單次付款｜帳戶存在期間可保留",
       perks: ["揀1個主題", "1×學習影片＋1×小朋友AI影片＋學習小遊戲", "普通版MEE收藏卡PDF下載"]
     },
     {
-      type: "monthly_3m", emoji: "📅", icon: <CalendarDays />, title: "3個月MiniMEE訂閱",
+      type: "monthly_3m", cardArt: "/assets/card-05.webp", emoji: "📅", icon: <CalendarDays />, title: "3個月MiniMEE訂閱",
       subtitle: "一次訂閱3個月・每月派發2個主題（每2星期1個）", price: "HK$324", priceNote: "約HK$108／月 · 可隨時停止續訂",
       perks: ["每月2個主題", "每月2×學習影片＋2×小朋友AI影片＋學習小遊戲＋小寵物養成計劃", "朋友紀念冊【10位名額】｜帳戶存在期間可保留", "普通版MEE收藏卡PDF下載", "可加購章節HK$46／1章", "可開啟遺失模式"],
       highlight: true
     },
     {
-      type: "yearly", emoji: "👑", icon: <Crown />, title: "1年精明MiniMEE訂閱",
+      type: "yearly", cardArt: "/assets/card-11.webp", emoji: "👑", icon: <Crown />, title: "1年精明MiniMEE訂閱",
       subtitle: "一次訂閱全年・每月派發2個主題（每2星期1個）", price: "HK$1,188", priceNote: "約HK$99／月 · 可隨時停止續訂",
       perks: ["每月2個主題", "每月2×學習影片＋2×小朋友AI影片＋學習小遊戲＋小寵物養成計劃", "朋友紀念冊【不設名額上限】｜帳戶存在期間可保留", "炫彩版MEE收藏卡PDF下載", "可開啟遺失模式", "多語言配音（普通話＋粵語＋英語）", "可加購章節HK$46／1章"]
     }
@@ -96,16 +96,21 @@ export function PricingPage() {
     <div className="public-page"><PublicHeader /><main className="content-page">
       <DemoBadge label="MINIMEE正式方案" /><h1>為每位小朋友獨立選方案</h1>
       <p className="lead">每個家長帳戶最多管理三名小朋友；每名小朋友都需要獨立訂閱。</p>
-      <div className="pricing-grid">{plans.map(plan =>
-        <article className={plan.highlight ? "featured" : ""} key={plan.type}>
-          {plan.highlight && <StatusPill tone="gold">最多家庭選擇</StatusPill>}
-          <div className="plan-heading"><span>{plan.emoji}</span>{plan.icon}<h2>{plan.title}</h2></div>
-          <p>{plan.subtitle}</p><div className="price-placeholder">{plan.price}</div><small>{plan.priceNote}</small>
-          <ul>{plan.perks.map(perk => <li key={perk}><Check />{perk}</li>)}</ul>
-          <button className="button" disabled>待Stripe連接</button>
-        </article>
-      )}</div>
-      <p className="pricing-note">預繳方案的「隨時取消」是停止下一期續訂；已付款服務期及退款安排受退款與重做政策約束。所有金額均為港幣。</p>
+      <section className="pricing-showcase">
+        <div className="pricing-grid">{plans.map(plan =>
+          <article className={plan.highlight ? "featured" : ""} key={plan.type}>
+            <img className="plan-art" src={plan.cardArt} alt="" />
+            <div className="plan-body">
+              {plan.highlight && <StatusPill tone="gold">最多家庭選擇</StatusPill>}
+              <div className="plan-heading"><span>{plan.emoji}</span>{plan.icon}<h2>{plan.title}</h2></div>
+              <p>{plan.subtitle}</p><div className="price-placeholder">{plan.price}</div><small>{plan.priceNote}</small>
+              <ul>{plan.perks.map(perk => <li key={perk}><Check />{perk}</li>)}</ul>
+              <button className="button" disabled>待Stripe連接</button>
+            </div>
+          </article>
+        )}</div>
+        <p className="pricing-note">預繳方案的「隨時取消」是停止下一期續訂；已付款服務期及退款安排受退款與重做政策約束。所有金額均為港幣。</p>
+      </section>
     </main></div>
   );
 }
@@ -118,7 +123,11 @@ export function FaqPage() {
     ["每張卡可以重抽嗎？", "不可。卡號與 NORMAL／FLASH 在主題權益派發時鎖定。"],
     ["朋友可以直接看影片嗎？", "不可。每段影片都要由卡主家長獨立批准分享。"]
   ];
-  return <div className="public-page"><PublicHeader /><main className="content-page"><h1>家長常見問題</h1><div className="faq-list">{faqs.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div></main></div>;
+  return <div className="public-page"><PublicHeader /><main className="content-page">
+    <DemoBadge label="MINIMEE 家長支援" /><h1>家長常見問題</h1>
+    <p className="lead">關於帳戶、訂閱和收藏卡的常見疑問；未解答到的問題歡迎電郵 minimee.kidz@gmail.com。</p>
+    <div className="faq-list">{faqs.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div>
+  </main></div>;
 }
 
 export function AuthPage() {
