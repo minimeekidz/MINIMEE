@@ -1,7 +1,10 @@
 import { getSupabaseAdmin } from "../_shared/clients.ts";
 import { parseProviderCallback } from "../_shared/providers.ts";
+import { notifyParent } from "../_shared/notify.ts";
 
 const FAILURE_MESSAGE = "AI 影片製作遇到問題，我們已經記錄低呢次嘗試，會盡快人手處理，唔會扣減你嘅主題權益。";
+const COMPLETE_TITLE = "AI 影片已經整好喇";
+const COMPLETE_MESSAGE = "你嘅 AI 影片已經全部整好，而家可以喺 App 度睇返喇！";
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
@@ -20,7 +23,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: job, error: jobError } = await admin
     .from("ai_video_jobs")
-    .select("id, parent_id, entitlement_id, video_type, status")
+    .select("id, parent_id, entitlement_id, video_type, status, theme_entitlements(subscription_id)")
     .eq("id", jobId)
     .maybeSingle();
   if (jobError) return new Response("Failed to look up job", { status: 500 });
@@ -30,12 +33,28 @@ Deno.serve(async (req: Request) => {
   }
 
   const parsed = parseProviderCallback(payload);
+  const subscriptionId = (job as { theme_entitlements?: { subscription_id?: string } }).theme_entitlements?.subscription_id;
 
   if (parsed.status === "completed") {
     await admin
       .from("ai_video_jobs")
-      .update({ status: "completed", asset_url: parsed.assetUrl })
+      .update({
+        status: "completed",
+        asset_url: parsed.assetUrl,
+        storyboard_urls: parsed.storyboard,
+      })
       .eq("id", jobId);
+
+    if (parsed.storyboard) {
+      await admin
+        .from("video_storyboards")
+        .update({
+          status: "completed",
+          character_images: parsed.storyboard.characterImages,
+          scene_images: parsed.storyboard.sceneImages,
+        })
+        .eq("entitlement_id", job.entitlement_id);
+    }
 
     const { data: siblingJobs } = await admin
       .from("ai_video_jobs")
@@ -47,6 +66,16 @@ Deno.serve(async (req: Request) => {
         .from("theme_entitlements")
         .update({ status: "consumed", consumed_at: new Date().toISOString() })
         .eq("id", job.entitlement_id);
+
+      if (subscriptionId) {
+        await notifyParent(admin, {
+          parentId: job.parent_id,
+          subscriptionId,
+          notificationType: "ai_job_completed",
+          title: COMPLETE_TITLE,
+          body: COMPLETE_MESSAGE,
+        });
+      }
     }
   } else if (parsed.status === "failed") {
     await admin
@@ -64,12 +93,15 @@ Deno.serve(async (req: Request) => {
       context: { job_id: jobId, provider_payload: payload },
     });
 
-    await admin.from("notifications").insert({
-      parent_id: job.parent_id,
-      notification_type: "ai_job_failed",
-      title: "AI 影片製作遇到問題",
-      body: FAILURE_MESSAGE,
-    });
+    if (subscriptionId) {
+      await notifyParent(admin, {
+        parentId: job.parent_id,
+        subscriptionId,
+        notificationType: "ai_job_failed",
+        title: "AI 影片製作遇到問題",
+        body: FAILURE_MESSAGE,
+      });
+    }
   } else {
     await admin.from("ai_video_jobs").update({ status: "processing" }).eq("id", jobId);
   }

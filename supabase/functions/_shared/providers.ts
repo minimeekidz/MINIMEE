@@ -36,6 +36,8 @@ export async function dispatchToMake(params: {
   }
 }
 
+export type StoryboardImages = { characterImages: string[]; sceneImages: string[] } | null;
+
 // Best-effort parse of the callback the Make scenario sends to
 // ai-video-webhook once its HeyGen/Higgsfield module finishes. Adjust the
 // field names below once the scenario's actual outgoing webhook shape is
@@ -43,18 +45,29 @@ export async function dispatchToMake(params: {
 export function parseProviderCallback(body: Record<string, unknown>): {
   status: "completed" | "failed" | "processing" | "unknown";
   assetUrl: string | null;
+  storyboard: StoryboardImages;
 } {
   const rawStatus = String(body.status ?? body.render_status ?? body.state ?? "").toLowerCase();
   const assetUrl = (body.video_url ?? body.url ?? body.output_url ?? body.asset_url ?? null) as string | null;
+  const storyboard = parseStoryboard(body.storyboard);
 
   if (["completed", "success", "succeeded", "done"].includes(rawStatus)) {
-    return { status: "completed", assetUrl };
+    return { status: "completed", assetUrl, storyboard };
   }
   if (["failed", "error", "nsfw", "canceled", "cancelled"].includes(rawStatus)) {
-    return { status: "failed", assetUrl: null };
+    return { status: "failed", assetUrl: null, storyboard: null };
   }
   if (["processing", "in_progress", "queued", "pending", "waiting"].includes(rawStatus)) {
-    return { status: "processing", assetUrl: null };
+    return { status: "processing", assetUrl: null, storyboard: null };
   }
-  return { status: "unknown", assetUrl };
+  return { status: "unknown", assetUrl, storyboard };
+}
+
+function parseStoryboard(raw: unknown): StoryboardImages {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const characterImages = Array.isArray(obj.character_images) ? obj.character_images.filter((v) => typeof v === "string") : [];
+  const sceneImages = Array.isArray(obj.scene_images) ? obj.scene_images.filter((v) => typeof v === "string") : [];
+  if (characterImages.length === 0 && sceneImages.length === 0) return null;
+  return { characterImages, sceneImages };
 }

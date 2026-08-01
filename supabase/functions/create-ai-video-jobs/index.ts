@@ -2,6 +2,7 @@ import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { getSupabaseAdmin, getSupabaseForRequest } from "../_shared/clients.ts";
 import { themeReleaseAt } from "../_shared/release.ts";
 import { dispatchToMake } from "../_shared/providers.ts";
+import { notifyParent } from "../_shared/notify.ts";
 
 const FAILURE_MESSAGE = "AI 影片製作遇到問題，我們已經記錄低呢次嘗試，會盡快人手處理，唔會扣減你嘅主題權益。";
 
@@ -26,7 +27,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: entitlement, error: entitlementError } = await admin
     .from("theme_entitlements")
-    .select("id, parent_id, child_id, subscription_id, sequence_number, status")
+    .select("id, parent_id, child_id, subscription_id, sequence_number, status, vo_template, answers")
     .eq("id", body.entitlementId)
     .eq("parent_id", user.id)
     .maybeSingle();
@@ -54,6 +55,27 @@ Deno.serve(async (req: Request) => {
       .update({ status: "reserved", reserved_at: new Date().toISOString() })
       .eq("id", entitlement.id);
   }
+
+  const { data: child } = await admin
+    .from("children")
+    .select("photo_url")
+    .eq("id", entitlement.child_id)
+    .maybeSingle();
+
+  let signedPhotoUrl: string | null = null;
+  if (child?.photo_url) {
+    const { data: signed } = await admin.storage
+      .from("child-photos")
+      .createSignedUrl(child.photo_url, 3600);
+    signedPhotoUrl = signed?.signedUrl ?? null;
+  }
+
+  await admin
+    .from("video_storyboards")
+    .upsert(
+      { entitlement_id: entitlement.id, child_id: entitlement.child_id, status: "queued" },
+      { onConflict: "entitlement_id", ignoreDuplicates: true },
+    );
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const jobsResult: Record<string, { status: string; error?: string }> = {};
@@ -92,11 +114,19 @@ Deno.serve(async (req: Request) => {
     }
 
     const callbackUrl = `${supabaseUrl}/functions/v1/ai-video-webhook?job_id=${jobId}`;
+    const storyboardCallbackUrl = `${supabaseUrl}/functions/v1/storyboard-webhook?entitlement_id=${entitlement.id}`;
     const dispatch = await dispatchToMake({
       jobId,
       videoType,
       callbackUrl,
-      input: { entitlement_id: entitlement.id, child_id: entitlement.child_id },
+      input: {
+        entitlement_id: entitlement.id,
+        child_id: entitlement.child_id,
+        photo_url: signedPhotoUrl,
+        vo_template: entitlement.vo_template,
+        answers: entitlement.answers,
+        storyboard_callback_url: storyboardCallbackUrl,
+      },
     });
 
     if (dispatch.ok) {
@@ -116,9 +146,10 @@ Deno.serve(async (req: Request) => {
         message: `${provider} dispatch failed`,
         context: { job_id: jobId, entitlement_id: entitlement.id, error: dispatch.error },
       });
-      await admin.from("notifications").insert({
-        parent_id: user.id,
-        notification_type: "ai_job_failed",
+      await notifyParent(admin, {
+        parentId: user.id,
+        subscriptionId: entitlement.subscription_id,
+        notificationType: "ai_job_failed",
         title: "AI 影片製作遇到問題",
         body: FAILURE_MESSAGE,
       });

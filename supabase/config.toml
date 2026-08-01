@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.ai-video-webhook]
 verify_jwt = false
+
+[functions.storyboard-webhook]
+verify_jwt = false

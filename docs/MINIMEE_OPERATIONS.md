@@ -163,7 +163,7 @@ the secrets above with live values, and re-run the full section 9/10
 acceptance checklist. Do not do this until real families are actually
 being onboarded.
 
-### 7b. AI video workflow (Make.com orchestrates HeyGen + Higgsfield)
+### 7b. AI video workflow (Make.com orchestrates a storyboard step + HeyGen + Higgsfield)
 
 Each released `theme_entitlements` row drives two jobs in `ai_video_jobs`:
 `learning_video` (HeyGen HyperFrames) and `child_ai_video` (Higgsfield,
@@ -172,36 +172,70 @@ immediately, then one every 14 days — computed in
 `supabase/functions/_shared/release.ts`, matching the 每兩星期一個主題
 cadence in section 3.
 
+`child_ai_video` needs a photo of the child, the theme's VO (voice-over)
+script template, and the parent's personalization answers before it can
+render: `children.photo_url` (a private `child-photos` storage path,
+never a public URL), `theme_entitlements.vo_template` and
+`theme_entitlements.answers` (jsonb) hold those inputs. A
+`video_storyboards` row (one per entitlement) tracks the intermediate
+step — Make.com generates multi-angle character reference images and
+scene images from those inputs *before* the Higgsfield render call, so the
+render has consistent character art to work from instead of only the raw
+photo.
+
 Orchestration runs through Make.com rather than Supabase calling HeyGen/
 Higgsfield directly:
 
 1. `create-ai-video-jobs` (parent-triggered dispatch; idempotent per
    entitlement/video_type; only re-dispatches a job that previously
-   failed) POSTs `{ job_id, video_type, callback_url, input }` to the
-   **"MINIMEE AI Video Workflow"** Make webhook
-   (`https://hook.us2.make.com/2hltixdy85on9pbyr85ruywspk8cio79`, team
-   "My Team" under Emily's Make org, Free plan — 2 scenarios / 1000
-   ops per month).
-2. The Make scenario (not yet built) must branch on `video_type`: call
-   Make's native **heygen** app (module "Create a Video from a Template"
-   or "Create an Avatar Video") for `learning_video`; call Higgsfield via
-   an HTTP module for `child_ai_video` (no native Higgsfield app in Make
-   as of this writing — `Authorization: Key <api_key>:<api_secret>` against
-   `https://platform.higgsfield.ai/<application_slug>`).
-3. When each provider finishes, the scenario must POST the result back to
+   failed) creates a signed URL for the child's photo (1h TTL), upserts a
+   `queued` `video_storyboards` row, and POSTs
+   `{ job_id, video_type, callback_url, input }` — `input` includes
+   `photo_url` (the signed URL), `vo_template`, `answers`, and
+   `storyboard_callback_url` — to the **"MINIMEE AI Video Workflow"** Make
+   webhook (`https://hook.us2.make.com/2hltixdy85on9pbyr85ruywspk8cio79`,
+   scenario ID `5826215`, team "My Team" under Emily's Make org, Free plan
+   — 2 scenarios / 1000 ops per month).
+2. The Make scenario branches on `video_type`:
+   - `learning_video`: an HTTP module calls HeyGen HyperFrames
+     (`https://api.heygen.com/v3/hyperframes/renders`).
+   - `child_ai_video`: an HTTP module first calls an image-generation
+     endpoint to produce the character/scene storyboard, then POSTs the
+     result to `storyboard_callback_url` (**this is `storyboard-webhook`**,
+     scoped to the entitlement, not a job), then calls Higgsfield
+     (`https://platform.higgsfield.ai/<application_slug>`, no native
+     Higgsfield app in Make as of this writing —
+     `Authorization: Key <api_key>:<api_secret>`) with the entitlement
+     input plus the generated `character_images`/`scene_images`.
+   - Each of these three HTTP calls has an `onerror` branch that posts a
+     `status: "failed"` payload back to the relevant callback
+     (`callback_url` for HeyGen/Higgsfield dispatch failures,
+     `storyboard_callback_url` for a storyboard generation failure) so the
+     Supabase side is never left waiting silently.
+3. When HeyGen/Higgsfield finishes, the scenario POSTs the result back to
    the `callback_url` it received (this **is** `ai-video-webhook`'s full
    URL with `job_id` already in the query string — just forward to it) with
    a body `parseProviderCallback` can read: a `status` field
-   (`completed`/`failed`/one of the recognized synonyms) and a `video_url`
-   for the finished asset.
+   (`completed`/`failed`/one of the recognized synonyms), a `video_url`
+   for the finished asset, and (for `child_ai_video`) a `storyboard` object
+   with `character_images`/`scene_images` that gets copied onto
+   `ai_video_jobs.storyboard_urls`.
 
 `ai-video-webhook` marks the entitlement `consumed` only once both jobs for
 it succeed, and never consumes the entitlement on failure.
 
-Failure handling matches section 4 exactly: a failed job gets a polite
-parent-facing message, an in-site + anonymous-email `notifications` row,
-and an `admin_alerts` row for manual operator handling; the entitlement
-stays usable so the parent can retry.
+Failure handling matches section 4: a failed job gets a polite
+parent-facing message via `notifyParent`
+(`supabase/functions/_shared/notify.ts`) — an in-site `notifications` row
+plus the same anonymous-email delivery Stripe notifications use, looked up
+through the entitlement's subscription → `billing_orders.notification_email`
+— and an `admin_alerts` row for manual operator handling; the entitlement
+stays usable so the parent can retry. A completed job also notifies the
+parent (`ai_job_completed`) once both jobs for the entitlement succeed. A
+storyboard failure (reported via `storyboard-webhook`) marks the
+`video_storyboards` row `failed` and raises an `admin_alerts` row, but does
+not by itself notify the parent — the Higgsfield dispatch still runs and,
+if it also fails, that failure is what reaches the parent.
 
 Required Supabase secret: `MAKE_AI_VIDEO_WEBHOOK_URL` (the webhook URL
 above). Not set yet, so `create-ai-video-jobs` currently fails closed
@@ -209,14 +243,18 @@ above). Not set yet, so `create-ai-video-jobs` currently fails closed
 nothing.
 
 **Outstanding before this can run for real:**
-- Build the Make scenario described above (step 2/3) — only the webhook
-  trigger exists today, nothing consumes it yet.
+- The Make scenario (`5826215`) exists and is schema-valid but still has
+  placeholder values for every provider credential/endpoint/slug
+  (`REPLACE_WITH_YOUR_*`: HeyGen API key + HyperFrames asset ID,
+  Higgsfield API key/secret + application slug, and the image-generation
+  endpoint/key for the storyboard step) and is **inactive** — plug in real
+  values and call `scenarios_activate` before it can run.
 - Add `MAKE_AI_VIDEO_WEBHOOK_URL` as a Supabase Edge Function secret.
-- HeyGen/Higgsfield API keys live inside the Make scenario's own
-  connections, not as Supabase secrets.
+- HeyGen/Higgsfield/image-gen API keys live inside the Make scenario's own
+  HTTP module headers, not as Supabase secrets.
 - `supabase/functions/_shared/providers.ts` (`parseProviderCallback`)
-  parses common field-name guesses defensively since the scenario's
-  outgoing payload shape doesn't exist yet — once built, either match the
+  parses common field-name guesses defensively — once the scenario's real
+  outgoing payload shape is confirmed against a live run, either match the
   callback body to what's already parsed, or adjust the parser to match.
 
 ## 8. Build and routing
