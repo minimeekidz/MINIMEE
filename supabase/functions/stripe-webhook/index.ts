@@ -113,6 +113,10 @@ async function handleSubscriptionUpdated(admin: AdminClient, subscription: Strip
   const update: Record<string, unknown> = {
     status: mappedStatus,
     current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+    // Mirrors a renewal stopped either from the parent-facing
+    // cancel-subscription function or directly in the Stripe dashboard, and
+    // re-syncs if the parent resumes the subscription there.
+    cancel_at_period_end: subscription.cancel_at_period_end,
   };
   if (mappedStatus === "cancelled") update.read_only_until = readOnlyDeadline();
 

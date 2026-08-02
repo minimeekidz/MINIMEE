@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
+import { organizationSchema, useRouteSeo, useStructuredData } from "./lib/seo";
 import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
 import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ThemesPage } from "./pages/ParentPages";
@@ -15,6 +16,11 @@ function NotFound() {
 
 export default function App() {
   const adminKinds = ["content", "assets", "ai-jobs", "qc", "support", "commerce", "privacy", "audit"];
+  const { pathname } = useLocation();
+  // Keeps canonical/noindex correct per route (ops doc section 11); the
+  // Organization block is site-wide so it stays mounted for every route.
+  useRouteSeo(pathname);
+  useStructuredData("minimee-organization", organizationSchema);
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
