@@ -1,17 +1,19 @@
 import { supabase } from "./supabase";
 
-export type IntegrationStatus = "demo" | "ready-to-connect" | "blocked";
+export type IntegrationStatus = "demo" | "ready-to-connect" | "connected" | "blocked";
 
 export const integrationStatus = {
-  supabase: "ready-to-connect",
-  // Edge Functions + Stripe test-mode products are deployed
-  // (create-billing-order, stripe-webhook); pages still render demo state
-  // until children/themes also move off src/data/mock.ts.
-  stripe: "ready-to-connect",
-  // Edge Functions are deployed (create-ai-video-jobs, ai-video-webhook) but
-  // need HEYGEN_API_KEY/HEYGEN_HYPERFRAMES_ASSET_ID and
-  // HIGGSFIELD_API_KEY/HIGGSFIELD_API_SECRET/HIGGSFIELD_APPLICATION_SLUG
-  // configured as Supabase function secrets before real jobs can dispatch.
+  supabase: "connected",
+  // The parent commerce pages call create-billing-order / cancel-subscription
+  // for real and read subscriptions, theme_entitlements and ai_video_jobs
+  // through RLS. Stripe itself is still in test mode: live Products/Prices
+  // and a live webhook endpoint have to be recreated before real families
+  // are charged (MINIMEE_OPERATIONS.md section 7a).
+  stripe: "connected",
+  // create-ai-video-jobs is wired to the theme list, but dispatch fails
+  // closed until MAKE_AI_VIDEO_WEBHOOK_URL is set and the Make scenario has
+  // real provider credentials in place of its REPLACE_WITH_YOUR_*
+  // placeholders (MINIMEE_OPERATIONS.md section 7b).
   aiProvider: "ready-to-connect",
   email: "ready-to-connect"
 } satisfies Record<string, IntegrationStatus>;
@@ -42,6 +44,20 @@ export async function createBillingOrder(params: { childId: string; planType: Pl
 export async function createAiVideoJobs(params: { entitlementId: string }) {
   if (!supabase) return { ok: false as const, error: "Supabase is not configured" };
   const { data, error } = await supabase.functions.invoke("create-ai-video-jobs", { body: params });
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const, data };
+}
+
+// POST /children/:id/subscription/cancel — stops the next renewal without
+// touching the period the parent has already paid for. The subscription
+// only becomes `cancelled` (and starts its 180-day read-only tail) when
+// Stripe reports the period actually ended, via stripe-webhook.
+export async function cancelSubscription(params: { childId: string }) {
+  if (!supabase) return { ok: false as const, error: "Supabase is not configured" };
+  const { data, error } = await supabase.functions.invoke<{ currentPeriodEnd: string | null }>(
+    "cancel-subscription",
+    { body: params },
+  );
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const, data };
 }

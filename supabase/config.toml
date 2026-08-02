@@ -4,6 +4,9 @@ verify_jwt = false
 [functions.create-billing-order]
 verify_jwt = true
 
+[functions.cancel-subscription]
+verify_jwt = true
+
 [functions.create-ai-video-jobs]
 verify_jwt = true
 

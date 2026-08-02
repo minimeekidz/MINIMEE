@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 vi.mock("./contexts/AuthContext", () => ({
@@ -48,13 +48,73 @@ vi.mock("./contexts/FamilyContext", () => ({
   }),
 }));
 
-vi.mock("./lib/supabase", () => ({
-  supabase: {
-    auth: {
-      resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
-    },
-  },
+// Billing rows the mocked Supabase client hands back, reset per test so
+// each case can describe the exact subscription state it is asserting on.
+const billing = vi.hoisted(() => ({
+  subscription: null as Record<string, unknown> | null,
+  entitlements: [] as Record<string, unknown>[],
+  jobs: [] as Record<string, unknown>[],
 }));
+
+vi.mock("./lib/supabase", () => {
+  const rowsFor = (table: string) =>
+    table === "theme_entitlements" ? billing.entitlements : table === "ai_video_jobs" ? billing.jobs : [];
+
+  const makeBuilder = (table: string) => {
+    const builder: Record<string, unknown> = {
+      select: () => builder,
+      eq: () => builder,
+      in: () => builder,
+      order: () => builder,
+      limit: () => builder,
+      maybeSingle: () => Promise.resolve({ data: billing.subscription, error: null }),
+      then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+        Promise.resolve({ data: rowsFor(table), error: null }).then(resolve, reject),
+    };
+    return builder;
+  };
+
+  return {
+    supabase: {
+      auth: { resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }) },
+      from: (table: string) => makeBuilder(table),
+    },
+  };
+});
+
+const createBillingOrder = vi.hoisted(() => vi.fn());
+const cancelSubscription = vi.hoisted(() => vi.fn());
+const createAiVideoJobs = vi.hoisted(() => vi.fn());
+
+vi.mock("./lib/service", async importOriginal => ({
+  ...(await importOriginal<typeof import("./lib/service")>()),
+  createBillingOrder,
+  cancelSubscription,
+  createAiVideoJobs,
+}));
+
+function activeSubscription(startedDaysAgo = 3) {
+  return {
+    id: "sub-1",
+    child_id: "demo-child-01",
+    plan_type: "monthly_3m",
+    status: "active",
+    theme_allowance: 6,
+    started_at: new Date(Date.now() - startedDaysAgo * 86400000).toISOString(),
+    current_period_end: new Date(Date.now() + 80 * 86400000).toISOString(),
+    read_only_until: null,
+    cancel_at_period_end: false,
+  };
+}
+
+beforeEach(() => {
+  billing.subscription = null;
+  billing.entitlements = [];
+  billing.jobs = [];
+  createBillingOrder.mockReset().mockResolvedValue({ ok: false, error: "Not authenticated" });
+  cancelSubscription.mockReset().mockResolvedValue({ ok: true, data: { currentPeriodEnd: null } });
+  createAiVideoJobs.mockReset().mockResolvedValue({ ok: true, data: {} });
+});
 
 describe("MINIMEE route shells", () => {
   it("renders the public home page", () => {
@@ -172,20 +232,55 @@ describe("MINIMEE route shells", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("重設連結已寄出");
   });
 
-  it("keeps checkout pending until a verified webhook", () => {
+  it("starts a real Stripe Checkout for the selected plan", async () => {
     render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/checkout"]}><App /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("button", { name: "進入示範付款" }));
-    expect(screen.getByText(/只信已驗證Webhook/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "模擬成功" }));
-    expect(screen.getByRole("status")).toHaveTextContent("Webhook確認後");
+    fireEvent.click(await screen.findByLabelText(/單次主題/));
+    fireEvent.click(screen.getByRole("button", { name: /以HK\$128付款/ }));
+    await screen.findByText(/登入狀態已過期/);
+    expect(createBillingOrder).toHaveBeenCalledWith({ childId: "demo-child-01", planType: "one_time_theme" });
   });
 
-  it("requires two steps to cancel renewal", () => {
+  it("never treats the Stripe redirect as proof of payment", async () => {
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/checkout?status=success"]}><App /></MemoryRouter>);
+    expect(await screen.findByRole("status")).toHaveTextContent("正在等待Stripe確認");
+    expect(screen.getByText(/不以瀏覽器返回頁判定/)).toBeInTheDocument();
+  });
+
+  it("requires two steps to cancel renewal and calls the cancel function", async () => {
+    billing.subscription = activeSubscription();
     render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/subscription"]}><App /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("button", { name: "取消續訂" }));
+    fireEvent.click(await screen.findByRole("button", { name: "取消續訂" }));
     fireEvent.click(screen.getByRole("button", { name: "繼續" }));
     fireEvent.click(screen.getByRole("button", { name: "確認停止續訂" }));
-    expect(screen.getAllByText("已取消續訂").length).toBeGreaterThan(0);
+    expect(cancelSubscription).toHaveBeenCalledWith({ childId: "demo-child-01" });
+  });
+
+  it("only offers AI video production on a released theme", async () => {
+    billing.subscription = activeSubscription();
+    billing.entitlements = [
+      { id: "ent-1", subscription_id: "sub-1", sequence_number: 1, status: "available", consumed_at: null },
+      { id: "ent-2", subscription_id: "sub-1", sequence_number: 2, status: "available", consumed_at: null },
+    ];
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/subscription"]}><App /></MemoryRouter>);
+
+    const startButtons = await screen.findAllByRole("button", { name: "開始製作影片" });
+    expect(startButtons).toHaveLength(1);
+    expect(screen.getByText("主題 2").closest("li")).toHaveTextContent("每兩星期解鎖一個主題");
+
+    fireEvent.click(startButtons[0]);
+    expect(createAiVideoJobs).toHaveBeenCalledWith({ entitlementId: "ent-1" });
+  });
+
+  it("shows the polite failure message without exposing provider errors", async () => {
+    billing.subscription = activeSubscription();
+    billing.entitlements = [{ id: "ent-1", subscription_id: "sub-1", sequence_number: 1, status: "available", consumed_at: null }];
+    billing.jobs = [
+      { id: "job-1", entitlement_id: "ent-1", video_type: "learning_video", status: "failed", asset_url: null, customer_message: null },
+      { id: "job-2", entitlement_id: "ent-1", video_type: "child_ai_video", status: "completed", asset_url: "https://example.com/v.mp4", customer_message: null },
+    ];
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/subscription"]}><App /></MemoryRouter>);
+    expect(await screen.findByText(/唔會扣減你嘅主題權益/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重新製作" })).toBeInTheDocument();
   });
 
   it("renders actionable synthetic rows in every admin workspace", () => {
@@ -193,5 +288,36 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByText("AI-DEMO-104")).toBeInTheDocument();
     expect(screen.getByText("權益已預留")).toBeInTheDocument();
     expect(screen.getByLabelText("工作台篩選")).toBeInTheDocument();
+  });
+
+  it("marks parent, child and admin routes noindex without a canonical", () => {
+    for (const path of ["/parent/dashboard", "/child/room", "/admin", "/lost/token-1", "/login"]) {
+      const view = render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
+      expect(document.querySelector('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
+      expect(document.querySelector('link[rel="canonical"]')).toBeNull();
+      view.unmount();
+    }
+  });
+
+  it("gives public pages a self-referencing canonical and no robots override", () => {
+    const view = render(<MemoryRouter initialEntries={["/pricing"]}><App /></MemoryRouter>);
+    expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute("href", "https://minimee.me/pricing");
+    expect(document.querySelector('meta[name="robots"]')).toBeNull();
+    view.unmount();
+  });
+
+  it("publishes Organization, Service and FAQ structured data", () => {
+    const pricing = render(<MemoryRouter initialEntries={["/pricing"]}><App /></MemoryRouter>);
+    expect(document.getElementById("minimee-organization")).not.toBeNull();
+    const service = JSON.parse(document.getElementById("minimee-service")?.textContent ?? "{}");
+    expect(service.offers).toHaveLength(3);
+    expect(service.offers[0].priceCurrency).toBe("HKD");
+    pricing.unmount();
+
+    const faq = render(<MemoryRouter initialEntries={["/faq"]}><App /></MemoryRouter>);
+    const faqData = JSON.parse(document.getElementById("minimee-faq")?.textContent ?? "{}");
+    expect(faqData["@type"]).toBe("FAQPage");
+    expect(faqData.mainEntity.length).toBeGreaterThan(0);
+    faq.unmount();
   });
 });
