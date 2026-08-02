@@ -457,6 +457,26 @@ section 9 item 7.
   keys on the `{parent_id}/…` folder prefix, and the Edge Function serves
   photos to Make through 1-hour signed URLs.
 
+### Rotate the leaked Cloudflare API token first
+
+Commit `1306666` ("Modify Cloudflare API token and account ID", 2026-08-01)
+pasted a **real Cloudflare API token, account ID and Supabase publishable
+key directly into `.github/workflows/deploy.yml` in plaintext**, in place
+of the `${{ secrets.* }}` references. The next commit reverted the file,
+and the squash merge kept it out of `main`'s linear history — but the
+commit object is still retrievable from the repository (GitHub keeps
+`refs/pull/8/head`), so the token must be treated as compromised.
+
+Before doing step 4 above: delete that token in the Cloudflare dashboard
+(My Profile → API Tokens) and issue a **new** one. Do not reuse the leaked
+value as `CLOUDFLARE_API_TOKEN`. The Supabase publishable key is designed
+to be public and is safe in browser-delivered code, so it needs no
+rotation; the account ID is not a credential on its own.
+
+Never inline a secret into a workflow file — `${{ secrets.NAME }}` is the
+only correct form, and a literal value there is also invalid expression
+syntax, which is why that run failed before any job started.
+
 ### Known open items
 
 - Supabase advisor: **leaked-password protection is disabled**. Turn it on
