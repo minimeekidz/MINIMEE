@@ -1,12 +1,12 @@
-interface Env {
+export interface Env {
+  ASSETS: Fetcher;
   VITE_SUPABASE_URL?: string;
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }
 
-const configVersion = "2026-07-30.1";
+const CONFIG_VERSION = "2026-07-31.1";
 
-// Pages Functions read these public client values from the deployment environment.
-export const onRequestGet = async ({ env }: { env: Env }) => {
+function supabaseConfigResponse(env: Env): Response {
   const url = env.VITE_SUPABASE_URL?.trim();
   const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
 
@@ -14,7 +14,7 @@ export const onRequestGet = async ({ env }: { env: Env }) => {
     return Response.json(
       {
         error: "Supabase public configuration is unavailable.",
-        configVersion,
+        configVersion: CONFIG_VERSION,
         missing: [
           !url && "VITE_SUPABASE_URL",
           !publishableKey && "VITE_SUPABASE_PUBLISHABLE_KEY",
@@ -25,7 +25,7 @@ export const onRequestGet = async ({ env }: { env: Env }) => {
   }
 
   return Response.json(
-    { url, publishableKey, configVersion },
+    { url, publishableKey, configVersion: CONFIG_VERSION },
     {
       headers: {
         "Cache-Control": "public, max-age=300",
@@ -33,4 +33,16 @@ export const onRequestGet = async ({ env }: { env: Env }) => {
       },
     },
   );
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const { pathname } = new URL(request.url);
+
+    if (pathname === "/api/supabase-config") {
+      return supabaseConfigResponse(env);
+    }
+
+    return env.ASSETS.fetch(request);
+  },
 };
