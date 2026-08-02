@@ -2,7 +2,7 @@
 
 > This file is the durable source of truth for MINIMEE. Read it before changing product rules, pricing, data access, deployment, DNS, Supabase, or production content.
 >
-> Last updated: 2026-07-29
+> Last updated: 2026-08-02
 
 ## 1. Brand and operator
 
@@ -352,14 +352,126 @@ Preserve a coherent illustrated/pixel-story-world feeling across scenes, without
   change.
 - Do not switch `minimee.me` DNS until the Cloudflare preview passes testing.
 - Stripe billing backend (section 7a) and the AI video job backend
-  (section 7b) are now implemented against Supabase and deployed as Edge
-  Functions, in Stripe test mode. Neither is wired into the frontend yet —
-  `CommercePages.tsx` still renders the demo state on purpose, consistent
-  with children/themes still being `src/data/mock.ts`. `src/lib/service.ts`
-  exposes `createBillingOrder`/`createAiVideoJobs` for whoever wires the
-  real parent/child pages next.
+  (section 7b) are implemented against Supabase, deployed as Edge
+  Functions, and now **wired into the parent-facing pages**.
+  `CommercePages.tsx` reads the real subscription, theme entitlements and
+  AI video jobs through RLS, starts Stripe Checkout through
+  `create-billing-order`, dispatches video jobs through
+  `create-ai-video-jobs`, and stops renewals through `cancel-subscription`.
+  Stripe itself is still in **test mode**.
 
-## 15. Restart instructions for any future assistant/developer
+## 15. Go-live runbook
+
+Everything below still needs Em's own credentials or account access — none
+of it can be done from the repository. Work top to bottom; steps 1–3 are
+independent, step 4 depends on 3, and step 5 depends on 4.
+
+### 1. Supabase Edge Function secrets
+
+```sh
+supabase secrets set --project-ref cjsfpsbtohwgqwgtcjef \
+  RESEND_API_KEY='<from resend.com dashboard>' \
+  MAKE_AI_VIDEO_WEBHOOK_URL='https://hook.us2.make.com/2hltixdy85on9pbyr85ruywspk8cio79'
+```
+
+`RESEND_API_KEY` is what turns on the anonymous-email half of section 6 —
+without it every notification stays in-app only and records
+`email_status = 'failed'` plus an `admin_alerts` row. Also verify the
+`minimee.me` sending domain in Resend, otherwise mail from
+`notifications@minimee.me` will not deliver. `MAKE_AI_VIDEO_WEBHOOK_URL`
+is what stops `create-ai-video-jobs` from failing closed.
+
+### 2. Make.com scenario credentials
+
+Scenario **`5826215`** ("MINIMEE AI Video Workflow") is built and
+schema-valid but every provider value is still a `REPLACE_WITH_YOUR_*`
+placeholder, and the scenario is **inactive**. Replace, then activate:
+
+| Module | Placeholder | Where the real value comes from |
+| --- | --- | --- |
+| HeyGen HTTP | `REPLACE_WITH_YOUR_HEYGEN_API_KEY` | HeyGen dashboard → API key |
+| HeyGen HTTP | `REPLACE_WITH_YOUR_HYPERFRAMES_ASSET_ID` | The HyperFrames template to render |
+| Storyboard HTTP | `REPLACE_WITH_YOUR_IMAGE_GEN_ENDPOINT` / `_API_KEY` | Whichever image model generates the character/scene sheets |
+| Higgsfield HTTP | `REPLACE_WITH_YOUR_HIGGSFIELD_API_KEY` / `_API_SECRET` | Higgsfield account → API credentials |
+| Higgsfield HTTP | `REPLACE_WITH_YOUR_APPLICATION_SLUG` | The Higgsfield application to invoke |
+
+These live in the Make scenario's own HTTP module headers, never as
+Supabase secrets. After a first real run, confirm the callback body
+matches what `parseProviderCallback` reads (section 7b step 3) and adjust
+whichever side is wrong.
+
+### 3. Stripe live mode
+
+Test-mode objects do not carry over. In live mode, recreate the three
+Products/Prices with the **same lookup keys** the Edge Function resolves —
+`minimee_one_time`, `minimee_quarterly`, `minimee_annual` (and
+`minimee_extra_chapter` for the HK$46 add-on) — at HK$128 / HK$324 /
+HK$1,188, then create a live webhook endpoint pointing at
+`https://cjsfpsbtohwgqwgtcjef.supabase.co/functions/v1/stripe-webhook`
+subscribed to `checkout.session.completed`, `invoice.paid`,
+`customer.subscription.updated` and `customer.subscription.deleted`.
+Then update the secrets:
+
+```sh
+supabase secrets set --project-ref cjsfpsbtohwgqwgtcjef \
+  STRIPE_SECRET_KEY='sk_live_…' \
+  STRIPE_WEBHOOK_SECRET='whsec_…'
+```
+
+Do not do this until real families are actually being onboarded — and
+re-run the section 9/10 checklist afterwards, because a live-mode
+misconfiguration charges real cards.
+
+### 4. First Cloudflare deploy
+
+Add these as **GitHub repository secrets** (Settings → Secrets and
+variables → Actions):
+
+- `CLOUDFLARE_API_TOKEN` — a token with the *Edit Cloudflare Workers*
+  template scoped to the MINIMEE account
+- `CLOUDFLARE_ACCOUNT_ID`
+- `VITE_SUPABASE_URL` — `https://cjsfpsbtohwgqwgtcjef.supabase.co`
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — the publishable/anon key only, never
+  the service-role key
+
+`.github/workflows/deploy.yml` then fires on the next push to `main` (or
+via *Run workflow*) and publishes to `minimee.<subdomain>.workers.dev`.
+`npx wrangler deploy --dry-run` already passes locally, so a failure here
+is a credentials problem, not a config one.
+
+### 5. DNS cutover
+
+Only after the `workers.dev` preview passes the full section 9 checklist
+on desktop and mobile. Keep Vercel live as the rollback target until the
+Cloudflare deploy has been stable, add `minimee.me` as a custom domain on
+the Worker, then move DNS. **Record the change in this document**, per
+section 9 item 7.
+
+### Verified before handover
+
+- `npm run build` and all 24 tests pass; `wrangler deploy --dry-run`
+  bundles the Worker and reads all 27 asset files.
+- RLS is enabled on all 11 public tables, each has at least one policy,
+  and `anon` holds no `SELECT`/`INSERT` anywhere.
+- `child-photos` is a private bucket; the parent-scoped storage policy
+  keys on the `{parent_id}/…` folder prefix, and the Edge Function serves
+  photos to Make through 1-hour signed URLs.
+
+### Known open items
+
+- Supabase advisor: **leaked-password protection is disabled**. Turn it on
+  under Authentication → Policies; it costs nothing and blocks known
+  breached passwords.
+- Supabase advisor: `public.is_admin()` is a `SECURITY DEFINER` function
+  executable by `authenticated`. It only reports whether the *caller* is an
+  admin, so this is intended, but leave a note here if that ever changes.
+- A leftover `swift-api` Edge Function from the Supabase starter is still
+  deployed and unused — delete it to keep the surface small.
+- `dist/assets/index-*.js` is ~514 kB (≈151 kB gzipped), over Vite's
+  500 kB warning. Not a blocker; worth code-splitting the admin routes if
+  first paint on mobile disappoints.
+
+## 16. Restart instructions for any future assistant/developer
 
 1. Read this entire file.
 2. Inspect the latest `main` branch and deployment status.
