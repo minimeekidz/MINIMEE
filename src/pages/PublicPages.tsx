@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { DemoBadge, IntegrationNotice, PublicHeader, StatusPill } from "../components/UI";
 import { PLANS, type PlanType } from "../lib/plans";
 import { faqSchema, serviceSchema, useStructuredData } from "../lib/seo";
+import { EXAMPLE_CARDS } from "../lib/kidCard";
 
 export function HomePage() {
   return (
@@ -12,15 +13,15 @@ export function HomePage() {
       <main>
         <section className="hero-section">
           <div className="hero-copy">
-            <DemoBadge label="MINIMEE · CHILDHOOD, COLLECTED" />
-            <h1>每次學習，<br /><em>都收藏成童年。</em></h1>
-            <p>孩子完成四個小任務，解鎖一段個人化學習影片，再把成果收藏成一張 MEE Card。</p>
+            <DemoBadge label="MINIMEE · 小朋友版電子名片" />
+            <h1>小朋友嘅<br /><em>自我介紹卡。</em></h1>
+            <p>大人有商業電子名片，小朋友都應該有一張。一條連結，講齊佢係邊個、鍾意咩、儲咗咩，仲可以開遺失模式。</p>
             <div className="hero-actions">
-              <Link className="button" to="/how-it-works">看看怎樣玩</Link>
-              <Link className="text-link" to="/child"><Play size={17} />預覽 Pixel World</Link>
+              <Link className="button" to="/kid/mimi">睇一張示範卡</Link>
+              <Link className="text-link" to="/play"><Play size={17} />試玩儲卡小遊戲</Link>
             </div>
             <div className="trust-row">
-              <span><ShieldCheck />家長控制</span><span><Heart />童年紀念</span><span><Sparkles />個人化學習</span>
+              <span><ShieldCheck />家長批核先公開</span><span><Heart />自我介紹片</span><span><Sparkles />做任務儲 MEE 卡</span>
             </div>
           </div>
           <div className="hero-visual">
@@ -32,14 +33,31 @@ export function HomePage() {
           </div>
         </section>
         <section className="steps-section">
-          <div className="section-heading"><StatusPill>一個主題 · 四步完成</StatusPill><h2>學懂、完成、留下來</h2></div>
+          <div className="section-heading"><StatusPill>四步完成</StatusPill><h2>由玩，到一張屬於佢嘅卡</h2></div>
           <div className="steps-grid">
             {[
-              ["01", "家長選擇", "按年齡和興趣選今期小主題"],
-              ["02", "孩子探索", "四個詞語、四道小問題、四塊碎片"],
-              ["03", "完成影片", "把真實樣貌放進像素寵物世界"],
-              ["04", "收藏回憶", "獲得固定卡位的 MEE Card"]
+              ["01", "小朋友答問題", "喺遊戲入面答「我鍾意咩」、「我想做咩」"],
+              ["02", "生成自我介紹片", "用佢自己嘅答案，整一段短片"],
+              ["03", "做任務儲卡", "行 MEE 小鎮，完成任務解鎖 MEE 卡"],
+              ["04", "家長批核分享", "家長睇過先公開，可以開遺失模式"]
             ].map(([n, title, copy]) => <article key={n}><span>{n}</span><h3>{title}</h3><p>{copy}</p></article>)}
+          </div>
+        </section>
+
+        <section className="steps-section">
+          <div className="section-heading"><StatusPill tone="gold">示範</StatusPill><h2>睇下真實嘅卡係點</h2></div>
+          <div className="example-grid">
+            {EXAMPLE_CARDS.map(card => (
+              <Link className="example-card" key={card.slug} to={`/kid/${card.slug}`}>
+                <img src={card.scene} alt="" />
+                <div className="example-card-body">
+                  <img className="example-avatar" src={card.avatar} alt="" />
+                  <strong>{card.nickname}</strong>
+                  <small>{card.tagline}</small>
+                  <span className="example-meta">{card.cards.length} 張 MEE 卡 · 想做{card.dreamJob}</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
       </main>

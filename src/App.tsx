@@ -8,6 +8,8 @@ import { FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pag
 import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
 import { LostItemsPage, NotificationsPage, PrivacyCenterPage, PublicLostItemPage, SupportCasePage } from "./pages/ParentServicePages";
 import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
+import { KidCardPage } from "./pages/KidCardPage";
+import { PixelWorldPage } from "./pages/PixelWorldPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function NotFound() {
@@ -27,6 +29,10 @@ export default function App() {
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/faq" element={<FaqPage />} />
+      {/* v2: the shareable child card and its playable demo — both public,
+          so a grandparent or a finder can open them without an account. */}
+      <Route path="/kid/:slug" element={<KidCardPage />} />
+      <Route path="/play" element={<PixelWorldPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register" element={<AuthPage />} />
       <Route path="/forgot-password" element={<AuthPage />} />

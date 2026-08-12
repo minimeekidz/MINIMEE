@@ -1,0 +1,146 @@
+import { useState } from "react";
+import { Compass, Heart, MapPin, Play, ShieldCheck, Sparkles, Star } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { PublicHeader, StatusPill } from "../components/UI";
+import { EXAMPLE_CARDS, findExampleCard, type KidCard, type MeeCard } from "../lib/kidCard";
+import { useStructuredData } from "../lib/seo";
+
+// The public face of MINIMEE v2: a child's self-introduction card. Parents
+// share this link the way an adult shares a commercial e-name card. Nothing
+// here needs an account — that is the point, it has to be openable by a
+// grandparent, a teacher or whoever found a lost water bottle.
+export function KidCardPage() {
+  const { slug } = useParams();
+  const card = findExampleCard(slug ?? "");
+
+  useStructuredData("minimee-kid-card", card
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        name: `${card.nickname} 嘅自我介紹卡`,
+        description: card.tagline,
+        inLanguage: "zh-HK",
+      }
+    : {});
+
+  if (!card) {
+    return <div className="public-page"><PublicHeader /><main className="content-page">
+      <h1>搵唔到呢張卡</h1>
+      <p className="lead">呢條連結可能已經失效，或者卡主已經收起咗佢。</p>
+      <Link className="button" to="/">返 MINIMEE 首頁</Link>
+    </main></div>;
+  }
+
+  return <div className="public-page kid-card-page"><PublicHeader />
+    <main>
+      <KidHero card={card} />
+      <KidIntroVideo card={card} />
+      <KidAbout card={card} />
+      <KidCollection card={card} />
+      {card.lostMode?.enabled && <KidLostMode card={card} />}
+      <KidCallToAction card={card} />
+    </main>
+  </div>;
+}
+
+function KidHero({ card }: { card: KidCard }) {
+  return <section className="kid-hero" style={{ backgroundImage: `url(${card.scene})` }}>
+    <div className="kid-hero-scrim" />
+    <div className="kid-hero-inner">
+      {card.isExample && <StatusPill tone="gold">示範卡 · 唔係真實小朋友</StatusPill>}
+      <img className="kid-avatar" src={card.avatar} alt={`${card.nickname}嘅頭像`} />
+      <h1>{card.nickname}</h1>
+      <p className="kid-tagline">{card.tagline}</p>
+      <div className="kid-hero-meta">
+        <span><Star size={14} />{card.ageGroup} 歲</span>
+        <span><Compass size={14} />想做{card.dreamJob}</span>
+        <span><Sparkles size={14} />{card.cards.length} 張 MEE 卡</span>
+      </div>
+    </div>
+  </section>;
+}
+
+function KidIntroVideo({ card }: { card: KidCard }) {
+  const [playing, setPlaying] = useState(false);
+  return <section className="kid-section kid-video-section">
+    <h2>聽{card.nickname}講自己</h2>
+    <p className="kid-section-note">呢段片係由小朋友自己嘅答案生成，家長批核後先會出現喺呢度。</p>
+    <div className="kid-video-frame">
+      {card.introVideoUrl && playing
+        ? <video src={card.introVideoUrl} poster={card.introVideoPoster ?? undefined} controls autoPlay playsInline />
+        : <button className="kid-video-poster" onClick={() => setPlaying(true)} disabled={!card.introVideoUrl}>
+            <img src={card.introVideoPoster ?? card.scene} alt="" />
+            <span className="kid-play"><Play size={26} /></span>
+            <span className="kid-video-label">
+              {card.introVideoUrl ? `播放 ${card.nickname} 嘅自我介紹` : "自我介紹片製作中…"}
+            </span>
+          </button>}
+    </div>
+  </section>;
+}
+
+function KidAbout({ card }: { card: KidCard }) {
+  return <section className="kid-section">
+    <h2>關於我</h2>
+    <p className="kid-about">{card.about}</p>
+    <h3>我鍾意…</h3>
+    <ul className="kid-likes">{card.likes.map(like => <li key={like}><Heart size={13} />{like}</li>)}</ul>
+  </section>;
+}
+
+function KidCollection({ card }: { card: KidCard }) {
+  return <section className="kid-section">
+    <h2>我嘅 MEE 卡收藏</h2>
+    <p className="kid-section-note">每完成一個任務就解鎖一張。閃卡係限定，唔可以重抽。</p>
+    <div className="kid-card-grid">{card.cards.map(mee => <MeeCardTile key={mee.id} card={mee} />)}</div>
+    {card.tasks.length > 0 && <>
+      <h3>仲差呢啲任務</h3>
+      <ul className="kid-task-list">{card.tasks.map(task => <li key={task.id}>
+        <strong>{task.title}</strong><small>{task.detail}</small>
+      </li>)}</ul>
+    </>}
+  </section>;
+}
+
+function MeeCardTile({ card }: { card: MeeCard }) {
+  return <article className={card.rarity === "flash" ? "mee-card flash" : "mee-card"}>
+    <img src={card.art} alt="" />
+    <div className="mee-card-body">
+      <div className="mee-card-head">
+        <span className="mee-code">{card.code}</span>
+        {card.rarity === "flash" && <StatusPill tone="gold">FLASH</StatusPill>}
+      </div>
+      <strong>{card.name}</strong>
+      <small>{card.earnedFor}</small>
+    </div>
+  </article>;
+}
+
+function KidLostMode({ card }: { card: KidCard }) {
+  if (!card.lostMode) return null;
+  return <section className="kid-section kid-lost-section">
+    <div className="kid-lost-head"><MapPin /><h2>執到我嘅嘢？</h2></div>
+    <p className="kid-about">{card.lostMode.message}</p>
+    <Link className="button" to={`/lost/${card.lostMode.token}`}>聯絡家長（唔會顯示電話號碼）</Link>
+    <p className="kid-section-note">
+      <ShieldCheck size={13} />
+      訊息經 MINIMEE 轉交，家長嘅電郵同電話唔會公開俾任何人。
+    </p>
+  </section>;
+}
+
+function KidCallToAction({ card }: { card: KidCard }) {
+  return <section className="kid-cta">
+    <h2>想幫你嘅小朋友整一張？</h2>
+    <p>MINIMEE 係小朋友版嘅電子名片：一條連結就講齊佢係邊個、鍾意咩、有咩收藏，仲可以開遺失模式。</p>
+    <div className="kid-cta-actions">
+      <Link className="button" to="/register">免費開始</Link>
+      <Link className="button secondary" to="/pricing">睇方案</Link>
+    </div>
+    {card.isExample && <p className="kid-section-note">
+      你而家睇緊嘅係示範卡。想睇另一個例子？
+      {EXAMPLE_CARDS.filter(other => other.slug !== card.slug).map(other =>
+        <Link key={other.slug} to={`/kid/${other.slug}`}> {other.nickname} 嘅卡</Link>)}
+    </p>}
+  </section>;
+}
