@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PixelPet, type Facing, type PetKind } from "./PixelPet";
+import { findHero, TOWN_PETS } from "../lib/characters";
+
+// Pets wander around their home spot on a slow drift, the way a town in an
+// Animal Crossing-ish game feels inhabited: nobody is going anywhere in
+// particular, but nothing is standing perfectly still either.
+const PET_ROAM_RADIUS = 90;
+const PET_SPEED = 0.35;
 
 // A top-down town the child walks around freely in eight directions, with
 // the camera following them — not a side-scroller on rails. Buildings are
@@ -12,7 +18,6 @@ const SPEED = 2.6;
 const PET_SIZE = 48;
 /** Only the pet's lower half collides, so it can overlap a roof and look inside it. */
 const FEET_H = 14;
-const WALK_FPS = 7;
 
 export interface TownBuilding {
   id: string;
@@ -39,9 +44,20 @@ export interface PixelTownProps {
   buildings: TownBuilding[];
   pickups: TownPickup[];
   collectedIds?: string[];
-  pet?: PetKind;
+  /** Which hero the child plays as. */
+  heroId?: string | null;
   onCollect?: (pickupId: string) => void;
   onEnter?: (building: TownBuilding) => void;
+}
+
+interface Wanderer {
+  id: string;
+  nameZh: string;
+  art: string;
+  x: number;
+  y: number;
+  angle: number;
+  flip: boolean;
 }
 
 interface Box { x: number; y: number; w: number; h: number }
@@ -51,14 +67,21 @@ function overlaps(a: Box, b: Box) {
 }
 
 export function PixelTown({
-  ground, buildings, pickups, collectedIds, pet = "watermelon-shiba", onCollect, onEnter,
+  ground, buildings, pickups, collectedIds, heroId, onCollect, onEnter,
 }: PixelTownProps) {
+  const hero = findHero(heroId);
+  const [pets, setPets] = useState<Wanderer[]>(() => TOWN_PETS.map(p => ({
+    id: p.id, nameZh: p.nameZh, art: p.art,
+    x: p.home.x, y: p.home.y,
+    angle: Math.random() * Math.PI * 2, flip: false,
+  })));
   // Spawn on open ground: standing on a pickup would hand the child a free
   // card the moment the town opens, and standing in a doorway would pop the
   // "go inside" prompt before they have moved.
   const [pos, setPos] = useState({ x: 560, y: 1100 });
-  const [facing, setFacing] = useState<Facing>("down");
-  const [walkFrame, setWalkFrame] = useState(0);
+  // Only left/right matter for a single-pose sprite: the hero flips to
+  // face the way they walk, and keeps facing that way when they stop.
+  const [facing, setFacing] = useState<"left" | "right">("right");
   const [moving, setMoving] = useState(false);
   const [collected, setCollected] = useState<string[]>(collectedIds ?? []);
   const [toast, setToast] = useState<string | null>(null);
@@ -115,8 +138,6 @@ export function PixelTown({
         setMoving(false);
       } else {
         setMoving(true);
-        if (dy < 0) setFacing("up");
-        else if (dy > 0) setFacing("down");
         if (dx < 0) setFacing("left");
         else if (dx > 0) setFacing("right");
 
@@ -145,13 +166,27 @@ export function PixelTown({
     return () => { running = false; window.cancelAnimationFrame(frameRef.current); };
   }, [solids]);
 
-  // Legs only cycle while actually walking.
+  // Pets drift around their home spot, turning slowly rather than jittering.
   useEffect(() => {
-    if (!moving) { setWalkFrame(0); return; }
-    const timer = window.setInterval(() => setWalkFrame(current => (current + 1) % 2), 1000 / WALK_FPS);
+    const timer = window.setInterval(() => {
+      setPets(current => current.map((pet, index) => {
+        const home = TOWN_PETS[index].home;
+        let angle = pet.angle + (Math.random() - 0.5) * 0.6;
+        let x = pet.x + Math.cos(angle) * PET_SPEED * 6;
+        let y = pet.y + Math.sin(angle) * PET_SPEED * 6;
+        // Turn back when they drift too far from where they belong.
+        const dx = x - home.x, dy = y - home.y;
+        if (Math.hypot(dx, dy) > PET_ROAM_RADIUS) {
+          angle = Math.atan2(home.y - y, home.x - x);
+          x = pet.x; y = pet.y;
+        }
+        return { ...pet, x, y, angle, flip: Math.cos(angle) < 0 };
+      }));
+    }, 420);
     return () => window.clearInterval(timer);
-  }, [moving]);
+  }, []);
 
+  // Legs only cycle while actually walking.
   const collect = useCallback((pickup: TownPickup) => {
     if (awarded.current.has(pickup.id)) return;
     awarded.current.add(pickup.id);
@@ -232,8 +267,26 @@ export function PixelTown({
           />
         ))}
 
-        <div className="town-pet" style={{ left: pos.x, top: pos.y, width: PET_SIZE, height: PET_SIZE }}>
-          <PixelPet kind={pet} facing={facing} frame={walkFrame} scale={PET_SIZE / 16} />
+        {pets.map(wanderer => (
+          <div key={wanderer.id} className="town-npc" style={{ left: wanderer.x, top: wanderer.y }}>
+            <img
+              src={wanderer.art}
+              alt={wanderer.nameZh}
+              style={{ transform: wanderer.flip ? "scaleX(-1)" : undefined }}
+            />
+            <span className="town-npc-name">{wanderer.nameZh}</span>
+          </div>
+        ))}
+
+        <div
+          className={moving ? "town-hero walking" : "town-hero"}
+          style={{ left: pos.x, top: pos.y, width: PET_SIZE, height: PET_SIZE }}
+        >
+          <img
+            src={hero.art}
+            alt={hero.nameZh}
+            style={{ transform: facing === "left" ? "scaleX(-1)" : undefined }}
+          />
           <span className="town-pet-shadow" />
         </div>
       </div>
