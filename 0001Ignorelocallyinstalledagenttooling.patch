@@ -1,0 +1,32 @@
+From 1a454ad6a1c0c6f88d3d757a471d5ef85c60bb92 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 12 Aug 2026 20:52:42 +0000
+Subject: [PATCH 1/2] Ignore locally installed agent tooling
+
+`npx skills add higgsfield-ai/skills` writes ~110 files of third-party
+skill definitions into .agents/, plus editor-local settings under
+.claude/ and a skills-lock.json. None of it is MINIMEE application code,
+and the repo may be migrated to another host, so keep it untracked.
+---
+ .gitignore | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/.gitignore b/.gitignore
+index 0aeb9c8..a921f22 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -10,3 +10,11 @@ vite.config.js
+ vite.config.d.ts
+ vitest.config.js
+ vitest.config.d.ts
++
++# Agent tooling installed locally by `npx skills add` (Higgsfield skills and
++# friends). These are third-party skill definitions and machine-local editor
++# settings, not part of the MINIMEE product — keep them out of the repo so a
++# migration elsewhere carries application code only.
++.agents/
++.claude/
++skills-lock.json
+-- 
+2.43.0
+

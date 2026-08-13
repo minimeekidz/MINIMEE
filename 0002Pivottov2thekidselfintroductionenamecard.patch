@@ -1,0 +1,809 @@
+From 6665b363b812f90097325b7693a9b55ab83adf57 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 12 Aug 2026 21:05:56 +0000
+Subject: [PATCH 2/2] Pivot to v2: the kid self-introduction e-name card
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+MINIMEE v2 is the child equivalent of an adult's commercial e-name card:
+one shareable link that says who the child is, what they like, shows their
+self-introduction video and MEE card collection, and carries the lost-item
+channel. v1's two-video-per-theme production pipeline is deliberately not
+part of this surface — a card has at most one video, so there is a single
+thing to generate, retry and show.
+
+- src/lib/kidCard.ts: the card model plus two worked examples. Parents
+  landing on the site see what the product IS rather than a feature list,
+  and the examples are labelled so nobody mistakes them for a real child.
+- KidCardPage: the public card at /kid/:slug. No account needed, because a
+  grandparent, a teacher, or whoever found a lost water bottle has to be
+  able to open it. The lost-item section only renders when the parent has
+  switched lost mode on, and routes through /lost/:token so no contact
+  details are ever exposed.
+- PixelWorldGame + /play: a long left-to-right pixel world where walking
+  into a pickup collects it. Movement and collection only — no pet stats,
+  no jump physics — it has to be fun on a phone in thirty seconds.
+  Keyboard and touch both drive it.
+- Home page now leads with the e-name card story and links straight to a
+  live example and the playable demo.
+
+Build passes and all 29 tests pass.
+---
+ src/App.test.tsx                  |  40 +++++++-
+ src/App.tsx                       |   6 ++
+ src/components/PixelWorldGame.tsx | 155 ++++++++++++++++++++++++++++++
+ src/lib/kidCard.ts                | 123 ++++++++++++++++++++++++
+ src/pages/KidCardPage.tsx         | 146 ++++++++++++++++++++++++++++
+ src/pages/PixelWorldPage.tsx      |  53 ++++++++++
+ src/pages/PublicPages.tsx         |  40 +++++---
+ src/styles.css                    |  95 ++++++++++++++++++
+ 8 files changed, 645 insertions(+), 13 deletions(-)
+ create mode 100644 src/components/PixelWorldGame.tsx
+ create mode 100644 src/lib/kidCard.ts
+ create mode 100644 src/pages/KidCardPage.tsx
+ create mode 100644 src/pages/PixelWorldPage.tsx
+
+diff --git a/src/App.test.tsx b/src/App.test.tsx
+index 76c3175..bc5343b 100644
+--- a/src/App.test.tsx
++++ b/src/App.test.tsx
+@@ -117,9 +117,11 @@ beforeEach(() => {
+ });
+ 
+ describe("MINIMEE route shells", () => {
+-  it("renders the public home page", () => {
++  it("renders the public home page around the kid e-name card idea", () => {
+     render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
+-    expect(screen.getByRole("heading", { name: /每次學習/ })).toBeInTheDocument();
++    expect(screen.getByRole("heading", { name: /自我介紹卡/ })).toBeInTheDocument();
++    expect(screen.getByRole("link", { name: "睇一張示範卡" })).toHaveAttribute("href", "/kid/mimi");
++    expect(screen.getByRole("link", { name: /試玩儲卡小遊戲/ })).toHaveAttribute("href", "/play");
+   });
+ 
+   it("renders the parent dashboard with the connected child profile", () => {
+@@ -306,6 +308,40 @@ describe("MINIMEE route shells", () => {
+     view.unmount();
+   });
+ 
++  it("shows an example kid card so parents understand the product", () => {
++    render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
++    expect(screen.getByRole("heading", { level: 1, name: "Mimi" })).toBeInTheDocument();
++    expect(screen.getByText(/我最鍾意畫海底世界/)).toBeInTheDocument();
++    expect(screen.getByText("示範卡 · 唔係真實小朋友")).toBeInTheDocument();
++    expect(screen.getByText("MEE-014")).toBeInTheDocument();
++  });
++
++  it("offers the lost-item channel without exposing parent contact details", () => {
++    render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
++    expect(screen.getByRole("link", { name: /聯絡家長/ })).toHaveAttribute("href", "/lost/example-token-mimi");
++    expect(screen.getByText(/電話唔會公開/)).toBeInTheDocument();
++  });
++
++  it("hides the lost-item section on a card that has it switched off", () => {
++    render(<MemoryRouter initialEntries={["/kid/ryan"]}><App /></MemoryRouter>);
++    expect(screen.getByRole("heading", { level: 1, name: "Ryan" })).toBeInTheDocument();
++    expect(screen.queryByRole("link", { name: /聯絡家長/ })).toBeNull();
++  });
++
++  it("keeps the intro video unplayable until one has been generated", () => {
++    render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
++    expect(screen.getByText("自我介紹片製作中…")).toBeInTheDocument();
++    expect(screen.getByRole("button", { name: /自我介紹片製作中/ })).toBeDisabled();
++  });
++
++  it("renders the walkable pixel world with its collectibles", () => {
++    render(<MemoryRouter initialEntries={["/play"]}><App /></MemoryRouter>);
++    expect(screen.getByText(/收集咗 0 \/ 5/)).toBeInTheDocument();
++    expect(screen.getByRole("button", { name: "向左行" })).toBeInTheDocument();
++    expect(screen.getByRole("button", { name: "向右行" })).toBeInTheDocument();
++    expect(screen.getByAltText("你嘅角色")).toBeInTheDocument();
++  });
++
+   it("publishes Organization, Service and FAQ structured data", () => {
+     const pricing = render(<MemoryRouter initialEntries={["/pricing"]}><App /></MemoryRouter>);
+     expect(document.getElementById("minimee-organization")).not.toBeNull();
+diff --git a/src/App.tsx b/src/App.tsx
+index 6223758..9d81567 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -8,6 +8,8 @@ import { FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pag
+ import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
+ import { LostItemsPage, NotificationsPage, PrivacyCenterPage, PublicLostItemPage, SupportCasePage } from "./pages/ParentServicePages";
+ import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
++import { KidCardPage } from "./pages/KidCardPage";
++import { PixelWorldPage } from "./pages/PixelWorldPage";
+ import { ProtectedRoute } from "./components/ProtectedRoute";
+ 
+ function NotFound() {
+@@ -27,6 +29,10 @@ export default function App() {
+       <Route path="/how-it-works" element={<HowItWorksPage />} />
+       <Route path="/pricing" element={<PricingPage />} />
+       <Route path="/faq" element={<FaqPage />} />
++      {/* v2: the shareable child card and its playable demo — both public,
++          so a grandparent or a finder can open them without an account. */}
++      <Route path="/kid/:slug" element={<KidCardPage />} />
++      <Route path="/play" element={<PixelWorldPage />} />
+       <Route path="/login" element={<AuthPage />} />
+       <Route path="/register" element={<AuthPage />} />
+       <Route path="/forgot-password" element={<AuthPage />} />
+diff --git a/src/components/PixelWorldGame.tsx b/src/components/PixelWorldGame.tsx
+new file mode 100644
+index 0000000..eff92b2
+--- /dev/null
++++ b/src/components/PixelWorldGame.tsx
+@@ -0,0 +1,155 @@
++import { useCallback, useEffect, useMemo, useRef, useState } from "react";
++import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
++
++// A long left-to-right pixel world the child walks through. Pickups are
++// placed along the track; walking into one collects it and, when it is tied
++// to a task, marks that task done. Deliberately small in scope: movement +
++// collection, no pet stats, no combat, no jump physics — it has to be fun on
++// a phone in thirty seconds, not be a platformer.
++
++const WORLD_WIDTH = 4200;
++const VIEW_HEIGHT = 320;
++const WALK_SPEED = 3.4;
++const SPRITE_WIDTH = 56;
++const GROUND_Y = 232;
++
++export interface Pickup {
++  id: string;
++  x: number;
++  label: string;
++  art: string;
++}
++
++export interface PixelWorldGameProps {
++  pickups: Pickup[];
++  /** Parallax scenery, back layer first. */
++  backdrop: string;
++  midground?: string;
++  avatar: string;
++  onCollect?: (pickupId: string) => void;
++}
++
++type Direction = "left" | "right";
++
++export function PixelWorldGame({ pickups, backdrop, midground, avatar, onCollect }: PixelWorldGameProps) {
++  const [x, setX] = useState(60);
++  const [facing, setFacing] = useState<Direction>("right");
++  const [walking, setWalking] = useState(false);
++  const [collected, setCollected] = useState<string[]>([]);
++  const [toast, setToast] = useState<string | null>(null);
++
++  // Held direction lives in a ref so the animation loop reads it without
++  // being torn down and recreated on every key event.
++  const held = useRef<{ left: boolean; right: boolean }>({ left: false, right: false });
++  const frame = useRef<number>(0);
++  const viewport = useRef<HTMLDivElement | null>(null);
++
++  const collect = useCallback((pickup: Pickup) => {
++    setCollected(current => {
++      if (current.includes(pickup.id)) return current;
++      setToast(pickup.label);
++      window.setTimeout(() => setToast(null), 1800);
++      onCollect?.(pickup.id);
++      return [...current, pickup.id];
++    });
++  }, [onCollect]);
++
++  useEffect(() => {
++    let running = true;
++    const step = () => {
++      if (!running) return;
++      setX(current => {
++        const direction = (held.current.right ? 1 : 0) - (held.current.left ? 1 : 0);
++        if (direction === 0) {
++          setWalking(false);
++          return current;
++        }
++        setWalking(true);
++        setFacing(direction > 0 ? "right" : "left");
++        const next = Math.min(Math.max(current + direction * WALK_SPEED, 0), WORLD_WIDTH - SPRITE_WIDTH);
++        return next;
++      });
++      frame.current = window.requestAnimationFrame(step);
++    };
++    frame.current = window.requestAnimationFrame(step);
++    return () => { running = false; window.cancelAnimationFrame(frame.current); };
++  }, []);
++
++  // Collection is checked off the committed position rather than inside the
++  // movement updater, so it never fires twice for one overlap.
++  useEffect(() => {
++    const hit = pickups.find(pickup =>
++      !collected.includes(pickup.id) && Math.abs(pickup.x - x) < 34);
++    if (hit) collect(hit);
++  }, [x, pickups, collected, collect]);
++
++  useEffect(() => {
++    const down = (event: KeyboardEvent) => {
++      if (event.key === "ArrowLeft" || event.key === "a") held.current.left = true;
++      if (event.key === "ArrowRight" || event.key === "d") held.current.right = true;
++    };
++    const up = (event: KeyboardEvent) => {
++      if (event.key === "ArrowLeft" || event.key === "a") held.current.left = false;
++      if (event.key === "ArrowRight" || event.key === "d") held.current.right = false;
++    };
++    window.addEventListener("keydown", down);
++    window.addEventListener("keyup", up);
++    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
++  }, []);
++
++  // Keep the walker roughly centred once they are past the first screen.
++  const cameraX = useMemo(() => {
++    const width = viewport.current?.clientWidth ?? 720;
++    return Math.min(Math.max(x - width / 2 + SPRITE_WIDTH / 2, 0), WORLD_WIDTH - width);
++  }, [x]);
++
++  const remaining = pickups.length - collected.length;
++
++  return <div className="pixel-game">
++    <div className="pixel-game-hud">
++      <span><Sparkles size={14} />收集咗 {collected.length} / {pickups.length}</span>
++      <span>{remaining === 0 ? "全部搵齊喇！" : "用方向鍵或者下面嘅掣行"}</span>
++    </div>
++
++    <div className="pixel-viewport" ref={viewport}>
++      <div className="pixel-layer back" style={{ backgroundImage: `url(${backdrop})`, transform: `translateX(${-cameraX * 0.25}px)` }} />
++      {midground && <div className="pixel-layer mid" style={{ backgroundImage: `url(${midground})`, transform: `translateX(${-cameraX * 0.55}px)` }} />}
++
++      <div className="pixel-track" style={{ width: WORLD_WIDTH, transform: `translateX(${-cameraX}px)` }}>
++        {pickups.map(pickup => (
++          <img
++            key={pickup.id}
++            className={collected.includes(pickup.id) ? "pixel-pickup taken" : "pixel-pickup"}
++            src={pickup.art}
++            alt={pickup.label}
++            style={{ left: pickup.x, bottom: VIEW_HEIGHT - GROUND_Y + 14 }}
++          />
++        ))}
++        <img
++          className={walking ? "pixel-walker walking" : "pixel-walker"}
++          src={avatar}
++          alt="你嘅角色"
++          style={{ left: x, bottom: VIEW_HEIGHT - GROUND_Y, transform: `scaleX(${facing === "left" ? -1 : 1})` }}
++        />
++        <div className="pixel-ground" />
++      </div>
++
++      {toast && <div className="pixel-toast" role="status">執到咗：{toast}</div>}
++    </div>
++
++    <div className="pixel-controls">
++      <button
++        aria-label="向左行"
++        onPointerDown={() => { held.current.left = true; }}
++        onPointerUp={() => { held.current.left = false; }}
++        onPointerLeave={() => { held.current.left = false; }}
++      ><ArrowLeft /></button>
++      <button
++        aria-label="向右行"
++        onPointerDown={() => { held.current.right = true; }}
++        onPointerUp={() => { held.current.right = false; }}
++        onPointerLeave={() => { held.current.right = false; }}
++      ><ArrowRight /></button>
++    </div>
++  </div>;
++}
+diff --git a/src/lib/kidCard.ts b/src/lib/kidCard.ts
+new file mode 100644
+index 0000000..1c0e40f
+--- /dev/null
++++ b/src/lib/kidCard.ts
+@@ -0,0 +1,123 @@
++// MINIMEE v2 core object: a child's self-introduction card — the kid
++// equivalent of an adult's commercial e-name card. A parent fills this in
++// once, and it becomes the child's shareable page: who they are, what they
++// like, their intro video, their MEE card collection, and (when switched
++// on) the lost-item contact channel.
++//
++// v1's two-video-per-theme production pipeline is deliberately gone. A card
++// has at most ONE video — the self-introduction — so there is a single
++// thing to generate, retry and show.
++
++export type AgeGroup = "3-5" | "6-8" | "9-12" | "13+";
++export type CardRarity = "normal" | "flash";
++
++export interface MeeCard {
++  id: string;
++  /** Display number on the card face, e.g. "MEE-014". */
++  code: string;
++  name: string;
++  rarity: CardRarity;
++  art: string;
++  /** The task that earned it, shown on the back of the card. */
++  earnedFor: string;
++  earnedAt: string | null;
++}
++
++export interface KidTask {
++  id: string;
++  title: string;
++  detail: string;
++  /** Which MEE card this task pays out when completed. */
++  rewardCardId: string;
++  done: boolean;
++}
++
++export interface KidCard {
++  id: string;
++  /** URL segment: /kid/:slug */
++  slug: string;
++  nickname: string;
++  ageGroup: AgeGroup;
++  /** One-line self-introduction, in the child's own words. */
++  tagline: string;
++  about: string;
++  likes: string[];
++  dreamJob: string;
++  avatar: string;
++  scene: string;
++  /** Self-introduction video; null until it has been generated. */
++  introVideoUrl: string | null;
++  introVideoPoster: string | null;
++  cards: MeeCard[];
++  tasks: KidTask[];
++  /** Lost mode: when on, a finder can reach the parent through /lost/:token. */
++  lostMode: { enabled: boolean; token: string; message: string } | null;
++  isExample: boolean;
++}
++
++// Two worked examples shipped with the product. They exist so a parent
++// landing on the marketing site immediately sees what the thing IS —
++// "呢個係小朋友嘅自我介紹卡" — instead of an abstract feature list. They are
++// clearly marked as examples so nobody mistakes them for a real child.
++export const EXAMPLE_CARDS: KidCard[] = [
++  {
++    id: "example-mimi",
++    slug: "mimi",
++    nickname: "Mimi",
++    ageGroup: "6-8",
++    tagline: "我叫Mimi，我最鍾意畫海底世界！",
++    about: "我今年7歲，讀小二。我有一隻叫「泡泡」嘅寵物水母，佢住喺我嘅MEE小屋。我識畫好多種魚，最叻畫水母同海龜。",
++    likes: ["畫畫", "海洋動物", "砌積木", "跳舞"],
++    dreamJob: "海洋生物學家",
++    avatar: "/assets/hero-girl.webp",
++    scene: "/assets/album-ocean.webp",
++    introVideoUrl: null,
++    introVideoPoster: "/assets/album-ocean.webp",
++    cards: [
++      { id: "c1", code: "MEE-014", name: "海龜朋友", rarity: "flash", art: "/assets/card-11.webp", earnedFor: "完成「認識海洋動物」任務", earnedAt: "2026-07-20T00:00:00Z" },
++      { id: "c2", code: "MEE-007", name: "小水母泡泡", rarity: "normal", art: "/assets/card-05.webp", earnedFor: "連續7日完成每日任務", earnedAt: "2026-07-14T00:00:00Z" },
++      { id: "c3", code: "MEE-002", name: "珊瑚花園", rarity: "normal", art: "/assets/card-01.webp", earnedFor: "第一次完成自我介紹", earnedAt: "2026-07-02T00:00:00Z" },
++    ],
++    tasks: [
++      { id: "t1", title: "介紹你最鍾意嘅動物", detail: "同鏡頭講30秒，講下點解鍾意佢。", rewardCardId: "c4", done: false },
++      { id: "t2", title: "畫一幅海底世界", detail: "畫完影相上載，就可以解鎖新卡。", rewardCardId: "c5", done: false },
++    ],
++    lostMode: { enabled: true, token: "example-token-mimi", message: "如果你揀到呢張卡，唔該聯絡我媽咪，多謝你！" },
++    isExample: true,
++  },
++  {
++    id: "example-ryan",
++    slug: "ryan",
++    nickname: "Ryan",
++    ageGroup: "9-12",
++    tagline: "我係Ryan，我想做太空人！",
++    about: "我10歲，我識砌火箭模型，亦識少少編程。我喺學校參加咗科學隊，我哋做過水火箭比賽，我隊拎咗第二名。",
++    likes: ["太空", "編程", "踩單車", "睇科學書"],
++    dreamJob: "太空人",
++    avatar: "/assets/hero-boy.webp",
++    scene: "/assets/town-night.webp",
++    introVideoUrl: null,
++    introVideoPoster: "/assets/town-night.webp",
++    cards: [
++      { id: "c6", code: "MEE-021", name: "夜空火箭", rarity: "flash", art: "/assets/card-09.webp", earnedFor: "完成「太空探索」主題", earnedAt: "2026-07-25T00:00:00Z" },
++      { id: "c7", code: "MEE-011", name: "小小工程師", rarity: "normal", art: "/assets/card-01.webp", earnedFor: "完成5個動手任務", earnedAt: "2026-07-11T00:00:00Z" },
++    ],
++    tasks: [
++      { id: "t3", title: "講一個你識嘅科學小知識", detail: "錄一段短片，話俾朋友聽。", rewardCardId: "c8", done: false },
++    ],
++    lostMode: null,
++    isExample: true,
++  },
++];
++
++export function findExampleCard(slug: string) {
++  return EXAMPLE_CARDS.find(card => card.slug === slug) ?? null;
++}
++
++export function collectedCount(card: KidCard) {
++  return card.cards.length;
++}
++
++export function openTasks(card: KidCard) {
++  return card.tasks.filter(task => !task.done);
++}
+diff --git a/src/pages/KidCardPage.tsx b/src/pages/KidCardPage.tsx
+new file mode 100644
+index 0000000..5875808
+--- /dev/null
++++ b/src/pages/KidCardPage.tsx
+@@ -0,0 +1,146 @@
++import { useState } from "react";
++import { Compass, Heart, MapPin, Play, ShieldCheck, Sparkles, Star } from "lucide-react";
++import { Link, useParams } from "react-router-dom";
++import { PublicHeader, StatusPill } from "../components/UI";
++import { EXAMPLE_CARDS, findExampleCard, type KidCard, type MeeCard } from "../lib/kidCard";
++import { useStructuredData } from "../lib/seo";
++
++// The public face of MINIMEE v2: a child's self-introduction card. Parents
++// share this link the way an adult shares a commercial e-name card. Nothing
++// here needs an account — that is the point, it has to be openable by a
++// grandparent, a teacher or whoever found a lost water bottle.
++export function KidCardPage() {
++  const { slug } = useParams();
++  const card = findExampleCard(slug ?? "");
++
++  useStructuredData("minimee-kid-card", card
++    ? {
++        "@context": "https://schema.org",
++        "@type": "ProfilePage",
++        name: `${card.nickname} 嘅自我介紹卡`,
++        description: card.tagline,
++        inLanguage: "zh-HK",
++      }
++    : {});
++
++  if (!card) {
++    return <div className="public-page"><PublicHeader /><main className="content-page">
++      <h1>搵唔到呢張卡</h1>
++      <p className="lead">呢條連結可能已經失效，或者卡主已經收起咗佢。</p>
++      <Link className="button" to="/">返 MINIMEE 首頁</Link>
++    </main></div>;
++  }
++
++  return <div className="public-page kid-card-page"><PublicHeader />
++    <main>
++      <KidHero card={card} />
++      <KidIntroVideo card={card} />
++      <KidAbout card={card} />
++      <KidCollection card={card} />
++      {card.lostMode?.enabled && <KidLostMode card={card} />}
++      <KidCallToAction card={card} />
++    </main>
++  </div>;
++}
++
++function KidHero({ card }: { card: KidCard }) {
++  return <section className="kid-hero" style={{ backgroundImage: `url(${card.scene})` }}>
++    <div className="kid-hero-scrim" />
++    <div className="kid-hero-inner">
++      {card.isExample && <StatusPill tone="gold">示範卡 · 唔係真實小朋友</StatusPill>}
++      <img className="kid-avatar" src={card.avatar} alt={`${card.nickname}嘅頭像`} />
++      <h1>{card.nickname}</h1>
++      <p className="kid-tagline">{card.tagline}</p>
++      <div className="kid-hero-meta">
++        <span><Star size={14} />{card.ageGroup} 歲</span>
++        <span><Compass size={14} />想做{card.dreamJob}</span>
++        <span><Sparkles size={14} />{card.cards.length} 張 MEE 卡</span>
++      </div>
++    </div>
++  </section>;
++}
++
++function KidIntroVideo({ card }: { card: KidCard }) {
++  const [playing, setPlaying] = useState(false);
++  return <section className="kid-section kid-video-section">
++    <h2>聽{card.nickname}講自己</h2>
++    <p className="kid-section-note">呢段片係由小朋友自己嘅答案生成，家長批核後先會出現喺呢度。</p>
++    <div className="kid-video-frame">
++      {card.introVideoUrl && playing
++        ? <video src={card.introVideoUrl} poster={card.introVideoPoster ?? undefined} controls autoPlay playsInline />
++        : <button className="kid-video-poster" onClick={() => setPlaying(true)} disabled={!card.introVideoUrl}>
++            <img src={card.introVideoPoster ?? card.scene} alt="" />
++            <span className="kid-play"><Play size={26} /></span>
++            <span className="kid-video-label">
++              {card.introVideoUrl ? `播放 ${card.nickname} 嘅自我介紹` : "自我介紹片製作中…"}
++            </span>
++          </button>}
++    </div>
++  </section>;
++}
++
++function KidAbout({ card }: { card: KidCard }) {
++  return <section className="kid-section">
++    <h2>關於我</h2>
++    <p className="kid-about">{card.about}</p>
++    <h3>我鍾意…</h3>
++    <ul className="kid-likes">{card.likes.map(like => <li key={like}><Heart size={13} />{like}</li>)}</ul>
++  </section>;
++}
++
++function KidCollection({ card }: { card: KidCard }) {
++  return <section className="kid-section">
++    <h2>我嘅 MEE 卡收藏</h2>
++    <p className="kid-section-note">每完成一個任務就解鎖一張。閃卡係限定，唔可以重抽。</p>
++    <div className="kid-card-grid">{card.cards.map(mee => <MeeCardTile key={mee.id} card={mee} />)}</div>
++    {card.tasks.length > 0 && <>
++      <h3>仲差呢啲任務</h3>
++      <ul className="kid-task-list">{card.tasks.map(task => <li key={task.id}>
++        <strong>{task.title}</strong><small>{task.detail}</small>
++      </li>)}</ul>
++    </>}
++  </section>;
++}
++
++function MeeCardTile({ card }: { card: MeeCard }) {
++  return <article className={card.rarity === "flash" ? "mee-card flash" : "mee-card"}>
++    <img src={card.art} alt="" />
++    <div className="mee-card-body">
++      <div className="mee-card-head">
++        <span className="mee-code">{card.code}</span>
++        {card.rarity === "flash" && <StatusPill tone="gold">FLASH</StatusPill>}
++      </div>
++      <strong>{card.name}</strong>
++      <small>{card.earnedFor}</small>
++    </div>
++  </article>;
++}
++
++function KidLostMode({ card }: { card: KidCard }) {
++  if (!card.lostMode) return null;
++  return <section className="kid-section kid-lost-section">
++    <div className="kid-lost-head"><MapPin /><h2>執到我嘅嘢？</h2></div>
++    <p className="kid-about">{card.lostMode.message}</p>
++    <Link className="button" to={`/lost/${card.lostMode.token}`}>聯絡家長（唔會顯示電話號碼）</Link>
++    <p className="kid-section-note">
++      <ShieldCheck size={13} />
++      訊息經 MINIMEE 轉交，家長嘅電郵同電話唔會公開俾任何人。
++    </p>
++  </section>;
++}
++
++function KidCallToAction({ card }: { card: KidCard }) {
++  return <section className="kid-cta">
++    <h2>想幫你嘅小朋友整一張？</h2>
++    <p>MINIMEE 係小朋友版嘅電子名片：一條連結就講齊佢係邊個、鍾意咩、有咩收藏，仲可以開遺失模式。</p>
++    <div className="kid-cta-actions">
++      <Link className="button" to="/register">免費開始</Link>
++      <Link className="button secondary" to="/pricing">睇方案</Link>
++    </div>
++    {card.isExample && <p className="kid-section-note">
++      你而家睇緊嘅係示範卡。想睇另一個例子？
++      {EXAMPLE_CARDS.filter(other => other.slug !== card.slug).map(other =>
++        <Link key={other.slug} to={`/kid/${other.slug}`}> {other.nickname} 嘅卡</Link>)}
++    </p>}
++  </section>;
++}
+diff --git a/src/pages/PixelWorldPage.tsx b/src/pages/PixelWorldPage.tsx
+new file mode 100644
+index 0000000..4a17895
+--- /dev/null
++++ b/src/pages/PixelWorldPage.tsx
+@@ -0,0 +1,53 @@
++import { useState } from "react";
++import { Link } from "react-router-dom";
++import { PublicHeader, StatusPill } from "../components/UI";
++import { PixelWorldGame, type Pickup } from "../components/PixelWorldGame";
++import { EXAMPLE_CARDS } from "../lib/kidCard";
++
++// The playable demo attached to the marketing site. A parent can try the
++// world without an account — the fastest way to explain "做下任務儲 MEE 卡".
++const DEMO_PICKUPS: Pickup[] = [
++  { id: "p1", x: 420, label: "珊瑚花園", art: "/assets/card-01.webp" },
++  { id: "p2", x: 1080, label: "小水母泡泡", art: "/assets/card-05.webp" },
++  { id: "p3", x: 1760, label: "小小工程師", art: "/assets/card-09.webp" },
++  { id: "p4", x: 2540, label: "海龜朋友", art: "/assets/card-11.webp" },
++  { id: "p5", x: 3320, label: "夜空火箭", art: "/assets/card-09.webp" },
++];
++
++export function PixelWorldPage() {
++  const [found, setFound] = useState<string[]>([]);
++  const example = EXAMPLE_CARDS[0];
++
++  return <div className="public-page"><PublicHeader />
++    <main className="content-page">
++      <StatusPill tone="violet">試玩 · 唔使登記</StatusPill>
++      <h1>行去 MEE 小鎮搵卡</h1>
++      <p className="lead">
++        小朋友喺長長嘅像素小鎮左右行，行到獎勵位置就會解鎖一張 MEE 卡。
++        真實版本入面，每張卡對應一個已完成嘅任務。
++      </p>
++
++      <PixelWorldGame
++        pickups={DEMO_PICKUPS}
++        backdrop="/assets/town-morning.webp"
++        midground="/assets/harbor-market.webp"
++        avatar={example.avatar}
++        onCollect={id => setFound(current => current.includes(id) ? current : [...current, id])}
++      />
++
++      {found.length === DEMO_PICKUPS.length && <div className="pixel-complete" role="status">
++        <h2>五張卡全部搵齊！</h2>
++        <p>喺正式版度，呢啲卡會入到小朋友嘅收藏，亦會出現喺佢嘅自我介紹卡上面。</p>
++        <Link className="button" to={`/kid/${example.slug}`}>睇下 {example.nickname} 嘅卡</Link>
++      </div>}
++
++      <section className="pixel-explainer">
++        <h2>點解要有個遊戲？</h2>
++        <p>
++          小朋友唔會為咗「填資料」而興奮，但會為咗儲卡而做嘢。任務同收藏綁埋一齊，
++          小朋友一路玩一路砌出自己嘅自我介紹卡 —— 而家長只需要批核。
++        </p>
++      </section>
++    </main>
++  </div>;
++}
+diff --git a/src/pages/PublicPages.tsx b/src/pages/PublicPages.tsx
+index 5d8838a..2615e66 100644
+--- a/src/pages/PublicPages.tsx
++++ b/src/pages/PublicPages.tsx
+@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
+ import { DemoBadge, IntegrationNotice, PublicHeader, StatusPill } from "../components/UI";
+ import { PLANS, type PlanType } from "../lib/plans";
+ import { faqSchema, serviceSchema, useStructuredData } from "../lib/seo";
++import { EXAMPLE_CARDS } from "../lib/kidCard";
+ 
+ export function HomePage() {
+   return (
+@@ -12,15 +13,15 @@ export function HomePage() {
+       <main>
+         <section className="hero-section">
+           <div className="hero-copy">
+-            <DemoBadge label="MINIMEE · CHILDHOOD, COLLECTED" />
+-            <h1>每次學習，<br /><em>都收藏成童年。</em></h1>
+-            <p>孩子完成四個小任務，解鎖一段個人化學習影片，再把成果收藏成一張 MEE Card。</p>
++            <DemoBadge label="MINIMEE · 小朋友版電子名片" />
++            <h1>小朋友嘅<br /><em>自我介紹卡。</em></h1>
++            <p>大人有商業電子名片，小朋友都應該有一張。一條連結，講齊佢係邊個、鍾意咩、儲咗咩，仲可以開遺失模式。</p>
+             <div className="hero-actions">
+-              <Link className="button" to="/how-it-works">看看怎樣玩</Link>
+-              <Link className="text-link" to="/child"><Play size={17} />預覽 Pixel World</Link>
++              <Link className="button" to="/kid/mimi">睇一張示範卡</Link>
++              <Link className="text-link" to="/play"><Play size={17} />試玩儲卡小遊戲</Link>
+             </div>
+             <div className="trust-row">
+-              <span><ShieldCheck />家長控制</span><span><Heart />童年紀念</span><span><Sparkles />個人化學習</span>
++              <span><ShieldCheck />家長批核先公開</span><span><Heart />自我介紹片</span><span><Sparkles />做任務儲 MEE 卡</span>
+             </div>
+           </div>
+           <div className="hero-visual">
+@@ -32,16 +33,33 @@ export function HomePage() {
+           </div>
+         </section>
+         <section className="steps-section">
+-          <div className="section-heading"><StatusPill>一個主題 · 四步完成</StatusPill><h2>學懂、完成、留下來</h2></div>
++          <div className="section-heading"><StatusPill>四步完成</StatusPill><h2>由玩，到一張屬於佢嘅卡</h2></div>
+           <div className="steps-grid">
+             {[
+-              ["01", "家長選擇", "按年齡和興趣選今期小主題"],
+-              ["02", "孩子探索", "四個詞語、四道小問題、四塊碎片"],
+-              ["03", "完成影片", "把真實樣貌放進像素寵物世界"],
+-              ["04", "收藏回憶", "獲得固定卡位的 MEE Card"]
++              ["01", "小朋友答問題", "喺遊戲入面答「我鍾意咩」、「我想做咩」"],
++              ["02", "生成自我介紹片", "用佢自己嘅答案，整一段短片"],
++              ["03", "做任務儲卡", "行 MEE 小鎮，完成任務解鎖 MEE 卡"],
++              ["04", "家長批核分享", "家長睇過先公開，可以開遺失模式"]
+             ].map(([n, title, copy]) => <article key={n}><span>{n}</span><h3>{title}</h3><p>{copy}</p></article>)}
+           </div>
+         </section>
++
++        <section className="steps-section">
++          <div className="section-heading"><StatusPill tone="gold">示範</StatusPill><h2>睇下真實嘅卡係點</h2></div>
++          <div className="example-grid">
++            {EXAMPLE_CARDS.map(card => (
++              <Link className="example-card" key={card.slug} to={`/kid/${card.slug}`}>
++                <img src={card.scene} alt="" />
++                <div className="example-card-body">
++                  <img className="example-avatar" src={card.avatar} alt="" />
++                  <strong>{card.nickname}</strong>
++                  <small>{card.tagline}</small>
++                  <span className="example-meta">{card.cards.length} 張 MEE 卡 · 想做{card.dreamJob}</span>
++                </div>
++              </Link>
++            ))}
++          </div>
++        </section>
+       </main>
+       <footer><span>© 2026 MINIMEE</span><div><Link to="/privacy">私隱</Link><Link to="/terms">條款</Link><Link to="/faq">FAQ</Link></div></footer>
+     </div>
+diff --git a/src/styles.css b/src/styles.css
+index 5480653..91ceeee 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -400,3 +400,98 @@ footer div { display: flex; gap: 20px; }
+ }
+ 
+ :focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
++
++/* ---- v2: kid self-introduction card ---- */
++.kid-card-page main { padding-bottom: 60px; }
++.kid-hero { position: relative; min-height: 420px; display: flex; align-items: flex-end; background-size: cover; background-position: center; }
++.kid-hero-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(36,28,56,.15) 0%, rgba(36,28,56,.82) 78%); }
++.kid-hero-inner { position: relative; width: min(920px, 92vw); margin: 0 auto; padding: 32px 0 40px; color: white; text-align: center; }
++.kid-avatar { width: 116px; height: 116px; margin: 14px auto 10px; display: block; border: 4px solid rgba(255,255,255,.85); border-radius: 50%; object-fit: cover; box-shadow: 0 12px 40px rgba(0,0,0,.35); }
++.kid-hero h1 { margin: 0; font-size: 40px; letter-spacing: .5px; }
++.kid-tagline { margin: 8px auto 16px; max-width: 30ch; font-size: 16px; line-height: 1.5; opacity: .95; }
++.kid-hero-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
++.kid-hero-meta span { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.16); font-size: 11px; font-weight: 700; backdrop-filter: blur(6px); }
++.kid-section { width: min(920px, 92vw); margin: 40px auto 0; }
++.kid-section h2 { margin: 0 0 6px; font-size: 22px; }
++.kid-section h3 { margin: 24px 0 10px; font-size: 15px; color: var(--muted); }
++.kid-section-note { display: flex; align-items: center; gap: 6px; margin: 6px 0 16px; color: var(--muted); font-size: 11px; }
++.kid-about { margin: 0; font-size: 14px; line-height: 1.75; }
++.kid-likes { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
++.kid-likes li { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: var(--lavender); color: var(--violet-dark); font-size: 12px; font-weight: 700; }
++.kid-video-frame { border-radius: 22px; overflow: hidden; box-shadow: var(--shadow); background: #1b1530; }
++.kid-video-frame video { width: 100%; display: block; }
++.kid-video-poster { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
++.kid-video-poster:disabled { cursor: default; }
++.kid-video-poster img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; opacity: .75; }
++.kid-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 68px; height: 68px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.94); color: var(--violet); box-shadow: 0 10px 30px rgba(0,0,0,.3); }
++.kid-video-label { position: absolute; left: 0; right: 0; bottom: 14px; color: white; font-size: 12px; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
++.kid-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 13px; }
++.mee-card { border: 1px solid var(--line); border-radius: 17px; overflow: hidden; background: var(--paper); box-shadow: var(--shadow); }
++.mee-card.flash { border-color: var(--gold); box-shadow: 0 14px 40px rgba(255,200,87,.35); }
++.mee-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
++.mee-card-body { padding: 11px 13px 14px; }
++.mee-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
++.mee-code { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .8px; }
++.mee-card-body strong { display: block; margin: 4px 0 3px; font-size: 13px; }
++.mee-card-body small { color: var(--muted); font-size: 9px; line-height: 1.5; }
++.kid-task-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
++.kid-task-list li { padding: 13px 15px; border: 1px dashed var(--line); border-radius: 14px; background: #fbfaff; }
++.kid-task-list strong { display: block; font-size: 13px; }
++.kid-task-list small { color: var(--muted); font-size: 10px; }
++.kid-lost-section { padding: 24px; border: 1px solid var(--gold); border-radius: 22px; background: #fffaf0; }
++.kid-lost-head { display: flex; align-items: center; gap: 9px; }
++.kid-lost-head svg { color: var(--gold); }
++.kid-lost-head h2 { margin: 0; }
++.kid-lost-section .button { margin-top: 14px; }
++.kid-cta { width: min(920px, 92vw); margin: 48px auto 0; padding: 32px; border-radius: 26px; text-align: center; color: white; background: linear-gradient(135deg, var(--violet) 0%, var(--pink) 100%); }
++.kid-cta h2 { margin: 0 0 8px; }
++.kid-cta p { margin: 0 auto; max-width: 46ch; font-size: 13px; line-height: 1.7; opacity: .95; }
++.kid-cta-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
++.kid-cta .button { background: white; color: var(--violet-dark); box-shadow: none; }
++.kid-cta .button.secondary { background: rgba(255,255,255,.2); color: white; }
++.kid-cta .kid-section-note { justify-content: center; color: rgba(255,255,255,.85); }
++.kid-cta .kid-section-note a { color: white; font-weight: 800; }
++
++/* ---- v2: side-scrolling pixel world ---- */
++.pixel-game { margin: 22px 0; border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: #10203a; box-shadow: var(--shadow); }
++.pixel-game-hud { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 16px; color: white; background: rgba(0,0,0,.28); font-size: 11px; font-weight: 700; }
++.pixel-game-hud span { display: inline-flex; align-items: center; gap: 6px; }
++.pixel-viewport { position: relative; height: 320px; overflow: hidden; }
++.pixel-layer { position: absolute; inset: 0; width: 200%; background-size: cover; background-position: center bottom; will-change: transform; }
++.pixel-layer.back { filter: saturate(.85) brightness(.9); }
++.pixel-layer.mid { opacity: .5; }
++.pixel-track { position: absolute; inset: 0; will-change: transform; }
++.pixel-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 88px; background: linear-gradient(180deg, rgba(24,16,44,.15), rgba(24,16,44,.72)); border-top: 4px solid rgba(255,255,255,.22); }
++.pixel-walker { position: absolute; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 8px 22px rgba(0,0,0,.45); image-rendering: pixelated; }
++.pixel-walker.walking { animation: pixel-bob .34s steps(2) infinite; }
++@keyframes pixel-bob { 0% { translate: 0 0; } 50% { translate: 0 -5px; } 100% { translate: 0 0; } }
++.pixel-pickup { position: absolute; width: 46px; border-radius: 7px; box-shadow: 0 6px 18px rgba(0,0,0,.4); animation: pixel-float 2.1s ease-in-out infinite; }
++@keyframes pixel-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -9px; } }
++.pixel-pickup.taken { opacity: .18; filter: grayscale(1); animation: none; }
++.pixel-toast { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); padding: 9px 18px; border-radius: 999px; background: rgba(255,255,255,.95); color: var(--violet-dark); font-size: 12px; font-weight: 800; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
++.pixel-controls { display: flex; justify-content: center; gap: 14px; padding: 13px; background: rgba(0,0,0,.28); }
++.pixel-controls button { width: 78px; height: 50px; display: grid; place-items: center; border: 0; border-radius: 14px; background: rgba(255,255,255,.92); color: var(--violet-dark); cursor: pointer; touch-action: none; }
++.pixel-controls button:active { background: var(--gold); }
++.pixel-complete { margin-top: 20px; padding: 22px; border-radius: 20px; text-align: center; background: var(--lavender); }
++.pixel-complete h2 { margin: 0 0 6px; }
++.pixel-complete p { margin: 0 0 14px; font-size: 12px; }
++.pixel-explainer { margin-top: 34px; }
++.pixel-explainer p { font-size: 13px; line-height: 1.75; }
++
++@media (max-width: 720px) {
++  .kid-hero { min-height: 340px; }
++  .kid-hero h1 { font-size: 30px; }
++  .pixel-viewport { height: 260px; }
++  .kid-cta-actions { flex-direction: column; }
++}
++
++/* ---- v2: example card teasers on the home page ---- */
++.example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
++.example-card { display: block; border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: var(--paper); box-shadow: var(--shadow); text-decoration: none; color: inherit; transition: transform .18s ease; }
++.example-card:hover { transform: translateY(-3px); }
++.example-card > img { width: 100%; height: 132px; object-fit: cover; display: block; }
++.example-card-body { position: relative; padding: 30px 18px 20px; }
++.example-avatar { position: absolute; top: -30px; left: 18px; width: 58px; height: 58px; border: 3px solid white; border-radius: 50%; object-fit: cover; box-shadow: 0 8px 20px rgba(0,0,0,.22); }
++.example-card-body strong { display: block; font-size: 17px; }
++.example-card-body small { display: block; margin: 4px 0 10px; color: var(--muted); font-size: 11px; line-height: 1.6; }
++.example-meta { display: inline-block; padding: 6px 12px; border-radius: 999px; background: var(--lavender); color: var(--violet-dark); font-size: 10px; font-weight: 800; }
+-- 
+2.43.0
+
