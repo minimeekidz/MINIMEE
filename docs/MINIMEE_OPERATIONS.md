@@ -628,6 +628,21 @@ grant is revoked and the safe columns granted individually. Videos live in
 the private `room-videos` bucket and are played through a signed URL minted
 at play time, so ending a subscription actually takes the video away.
 
+**Publishing new content: `/admin/lessons`** (admin only, in the admin nav as
+「房間內容」). Pick a room, type a title, paste the word list one per line as
+`詞語 | 讀音 | 意思`, optionally give the path of a file already uploaded to
+the private `room-videos` bucket, and publish.
+
+Publishing is **insert-then-flip `current`, never an edit in place.** The
+previous lesson stays in the table, so a bad swap is undone by pressing
+「設為現行」 on the old row rather than by retyping the content. The page
+clears the old `current` first because the partial unique index allows only
+one per room.
+
+A lesson with no `video_path` is legitimate — the word game still works, so
+rooms can open with content before the video is shot. Two words is the
+minimum, since the game needs something to choose between.
+
 ### 7f. Art pipeline and the brand book
 
 The brand book (`MINIMEE 品牌標準建立表`, sheet `02_視覺系統`) fixes the look:

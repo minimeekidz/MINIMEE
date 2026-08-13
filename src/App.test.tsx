@@ -334,6 +334,32 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByLabelText("工作台篩選")).toBeInTheDocument();
   });
 
+  it("lists every room and which ones still have no current lesson", async () => {
+    billing.rooms = [
+      { id: "library", name_zh: "MEE 圖書館", blurb: "生活詞語", sort_order: 1 },
+      { id: "cinema", name_zh: "MEE 戲院", blurb: "故事詞語", sort_order: 2 },
+    ];
+    billing.lessons = [{
+      id: "lesson-1", room_id: "library", theme: "海洋", title: "海洋詞語",
+      words: [{ word: "海豚" }, { word: "海龜" }], current: true, video_path: null,
+    }];
+    render(<MemoryRouter initialEntries={["/admin/lessons"]}><App /></MemoryRouter>);
+    expect(await screen.findByText(/海洋詞語/)).toBeInTheDocument();
+    // The empty room has to be visible: an unfilled room is the thing the
+    // operator opened this page to find.
+    expect(screen.getByText("仲未有課程。")).toBeInTheDocument();
+    expect(screen.getByText("空")).toBeInTheDocument();
+  });
+
+  it("refuses to publish a lesson with fewer than two words", async () => {
+    billing.rooms = [{ id: "library", name_zh: "MEE 圖書館", blurb: "生活詞語", sort_order: 1 }];
+    render(<MemoryRouter initialEntries={["/admin/lessons"]}><App /></MemoryRouter>);
+    const title = await screen.findByPlaceholderText("海洋詞語");
+    fireEvent.change(title, { target: { value: "海洋詞語" } });
+    fireEvent.click(screen.getByRole("button", { name: /發布做呢間房嘅現行內容/ }));
+    expect(await screen.findByText("最少要兩個詞語，遊戲先有得揀。")).toBeInTheDocument();
+  });
+
   it("marks parent, child and admin routes noindex without a canonical", () => {
     for (const path of ["/parent/dashboard", "/child/room", "/admin", "/lost/token-1", "/login"]) {
       const view = render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);

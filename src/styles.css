@@ -533,8 +533,9 @@ footer div { display: flex; gap: 20px; }
 .editor-grid label, .editor-grid > div { display: flex; flex-direction: column; gap: 6px; }
 .editor-wide { grid-column: 1 / -1; }
 .editor-grid label > span, .editor-label { font-size: 11px; font-weight: 800; }
-.editor-grid input, .editor-grid textarea { padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; font: inherit; font-size: 13px; background: #fbfaff; }
-.editor-grid input:focus, .editor-grid textarea:focus { outline: 0; border-color: var(--violet); background: white; }
+.editor-grid input, .editor-grid textarea, .editor-grid select { padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; font: inherit; font-size: 13px; background: #fbfaff; }
+.editor-grid input:focus, .editor-grid textarea:focus, .editor-grid select:focus { outline: 0; border-color: var(--violet); background: white; }
+.editor-grid textarea { resize: vertical; line-height: 1.6; }
 .editor-grid small { color: var(--muted); font-size: 9px; }
 .like-chips { display: flex; flex-wrap: wrap; gap: 7px; }
 .like-chip { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border: 0; border-radius: 999px; background: var(--lavender); color: var(--violet-dark); font-size: 11px; font-weight: 700; cursor: pointer; }
