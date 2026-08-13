@@ -5,6 +5,7 @@ import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { COLLECTIBLES } from "./lib/kidCard";
 import { GRID, PET_KINDS, PETS, spriteGrid } from "./components/PixelPet";
+import { HEROES, TOWN_PETS } from "./lib/characters";
 import { TOWN_BUILDINGS, TOWN_PICKUPS } from "./lib/townMap";
 
 vi.mock("./contexts/AuthContext", () => ({
@@ -559,6 +560,30 @@ describe("MINIMEE route shells", () => {
     render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
     expect(await screen.findByText(/2 \/ 4 塊碎片/)).toBeInTheDocument();
     expect(screen.getByText(/已換到 0 張 MEE 卡/)).toBeInTheDocument();
+  });
+
+  it("gives the town six heroes and twelve pets on real art", () => {
+    // The brand book bans smooth 3D and plastic skin, so the pixel version
+    // of the pet sheet is the one in use — every path must resolve to it.
+    expect(HEROES).toHaveLength(6);
+    expect(TOWN_PETS).toHaveLength(12);
+    for (const hero of HEROES) expect(hero.art).toMatch(/^\/assets\/heroes\/.+\.webp$/);
+    for (const pet of TOWN_PETS) expect(pet.art).toMatch(/^\/assets\/pets\/.+\.webp$/);
+    // Distinct ids and distinct art, or two entries would render identically.
+    expect(new Set(HEROES.map(h => h.art)).size).toBe(6);
+    expect(new Set(TOWN_PETS.map(p => p.art)).size).toBe(12);
+  });
+
+  it("scatters the pets rather than piling them in one corner", () => {
+    // A town reads as inhabited only if the pets are spread through it.
+    for (const pet of TOWN_PETS) {
+      expect(pet.home.x).toBeGreaterThan(0);
+      expect(pet.home.y).toBeGreaterThan(0);
+    }
+    const xs = TOWN_PETS.map(p => p.home.x);
+    const ys = TOWN_PETS.map(p => p.home.y);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(1000);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(600);
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {

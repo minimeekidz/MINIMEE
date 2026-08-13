@@ -117,6 +117,7 @@ export function KidPlayPage() {
       buildings={TOWN_BUILDINGS}
       pickups={TOWN_PICKUPS}
       collectedIds={collected}
+      heroId={card.heroId}
       onCollect={code => void handleCollect(code)}
       onEnter={building => {
         // The album house holds the collection; every other door is a room

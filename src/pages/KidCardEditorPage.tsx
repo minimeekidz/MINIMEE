@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, Copy, Eye, EyeOff, MapPin, Plus, Save, ShieldCheck, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI";
+import { HEROES } from "../lib/characters";
 import { useAuth } from "../contexts/AuthContext";
 import { useFamily } from "../contexts/FamilyContext";
 import {
@@ -204,6 +205,23 @@ export function KidCardEditorPage() {
             if (value && !card.likes.includes(value)) patch({ likes: [...card.likes, value] });
             setLikeDraft("");
           }}><Plus size={15} /></button>
+        </div>
+      </div>
+
+      <div className="editor-wide">
+        <span className="editor-label">小朋友喺 MEE 小鎮玩邊個角色</span>
+        <div className="hero-picker">
+          {HEROES.map(hero => (
+            <button
+              key={hero.id}
+              className={(card.heroId ?? HEROES[0].id) === hero.id ? "hero-option selected" : "hero-option"}
+              onClick={() => patch({ heroId: hero.id })}
+              aria-pressed={(card.heroId ?? HEROES[0].id) === hero.id}
+            >
+              <img src={hero.art} alt="" />
+              <span>{hero.nameZh}</span>
+            </button>
+          ))}
         </div>
       </div>
 

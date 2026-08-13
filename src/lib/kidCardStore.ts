@@ -170,10 +170,11 @@ export interface EditableCard {
   lostModeEnabled: boolean;
   lostModeToken: string | null;
   lostModeMessage: string;
+  heroId: string | null;
 }
 
 const EDITABLE_COLUMNS =
-  "id, child_id, slug, display_name, age_group, tagline, about, likes, dream_job, scene, avatar_url, intro_video_url, published, lost_mode_enabled, lost_mode_token, lost_mode_message";
+  "id, child_id, slug, display_name, age_group, tagline, about, likes, dream_job, scene, avatar_url, intro_video_url, published, lost_mode_enabled, lost_mode_token, lost_mode_message, hero_id";
 
 function toEditable(row: Record<string, unknown>): EditableCard {
   return {
@@ -193,6 +194,7 @@ function toEditable(row: Record<string, unknown>): EditableCard {
     lostModeEnabled: Boolean(row.lost_mode_enabled),
     lostModeToken: (row.lost_mode_token as string) ?? null,
     lostModeMessage: (row.lost_mode_message as string) ?? "",
+    heroId: (row.hero_id as string) ?? null,
   };
 }
 
@@ -272,6 +274,7 @@ export async function saveCard(card: EditableCard): Promise<{ ok: boolean; error
       // printed keeps working when the parent toggles lost mode off and on.
       lost_mode_token: card.lostModeEnabled ? (card.lostModeToken ?? mintLostToken()) : card.lostModeToken,
       lost_mode_message: card.lostModeMessage || null,
+      hero_id: card.heroId,
     })
     .eq("id", card.id);
   return error ? { ok: false, error: error.message } : { ok: true };

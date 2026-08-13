@@ -589,6 +589,45 @@ grant is revoked and the safe columns granted individually. Videos live in
 the private `room-videos` bucket and are played through a signed URL minted
 at play time, so ending a subscription actually takes the video away.
 
+### 7f. Art pipeline and the brand book
+
+The brand book (`MINIMEE 品牌標準建立表`, sheet `02_視覺系統`) fixes the look:
+**精緻復古像素藝術, 深色清晰外輪廓, 內部柔和陰影, 低像素**, and explicitly
+bans **塑膠皮膚、平滑3D、角色比例漂移**.
+
+That ban decided a real question. The twelve pets arrived twice — once as
+3D plush renders, once as pixel art. **The pixel version is the one in
+use**; the 3D one is exactly what the book forbids.
+
+Provisional palette from the same sheet, all marked 待確認 there because
+they were sampled from art rather than taken from an Approved master:
+`--brand-blue #176B9C`, `--brand-pink #E987A5`, `--brand-gold #D9A441`,
+`--brand-night #14213D`.
+
+**Two extractors live in `scripts/`:**
+
+- `extract-pets.mjs` — single-row magenta sheets. Keys the colour out, ramps
+  alpha at the edges and pulls the magenta spill so the rim goes neutral
+  rather than pink, splits on empty columns, pads each frame inside a square.
+- `extract-grid.mjs` — 2D grids on any key colour. The pet sheet came on
+  green, the hamster sheets on magenta.
+- `extract-heroes.mjs` — white backgrounds. **A colour key is wrong here**:
+  the heroes contain white in their boots, trim and eyes, so keying every
+  white pixel punches holes through the art. It floods from the border
+  instead, which only removes background actually connected to the edge.
+
+All three pad the art inside its canvas. The first pet batch shipped with
+**every head sliced flat** — the top three opaque rows identical in width —
+and that is not recoverable, so nothing touches an edge by construction now.
+
+**Frames are single front poses.** Movement animates with a bob and a
+horizontal flip rather than per-direction art. When multi-angle sheets
+arrive, `extract-grid.mjs` produces them and only the lookup in
+`src/lib/characters.ts` changes.
+
+Original PNGs are never committed — git keeps every version of a binary
+forever, and the uploads ran 25-27 MB a batch against ~3 MB converted.
+
 ### Known open items
 
 - Supabase advisor: **leaked-password protection is disabled**. Turn it on

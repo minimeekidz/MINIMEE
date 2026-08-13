@@ -9,6 +9,13 @@
   --muted: #746d84;
   --violet: #6c5ce7;
   --violet-dark: #4a3cbb;
+  /* Brand palette, sheet 02_視覺系統 of the brand book. Marked 待確認
+     there — they are working colours sampled from the art, not yet taken
+     from an Approved master asset, so treat them as provisional. */
+  --brand-blue: #176B9C;
+  --brand-pink: #E987A5;
+  --brand-gold: #D9A441;
+  --brand-night: #14213D;
   --lavender: #eeeaff;
   --pink: #ff7597;
   --gold: #ffc857;
@@ -563,6 +570,15 @@ footer div { display: flex; gap: 20px; }
 .town-pickup { position: absolute; width: 40px; border: 2px solid #2c2140; border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,.35); animation: town-bob 1.6s steps(2) infinite; image-rendering: pixelated; }
 @keyframes town-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 .town-pickup.taken { opacity: .2; filter: grayscale(1); animation: none; }
+.town-hero { position: absolute; z-index: 6; }
+.town-hero img { width: 100%; height: 100%; object-fit: contain; display: block; image-rendering: pixelated; filter: drop-shadow(0 2px 0 rgba(20,12,40,.35)); }
+.town-hero.walking img { animation: town-step .34s steps(2) infinite; }
+@keyframes town-step { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+.town-npc { position: absolute; z-index: 4; width: 40px; }
+.town-npc img { width: 40px; height: 40px; object-fit: contain; display: block; image-rendering: pixelated; animation: town-idle 1.9s steps(2) infinite; filter: drop-shadow(0 2px 0 rgba(20,12,40,.3)); }
+@keyframes town-idle { 0%,100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+.town-npc-name { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); padding: 1px 6px; border: 2px solid #2c2140; border-radius: 3px; background: #ffe9b8; color: #2c2140; font-size: 7px; font-weight: 900; white-space: nowrap; opacity: 0; transition: opacity .15s; }
+.town-npc:hover .town-npc-name { opacity: 1; }
 .town-pet { position: absolute; z-index: 5; }
 .town-pet-shadow { position: absolute; left: 8px; bottom: -3px; width: 32px; height: 8px; border-radius: 50%; background: rgba(20,12,40,.35); }
 .town-toast { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); padding: 8px 16px; border: 3px solid #2c2140; border-radius: 6px; background: #ffe9b8; color: #2c2140; font-size: 12px; font-weight: 900; }
@@ -602,3 +618,8 @@ footer div { display: flex; gap: 20px; }
 .fragment-pips i.on { background: var(--gold); }
 .fragment-note { margin-left: auto; color: var(--muted); font-size: 10px; font-weight: 800; }
 @media (max-width: 720px) { .word-options { grid-template-columns: 1fr; } .fragment-note { margin-left: 0; } }
+.hero-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 9px; }
+.hero-option { padding: 8px 4px; border: 3px solid var(--line); border-radius: 10px; background: #fbfaff; cursor: pointer; }
+.hero-option img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; image-rendering: pixelated; }
+.hero-option span { display: block; margin-top: 4px; font-size: 9px; font-weight: 800; }
+.hero-option.selected { border-color: var(--violet); background: var(--lavender); }
