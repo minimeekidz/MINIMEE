@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { COLLECTIBLES } from "./lib/kidCard";
-import { FRAMES, GRID } from "./components/PixelPet";
+import { GRID, PET_KINDS, PETS, spriteGrid } from "./components/PixelPet";
 import { TOWN_BUILDINGS, TOWN_PICKUPS } from "./lib/townMap";
 
 vi.mock("./contexts/AuthContext", () => ({
@@ -469,18 +469,34 @@ describe("MINIMEE route shells", () => {
     for (const item of COLLECTIBLES) expect(item.x).toBeGreaterThan(0);
   });
 
-  it("keeps every pixel sprite frame a perfect square grid", () => {
-    // A short row would silently shift the whole sprite, and the walk cycle
-    // would tear. Cheap to assert, impossible to eyeball.
-    for (const [set, frames] of Object.entries(FRAMES)) {
-      expect(frames.length, `${set} needs at least two frames to animate`).toBeGreaterThan(1);
-      for (const frame of frames) {
-        expect(frame).toHaveLength(GRID);
-        for (const row of frame) expect(row).toHaveLength(GRID);
+  it("paints a complete, animating sprite for all twelve pets", () => {
+    expect(PET_KINDS).toHaveLength(12);
+    for (const kind of PET_KINDS) {
+      for (const facing of ["down", "up", "side"] as const) {
+        for (const step of [0, 1]) {
+          const grid = spriteGrid(kind, facing, step);
+          expect(grid, `${kind} ${facing} ${step}`).toHaveLength(GRID);
+          for (const row of grid) expect(row).toHaveLength(GRID);
+        }
+        // The two walk frames must differ, or the legs never move.
+        expect(spriteGrid(kind, facing, 0).join(""), `${kind} ${facing} does not animate`)
+          .not.toBe(spriteGrid(kind, facing, 1).join(""));
       }
+      // Facing away hides the face, so back must differ from front.
+      expect(spriteGrid(kind, "up", 0).join("")).not.toBe(spriteGrid(kind, "down", 0).join(""));
     }
-    // The two walk frames must actually differ, or the legs never move.
-    expect(FRAMES.down[0].join("")).not.toBe(FRAMES.down[1].join(""));
+  });
+
+  it("gives every pet a distinct silhouette or palette", () => {
+    // Twelve palette-identical blobs would read as one pet in twelve hats.
+    const signatures = new Set(PET_KINDS.map(kind => {
+      const s = PETS[kind];
+      return [s.ears, s.build, s.fur, s.accent].join("|");
+    }));
+    expect(signatures.size).toBe(12);
+    for (const kind of PET_KINDS) {
+      expect(PETS[kind].nameZh, `${kind} needs a Chinese name`).toBeTruthy();
+    }
   });
 
   it("never spawns the pet on a pickup or inside a building", () => {

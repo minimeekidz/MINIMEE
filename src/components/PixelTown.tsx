@@ -51,7 +51,7 @@ function overlaps(a: Box, b: Box) {
 }
 
 export function PixelTown({
-  ground, buildings, pickups, collectedIds, pet = "shiba", onCollect, onEnter,
+  ground, buildings, pickups, collectedIds, pet = "watermelon-shiba", onCollect, onEnter,
 }: PixelTownProps) {
   // Spawn on open ground: standing on a pickup would hand the child a free
   // card the moment the town opens, and standing in a doorway would pop the
