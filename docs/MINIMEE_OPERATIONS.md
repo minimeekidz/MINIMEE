@@ -522,7 +522,46 @@ transaction: unpublished cards and their tokens invisible to `anon`,
 published ones resolving, a wrong token returning nothing, and lost mode
 switched off instantly killing a previously working token.
 
-### 7d. MEE 小鎮 and how cards are earned
+### 7d. MEE 世界 — connected zones, not one boxed map
+
+The world is **several full-screen zones joined by gates**, not a small
+viewport inside a page. The background *is* the screen.
+
+```
+遊樂場 ←→ MEE 小鎮 ←→ 碼頭 ←→ 蘑菇廣場
+  │           │          │         │
+劇院       圖書館      碼頭市集   收藏館
+寵物房     戲院        Hero Studio
+           Paw Café
+```
+
+Walking to a **gate** at the edge of a zone fades across to the next one;
+walking to a **door** opens the room behind it, where the lesson video and
+its word game live.
+
+Three things follow from how the art is built:
+
+- **Buildings are painted into the background.** Nothing is composited on
+  top of them — a door is a marker on the ground, not a picture of a door.
+  An earlier version pasted framed building images over the art and looked
+  like a collage.
+- **Positions are normalised 0-1** against the background, so one layout
+  serves a phone held portrait and a desktop window, and replacing the art
+  does not mean re-tuning every doorway.
+- **Walking is confined to a per-zone ground band** (`walk.top` /
+  `walk.bottom`). That keeps the child out of the sky and off the rooftops
+  without per-pixel collision against a painted scene.
+
+**Day and night** follow the child's own clock (06:00–18:00 is day), so
+evening play looks like evening. Zones that have only one piece of art use
+it for both and rely on the tint.
+
+Tests assert the graph is sound: every gate points at a zone that exists,
+every door at a room that exists, every zone is reachable from another one,
+and every hotspot sits inside its zone's walkable band. A dead end would
+otherwise be invisible until a child walked into it.
+
+### 7d-i. How cards are earned
 
 Two surfaces run the same `PixelWorldGame` component:
 

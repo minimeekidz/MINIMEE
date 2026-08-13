@@ -5,6 +5,7 @@ import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
 import { awardFragment, signedLessonVideo, useRooms, type LessonWord } from "../lib/rooms";
+import { ROOM_ART } from "../lib/world";
 
 // One room: watch the video, then a short word game underneath it. Finishing
 // the game earns the fragment for that room's current lesson.
@@ -72,7 +73,7 @@ export function RoomPage() {
   return <Shell surface="parent">
     <DashboardHeader title={room.nameZh} />
 
-    <section className="room-header" style={{ backgroundImage: `url(${room.art})` }}>
+    <section className="room-header" style={{ backgroundImage: `url(${ROOM_ART[room.id] ?? room.art})` }}>
       <div className="room-header-scrim" />
       <div className="room-header-inner">
         <StatusPill tone={room.earned ? "green" : "gold"}>
@@ -90,7 +91,7 @@ export function RoomPage() {
             {playing && videoUrl
               ? <video src={videoUrl} controls autoPlay playsInline />
               : <button className="room-video-poster" onClick={() => setPlaying(true)}>
-                  <img src={room.art} alt="" />
+                  <img src={ROOM_ART[room.id] ?? room.art} alt="" />
                   <span className="kid-play"><Play size={26} /></span>
                   <span className="kid-video-label">▶ 睇 {room.lesson.title}</span>
                 </button>}

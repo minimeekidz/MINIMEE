@@ -623,3 +623,45 @@ footer div { display: flex; gap: 20px; }
 .hero-option img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; image-rendering: pixelated; }
 .hero-option span { display: block; margin-top: 4px; font-size: 9px; font-weight: 800; }
 .hero-option.selected { border-color: var(--violet); background: var(--lavender); }
+
+/* ---- v2: the world screen (full-bleed, no framed panels) ---- */
+.world { position: fixed; inset: 0; overflow: hidden; background: #0d1020; user-select: none; touch-action: none; }
+/* The background IS the screen. Buildings are painted into the art, so
+   nothing is composited on top of them — only a marker at each doorway. */
+.world-bg { position: absolute; inset: 0; background-size: cover; background-position: center; image-rendering: pixelated; }
+.world-tint { position: absolute; inset: 0; pointer-events: none; }
+.world-tint.day { background: linear-gradient(180deg, rgba(255,236,190,.10), rgba(20,33,61,.16)); }
+.world-tint.night { background: linear-gradient(180deg, rgba(20,33,61,.42), rgba(20,33,61,.60)); }
+
+.world-hud { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #fff4e0; background: linear-gradient(180deg, rgba(13,16,32,.75), transparent); font-weight: 900; }
+.world-place { font-size: 15px; text-shadow: 2px 2px 0 #14213D; }
+.world-time { font-size: 11px; opacity: .9; }
+.world-exit { margin-left: auto; padding: 7px 14px; border: 3px solid #14213D; border-radius: 6px; background: #ffe9b8; color: #14213D; font-size: 11px; font-weight: 900; cursor: pointer; }
+
+/* A doorway marker, not a picture of the door — the door is in the art. */
+.world-marker { position: absolute; transform: translate(-50%, -100%); text-align: center; pointer-events: none; }
+.world-marker span { display: grid; place-items: center; width: 30px; height: 30px; margin: 0 auto; border: 3px solid #14213D; border-radius: 50%; background: var(--brand-gold); color: #14213D; font-size: 13px; font-weight: 900; animation: marker-bob 1.5s steps(2) infinite; }
+.world-marker.gate span { background: var(--brand-blue); color: #fff4e0; border-radius: 6px; }
+.world-marker.done span { background: var(--green); color: white; animation: none; }
+.world-marker small { display: inline-block; margin-top: 4px; padding: 2px 7px; border: 2px solid #14213D; border-radius: 4px; background: rgba(255,244,224,.94); color: #14213D; font-size: 9px; font-weight: 900; white-space: nowrap; }
+@keyframes marker-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+
+.world-npc { position: absolute; height: 9%; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(13,16,32,.4)); animation: marker-bob 2.2s steps(2) infinite; }
+.world-hero { position: absolute; z-index: 5; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(13,16,32,.45)); }
+.world-hero.walking { animation: hero-step .32s steps(2) infinite; }
+@keyframes hero-step { 0%,100% { margin-top: 0; } 50% { margin-top: -6px; } }
+
+.world-action { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); padding: 14px 26px; border: 4px solid #14213D; border-radius: 8px; background: var(--brand-gold); color: #14213D; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 0 rgba(13,16,32,.5); animation: marker-bob 1.1s steps(2) infinite; z-index: 6; }
+
+.world-pad { position: absolute; left: 16px; bottom: 18px; display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 50px); gap: 6px; z-index: 6; }
+.world-pad button { border: 3px solid #14213D; border-radius: 8px; background: rgba(255,233,184,.94); color: #14213D; font-size: 16px; font-weight: 900; cursor: pointer; touch-action: none; }
+.world-pad button:active { background: var(--brand-gold); translate: 0 2px; }
+.pad-up { grid-area: 1 / 2; } .pad-left { grid-area: 2 / 1; } .pad-right { grid-area: 2 / 3; } .pad-down { grid-area: 3 / 2; }
+
+.world-fade { position: absolute; inset: 0; background: #0d1020; opacity: 0; pointer-events: none; transition: opacity .4s ease; z-index: 10; }
+.world-fade.on { opacity: 1; }
+
+@media (min-width: 900px) {
+  .world-pad { left: 50%; transform: translateX(-50%); }
+  .world-marker small { font-size: 10px; }
+}

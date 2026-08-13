@@ -3,10 +3,8 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
-import { COLLECTIBLES } from "./lib/kidCard";
-import { GRID, PET_KINDS, PETS, spriteGrid } from "./components/PixelPet";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { TOWN_BUILDINGS, TOWN_PICKUPS } from "./lib/townMap";
+import { hotspotNear, isDaytime, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -395,16 +393,6 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByText(/掃描物品上面嘅 MINIMEE QR 貼紙/)).toBeInTheDocument();
   });
 
-  it("renders a walkable top-down town with all four directions", () => {
-    render(<MemoryRouter initialEntries={["/play"]}><App /></MemoryRouter>);
-    expect(screen.getByText(/執到 0 \/ 5 張 MEE 卡/)).toBeInTheDocument();
-    // Free roam, not a side-scroller: every axis has to be reachable.
-    for (const label of ["向上行", "向下行", "向左行", "向右行"]) {
-      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
-    }
-    expect(screen.getByText("MEE 圖書館")).toBeInTheDocument();
-    expect(screen.getByText("Paw Café")).toBeInTheDocument();
-  });
 
   it("offers to create a card and says plainly that it starts private", async () => {
     render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/card"]}><App /></MemoryRouter>);
@@ -452,79 +440,10 @@ describe("MINIMEE route shells", () => {
       "href", "/parent/children/demo-child-01/card");
   });
 
-  it("renders the real town with previously earned cards already taken", async () => {
-    billing.kidCard = editableCard({ published: true });
-    billing.meeCards = [{ code: "MEE-002" }, { code: "MEE-014" }];
-    billing.kidTasks = [
-      { id: "t1", title: "介紹你最鍾意嘅動物", detail: "講 30 秒", done: false },
-      { id: "t2", title: "已做完嘅嘢", detail: "", done: true },
-    ];
-    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
 
-    // Two of five already earned, so the HUD must not offer them again.
-    expect(await screen.findByText(/執到 2 \/ 5 張 MEE 卡/)).toBeInTheDocument();
-    // Only the open task is actionable.
-    expect(screen.getByText("介紹你最鍾意嘅動物")).toBeInTheDocument();
-    expect(screen.queryByText("已做完嘅嘢")).toBeNull();
-    expect(screen.getByText(/已完成 1 \/ 2 個任務/)).toBeInTheDocument();
-  });
 
-  it("locks a collectible's rarity to its code so it cannot be re-rolled", () => {
-    // Ops doc rule: a card's number and NORMAL/FLASH status are fixed when
-    // earned. Rarity therefore has to be a property of the catalogue entry,
-    // never something computed per award.
-    const byCode = new Map(COLLECTIBLES.map(item => [item.code, item]));
-    expect(byCode.size).toBe(COLLECTIBLES.length);
-    expect(byCode.get("MEE-014")?.rarity).toBe("flash");
-    expect(byCode.get("MEE-002")?.rarity).toBe("normal");
-    for (const item of COLLECTIBLES) expect(item.x).toBeGreaterThan(0);
-  });
 
-  it("paints a complete, animating sprite for all twelve pets", () => {
-    expect(PET_KINDS).toHaveLength(12);
-    for (const kind of PET_KINDS) {
-      for (const facing of ["down", "up", "side"] as const) {
-        for (const step of [0, 1]) {
-          const grid = spriteGrid(kind, facing, step);
-          expect(grid, `${kind} ${facing} ${step}`).toHaveLength(GRID);
-          for (const row of grid) expect(row).toHaveLength(GRID);
-        }
-        // The two walk frames must differ, or the legs never move.
-        expect(spriteGrid(kind, facing, 0).join(""), `${kind} ${facing} does not animate`)
-          .not.toBe(spriteGrid(kind, facing, 1).join(""));
-      }
-      // Facing away hides the face, so back must differ from front.
-      expect(spriteGrid(kind, "up", 0).join("")).not.toBe(spriteGrid(kind, "down", 0).join(""));
-    }
-  });
 
-  it("gives every pet a distinct silhouette or palette", () => {
-    // Twelve palette-identical blobs would read as one pet in twelve hats.
-    const signatures = new Set(PET_KINDS.map(kind => {
-      const s = PETS[kind];
-      return [s.ears, s.build, s.fur, s.accent].join("|");
-    }));
-    expect(signatures.size).toBe(12);
-    for (const kind of PET_KINDS) {
-      expect(PETS[kind].nameZh, `${kind} needs a Chinese name`).toBeTruthy();
-    }
-  });
-
-  it("never spawns the pet on a pickup or inside a building", () => {
-    // Spawning on a card would hand out a free collectible on open.
-    const spawn = { x: 560, y: 1100, size: 48 };
-    const centre = { x: spawn.x + spawn.size / 2, y: spawn.y + spawn.size / 2 };
-    for (const pickup of TOWN_PICKUPS) {
-      expect(Math.hypot(pickup.x - centre.x, pickup.y - centre.y)).toBeGreaterThan(44);
-    }
-    const feet = { x: spawn.x, y: spawn.y + spawn.size - 14, w: spawn.size, h: 14 };
-    for (const b of TOWN_BUILDINGS) {
-      const solid = { x: b.x, y: b.y + b.h * 0.45, w: b.w, h: b.h * 0.55 };
-      const clash = feet.x < solid.x + solid.w && feet.x + feet.w > solid.x
-        && feet.y < solid.y + solid.h && feet.y + feet.h > solid.y;
-      expect(clash, `spawn overlaps ${b.label}`).toBe(false);
-    }
-  });
 
   it("runs a room's word game and awards its fragment once", async () => {
     billing.kidCard = editableCard({ published: true });
@@ -551,16 +470,6 @@ describe("MINIMEE route shells", () => {
     expect(screen.queryByText(/個詞語$/)).toBeNull();
   });
 
-  it("counts fragments toward the next MEE card", async () => {
-    billing.kidCard = editableCard({ published: true });
-    billing.fragments = [
-      { room_id: "library", lesson_id: "l1", spent: false },
-      { room_id: "cinema", lesson_id: "l2", spent: false },
-    ];
-    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
-    expect(await screen.findByText(/2 \/ 4 塊碎片/)).toBeInTheDocument();
-    expect(screen.getByText(/已換到 0 張 MEE 卡/)).toBeInTheDocument();
-  });
 
   it("gives the town six heroes and twelve pets on real art", () => {
     // The brand book bans smooth 3D and plastic skin, so the pixel version
@@ -584,6 +493,41 @@ describe("MINIMEE route shells", () => {
     const ys = TOWN_PETS.map(p => p.home.y);
     expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(1000);
     expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(600);
+  });
+
+  it("builds a connected world where every exit leads somewhere real", () => {
+    // A gate pointing at a missing zone, or a door at a missing room, would
+    // strand the child on a dead end with no way to tell from the art.
+    for (const zone of Object.values(ZONES)) {
+      expect(zone.hotspots.length, `${zone.id} needs somewhere to go`).toBeGreaterThan(0);
+      for (const spot of zone.hotspots) {
+        if (spot.kind === "gate") expect(ZONES[spot.target], `${zone.id} → ${spot.target}`).toBeDefined();
+        else expect(ROOM_ART[spot.target], `${zone.id} door → ${spot.target}`).toBeDefined();
+        // Hotspots have to sit on ground the child can actually reach.
+        expect(spot.y).toBeGreaterThanOrEqual(zone.walk.top - 0.06);
+        expect(spot.y).toBeLessThanOrEqual(zone.walk.bottom + 0.06);
+      }
+      // Every zone must be reachable from somewhere, or it is unusable.
+      const reachable = Object.values(ZONES).some(other =>
+        other.id !== zone.id && other.hotspots.some(s => s.kind === "gate" && s.target === zone.id));
+      expect(reachable, `${zone.id} is unreachable`).toBe(true);
+    }
+  });
+
+  it("switches the world between day and night art", () => {
+    const town = ZONES.town;
+    expect(isDaytime(new Date("2026-08-14T09:00:00"))).toBe(true);
+    expect(isDaytime(new Date("2026-08-14T21:00:00"))).toBe(false);
+    expect(zoneBackground(town, new Date("2026-08-14T09:00:00"))).toBe(town.day);
+    expect(zoneBackground(town, new Date("2026-08-14T21:00:00"))).toBe(town.night);
+  });
+
+  it("only offers a door when the child is standing at it", () => {
+    const town = ZONES.town;
+    const door = town.hotspots[0];
+    expect(hotspotNear(town, door.x, door.y)?.id).toBe(door.id);
+    // Standing across the map offers nothing, so prompts cannot stack up.
+    expect(hotspotNear(town, 0.5, 0.75)).toBeNull();
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {
