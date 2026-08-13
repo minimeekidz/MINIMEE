@@ -1,0 +1,217 @@
+﻿pet_id,name_zh,name_en,category,view,expression,action,filename,status
+MM_PET_01,大太陽羊,Sunshine Sheep,view,front,neutral,standing,MM_PET_01_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,view,left45,neutral,standing,MM_PET_01_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,view,right45,neutral,standing,MM_PET_01_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,view,left_side,neutral,standing,MM_PET_01_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,view,right_side,neutral,standing,MM_PET_01_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,view,back,neutral,standing,MM_PET_01_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,expression,front,happy,standing,MM_PET_01_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,expression,front,love,standing,MM_PET_01_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,expression,front,sad,standing,MM_PET_01_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,expression,front,exhausted,standing,MM_PET_01_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,expression,front,surprised,standing,MM_PET_01_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,expression,front,encouragement,standing,MM_PET_01_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,action,front,neutral,eating,MM_PET_01_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,action,front,neutral,sleeping,MM_PET_01_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,action,front,neutral,standing,MM_PET_01_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,action,front,neutral,sitting,MM_PET_01_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,action,front,neutral,talking,MM_PET_01_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_01,大太陽羊,Sunshine Sheep,action,front,neutral,head_pat,MM_PET_01_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,view,front,neutral,standing,MM_PET_02_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,view,left45,neutral,standing,MM_PET_02_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,view,right45,neutral,standing,MM_PET_02_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,view,left_side,neutral,standing,MM_PET_02_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,view,right_side,neutral,standing,MM_PET_02_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,view,back,neutral,standing,MM_PET_02_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,expression,front,happy,standing,MM_PET_02_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,expression,front,love,standing,MM_PET_02_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,expression,front,sad,standing,MM_PET_02_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,expression,front,exhausted,standing,MM_PET_02_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,expression,front,surprised,standing,MM_PET_02_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,expression,front,encouragement,standing,MM_PET_02_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,action,front,neutral,eating,MM_PET_02_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,action,front,neutral,sleeping,MM_PET_02_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,action,front,neutral,standing,MM_PET_02_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,action,front,neutral,sitting,MM_PET_02_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,action,front,neutral,talking,MM_PET_02_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_02,包子倉鼠,Bao Hamster,action,front,neutral,head_pat,MM_PET_02_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,view,front,neutral,standing,MM_PET_03_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,view,left45,neutral,standing,MM_PET_03_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,view,right45,neutral,standing,MM_PET_03_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,view,left_side,neutral,standing,MM_PET_03_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,view,right_side,neutral,standing,MM_PET_03_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,view,back,neutral,standing,MM_PET_03_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,expression,front,happy,standing,MM_PET_03_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,expression,front,love,standing,MM_PET_03_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,expression,front,sad,standing,MM_PET_03_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,expression,front,exhausted,standing,MM_PET_03_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,expression,front,surprised,standing,MM_PET_03_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,expression,front,encouragement,standing,MM_PET_03_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,action,front,neutral,eating,MM_PET_03_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,action,front,neutral,sleeping,MM_PET_03_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,action,front,neutral,standing,MM_PET_03_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,action,front,neutral,sitting,MM_PET_03_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,action,front,neutral,talking,MM_PET_03_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_03,牛奶貓,Milk Carton Cat,action,front,neutral,head_pat,MM_PET_03_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,view,front,neutral,standing,MM_PET_04_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,view,left45,neutral,standing,MM_PET_04_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,view,right45,neutral,standing,MM_PET_04_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,view,left_side,neutral,standing,MM_PET_04_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,view,right_side,neutral,standing,MM_PET_04_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,view,back,neutral,standing,MM_PET_04_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,expression,front,happy,standing,MM_PET_04_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,expression,front,love,standing,MM_PET_04_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,expression,front,sad,standing,MM_PET_04_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,expression,front,exhausted,standing,MM_PET_04_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,expression,front,surprised,standing,MM_PET_04_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,expression,front,encouragement,standing,MM_PET_04_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,action,front,neutral,eating,MM_PET_04_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,action,front,neutral,sleeping,MM_PET_04_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,action,front,neutral,standing,MM_PET_04_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,action,front,neutral,sitting,MM_PET_04_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,action,front,neutral,talking,MM_PET_04_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_04,西瓜柴犬,Watermelon Shiba,action,front,neutral,head_pat,MM_PET_04_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,view,front,neutral,standing,MM_PET_05_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,view,left45,neutral,standing,MM_PET_05_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,view,right45,neutral,standing,MM_PET_05_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,view,left_side,neutral,standing,MM_PET_05_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,view,right_side,neutral,standing,MM_PET_05_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,view,back,neutral,standing,MM_PET_05_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,expression,front,happy,standing,MM_PET_05_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,expression,front,love,standing,MM_PET_05_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,expression,front,sad,standing,MM_PET_05_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,expression,front,exhausted,standing,MM_PET_05_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,expression,front,surprised,standing,MM_PET_05_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,expression,front,encouragement,standing,MM_PET_05_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,action,front,neutral,eating,MM_PET_05_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,action,front,neutral,sleeping,MM_PET_05_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,action,front,neutral,standing,MM_PET_05_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,action,front,neutral,sitting,MM_PET_05_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,action,front,neutral,talking,MM_PET_05_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_05,海浪企鵝,Wave Penguin,action,front,neutral,head_pat,MM_PET_05_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,view,front,neutral,standing,MM_PET_06_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,view,left45,neutral,standing,MM_PET_06_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,view,right45,neutral,standing,MM_PET_06_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,view,left_side,neutral,standing,MM_PET_06_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,view,right_side,neutral,standing,MM_PET_06_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,view,back,neutral,standing,MM_PET_06_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,expression,front,happy,standing,MM_PET_06_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,expression,front,love,standing,MM_PET_06_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,expression,front,sad,standing,MM_PET_06_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,expression,front,exhausted,standing,MM_PET_06_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,expression,front,surprised,standing,MM_PET_06_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,expression,front,encouragement,standing,MM_PET_06_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,action,front,neutral,eating,MM_PET_06_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,action,front,neutral,sleeping,MM_PET_06_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,action,front,neutral,standing,MM_PET_06_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,action,front,neutral,sitting,MM_PET_06_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,action,front,neutral,talking,MM_PET_06_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_06,飛行小雞,Aviator Chick,action,front,neutral,head_pat,MM_PET_06_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,view,front,neutral,standing,MM_PET_07_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,view,left45,neutral,standing,MM_PET_07_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,view,right45,neutral,standing,MM_PET_07_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,view,left_side,neutral,standing,MM_PET_07_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,view,right_side,neutral,standing,MM_PET_07_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,view,back,neutral,standing,MM_PET_07_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,expression,front,happy,standing,MM_PET_07_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,expression,front,love,standing,MM_PET_07_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,expression,front,sad,standing,MM_PET_07_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,expression,front,exhausted,standing,MM_PET_07_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,expression,front,surprised,standing,MM_PET_07_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,expression,front,encouragement,standing,MM_PET_07_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,action,front,neutral,eating,MM_PET_07_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,action,front,neutral,sleeping,MM_PET_07_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,action,front,neutral,standing,MM_PET_07_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,action,front,neutral,sitting,MM_PET_07_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,action,front,neutral,talking,MM_PET_07_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_07,毛線鼠婆婆,Yarn Granny Mouse,action,front,neutral,head_pat,MM_PET_07_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,view,front,neutral,standing,MM_PET_08_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,view,left45,neutral,standing,MM_PET_08_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,view,right45,neutral,standing,MM_PET_08_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,view,left_side,neutral,standing,MM_PET_08_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,view,right_side,neutral,standing,MM_PET_08_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,view,back,neutral,standing,MM_PET_08_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,expression,front,happy,standing,MM_PET_08_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,expression,front,love,standing,MM_PET_08_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,expression,front,sad,standing,MM_PET_08_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,expression,front,exhausted,standing,MM_PET_08_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,expression,front,surprised,standing,MM_PET_08_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,expression,front,encouragement,standing,MM_PET_08_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,action,front,neutral,eating,MM_PET_08_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,action,front,neutral,sleeping,MM_PET_08_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,action,front,neutral,standing,MM_PET_08_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,action,front,neutral,sitting,MM_PET_08_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,action,front,neutral,talking,MM_PET_08_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_08,愛心可愛兔,Lovely Heart Bunny,action,front,neutral,head_pat,MM_PET_08_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,view,front,neutral,standing,MM_PET_09_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,view,left45,neutral,standing,MM_PET_09_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,view,right45,neutral,standing,MM_PET_09_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,view,left_side,neutral,standing,MM_PET_09_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,view,right_side,neutral,standing,MM_PET_09_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,view,back,neutral,standing,MM_PET_09_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,expression,front,happy,standing,MM_PET_09_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,expression,front,love,standing,MM_PET_09_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,expression,front,sad,standing,MM_PET_09_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,expression,front,exhausted,standing,MM_PET_09_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,expression,front,surprised,standing,MM_PET_09_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,expression,front,encouragement,standing,MM_PET_09_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,action,front,neutral,eating,MM_PET_09_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,action,front,neutral,sleeping,MM_PET_09_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,action,front,neutral,standing,MM_PET_09_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,action,front,neutral,sitting,MM_PET_09_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,action,front,neutral,talking,MM_PET_09_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_09,牛仔小狗,Cowboy Pup,action,front,neutral,head_pat,MM_PET_09_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,view,front,neutral,standing,MM_PET_10_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,view,left45,neutral,standing,MM_PET_10_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,view,right45,neutral,standing,MM_PET_10_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,view,left_side,neutral,standing,MM_PET_10_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,view,right_side,neutral,standing,MM_PET_10_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,view,back,neutral,standing,MM_PET_10_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,expression,front,happy,standing,MM_PET_10_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,expression,front,love,standing,MM_PET_10_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,expression,front,sad,standing,MM_PET_10_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,expression,front,exhausted,standing,MM_PET_10_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,expression,front,surprised,standing,MM_PET_10_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,expression,front,encouragement,standing,MM_PET_10_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,action,front,neutral,eating,MM_PET_10_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,action,front,neutral,sleeping,MM_PET_10_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,action,front,neutral,standing,MM_PET_10_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,action,front,neutral,sitting,MM_PET_10_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,action,front,neutral,talking,MM_PET_10_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_10,愛心超級豬,Super Heart Pig,action,front,neutral,head_pat,MM_PET_10_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,view,front,neutral,standing,MM_PET_11_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,view,left45,neutral,standing,MM_PET_11_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,view,right45,neutral,standing,MM_PET_11_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,view,left_side,neutral,standing,MM_PET_11_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,view,right_side,neutral,standing,MM_PET_11_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,view,back,neutral,standing,MM_PET_11_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,expression,front,happy,standing,MM_PET_11_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,expression,front,love,standing,MM_PET_11_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,expression,front,sad,standing,MM_PET_11_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,expression,front,exhausted,standing,MM_PET_11_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,expression,front,surprised,standing,MM_PET_11_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,expression,front,encouragement,standing,MM_PET_11_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,action,front,neutral,eating,MM_PET_11_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,action,front,neutral,sleeping,MM_PET_11_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,action,front,neutral,standing,MM_PET_11_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,action,front,neutral,sitting,MM_PET_11_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,action,front,neutral,talking,MM_PET_11_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_11,旋轉刺蝟,Spin Hedgehog,action,front,neutral,head_pat,MM_PET_11_front_neutral_head_pat_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,view,front,neutral,standing,MM_PET_12_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,view,left45,neutral,standing,MM_PET_12_left45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,view,right45,neutral,standing,MM_PET_12_right45_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,view,left_side,neutral,standing,MM_PET_12_left_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,view,right_side,neutral,standing,MM_PET_12_right_side_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,view,back,neutral,standing,MM_PET_12_back_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,expression,front,happy,standing,MM_PET_12_front_happy_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,expression,front,love,standing,MM_PET_12_front_love_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,expression,front,sad,standing,MM_PET_12_front_sad_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,expression,front,exhausted,standing,MM_PET_12_front_exhausted_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,expression,front,surprised,standing,MM_PET_12_front_surprised_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,expression,front,encouragement,standing,MM_PET_12_front_encouragement_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,action,front,neutral,eating,MM_PET_12_front_neutral_eating_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,action,front,neutral,sleeping,MM_PET_12_front_neutral_sleeping_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,action,front,neutral,standing,MM_PET_12_front_neutral_standing_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,action,front,neutral,sitting,MM_PET_12_front_neutral_sitting_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,action,front,neutral,talking,MM_PET_12_front_neutral_talking_v001.png,PENDING_GENERATION
+MM_PET_12,和服三花貓,Kimono Calico Cat,action,front,neutral,head_pat,MM_PET_12_front_neutral_head_pat_v001.png,PENDING_GENERATION
