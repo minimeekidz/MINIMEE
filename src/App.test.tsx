@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { COLLECTIBLES } from "./lib/kidCard";
+import { FRAMES, GRID } from "./components/PixelPet";
+import { TOWN_BUILDINGS, TOWN_PICKUPS } from "./lib/townMap";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -80,6 +82,10 @@ vi.mock("./lib/supabase", () => {
       order: () => builder,
       limit: () => builder,
       maybeSingle: () => Promise.resolve({ data: singleFor(table), error: null }),
+      single: () => Promise.resolve({ data: singleFor(table), error: null }),
+      insert: () => builder,
+      upsert: () => Promise.resolve({ data: null, error: null }),
+      update: () => builder,
       then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
         Promise.resolve({ data: rowsFor(table), error: null }).then(resolve, reject),
     };
@@ -378,12 +384,15 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByText(/掃描物品上面嘅 MINIMEE QR 貼紙/)).toBeInTheDocument();
   });
 
-  it("renders the walkable pixel world with its collectibles", () => {
+  it("renders a walkable top-down town with all four directions", () => {
     render(<MemoryRouter initialEntries={["/play"]}><App /></MemoryRouter>);
-    expect(screen.getByText(/收集咗 0 \/ 5/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "向左行" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "向右行" })).toBeInTheDocument();
-    expect(screen.getByAltText("你嘅角色")).toBeInTheDocument();
+    expect(screen.getByText(/執到 0 \/ 5 張 MEE 卡/)).toBeInTheDocument();
+    // Free roam, not a side-scroller: every axis has to be reachable.
+    for (const label of ["向上行", "向下行", "向左行", "向右行"]) {
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+    }
+    expect(screen.getByText("MEE 圖書館")).toBeInTheDocument();
+    expect(screen.getByText("Paw Café")).toBeInTheDocument();
   });
 
   it("offers to create a card and says plainly that it starts private", async () => {
@@ -442,7 +451,7 @@ describe("MINIMEE route shells", () => {
     render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
 
     // Two of five already earned, so the HUD must not offer them again.
-    expect(await screen.findByText(/收集咗 2 \/ 5/)).toBeInTheDocument();
+    expect(await screen.findByText(/執到 2 \/ 5 張 MEE 卡/)).toBeInTheDocument();
     // Only the open task is actionable.
     expect(screen.getByText("介紹你最鍾意嘅動物")).toBeInTheDocument();
     expect(screen.queryByText("已做完嘅嘢")).toBeNull();
@@ -458,6 +467,36 @@ describe("MINIMEE route shells", () => {
     expect(byCode.get("MEE-014")?.rarity).toBe("flash");
     expect(byCode.get("MEE-002")?.rarity).toBe("normal");
     for (const item of COLLECTIBLES) expect(item.x).toBeGreaterThan(0);
+  });
+
+  it("keeps every pixel sprite frame a perfect square grid", () => {
+    // A short row would silently shift the whole sprite, and the walk cycle
+    // would tear. Cheap to assert, impossible to eyeball.
+    for (const [set, frames] of Object.entries(FRAMES)) {
+      expect(frames.length, `${set} needs at least two frames to animate`).toBeGreaterThan(1);
+      for (const frame of frames) {
+        expect(frame).toHaveLength(GRID);
+        for (const row of frame) expect(row).toHaveLength(GRID);
+      }
+    }
+    // The two walk frames must actually differ, or the legs never move.
+    expect(FRAMES.down[0].join("")).not.toBe(FRAMES.down[1].join(""));
+  });
+
+  it("never spawns the pet on a pickup or inside a building", () => {
+    // Spawning on a card would hand out a free collectible on open.
+    const spawn = { x: 480, y: 1140, size: 48 };
+    const centre = { x: spawn.x + spawn.size / 2, y: spawn.y + spawn.size / 2 };
+    for (const pickup of TOWN_PICKUPS) {
+      expect(Math.hypot(pickup.x - centre.x, pickup.y - centre.y)).toBeGreaterThan(44);
+    }
+    const feet = { x: spawn.x, y: spawn.y + spawn.size - 14, w: spawn.size, h: 14 };
+    for (const b of TOWN_BUILDINGS) {
+      const solid = { x: b.x, y: b.y + b.h * 0.45, w: b.w, h: b.h * 0.55 };
+      const clash = feet.x < solid.x + solid.w && feet.x + feet.w > solid.x
+        && feet.y < solid.y + solid.h && feet.y + feet.h > solid.y;
+      expect(clash, `spawn overlaps ${b.label}`).toBe(false);
+    }
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {

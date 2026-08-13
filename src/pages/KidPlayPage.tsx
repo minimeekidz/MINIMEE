@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Sparkles, Trophy } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI";
-import { PixelWorldGame, type Pickup } from "../components/PixelWorldGame";
+import { PixelTown } from "../components/PixelTown";
+import { TOWN_BUILDINGS, TOWN_PICKUPS } from "../lib/townMap";
 import { useFamily } from "../contexts/FamilyContext";
 import { COLLECTIBLES } from "../lib/kidCard";
 import {
@@ -17,6 +18,7 @@ import {
 export function KidPlayPage() {
   const { id: childId } = useParams();
   const { children, loading: familyLoading } = useFamily();
+  const navigate = useNavigate();
   const child = children.find(candidate => candidate.id === childId);
 
   const [card, setCard] = useState<EditableCard | null>(null);
@@ -82,13 +84,6 @@ export function KidPlayPage() {
     </Shell>;
   }
 
-  const pickups: Pickup[] = COLLECTIBLES.map(item => ({
-    id: item.code,
-    x: item.x,
-    label: item.name,
-    art: item.art,
-  }));
-
   const openTasks = tasks.filter(task => !task.done);
   const allFound = collected.length === COLLECTIBLES.length;
 
@@ -98,17 +93,17 @@ export function KidPlayPage() {
     {error && <div className="payment-result failed" role="alert"><div><strong>提示</strong><p>{error}</p></div></div>}
 
     <p className="kid-section-note">
-      把手機交俾 {child.nickname}，用方向鍵或者下面嘅掣左右行。行埋去獎勵位置就會執到 MEE 卡，
+      把手機交俾 {child.nickname}，用方向鍵或者下面嘅方向掣四圍行。行埋去就會執到 MEE 卡，
       執到嘅卡會即刻儲落佢張自我介紹卡度。
     </p>
 
-    <PixelWorldGame
-      pickups={pickups}
+    <PixelTown
+      ground="/assets/town-morning.webp"
+      buildings={TOWN_BUILDINGS}
+      pickups={TOWN_PICKUPS}
       collectedIds={collected}
-      backdrop="/assets/town-morning.webp"
-      midground="/assets/harbor-market.webp"
-      avatar={card.avatarUrl ?? "/assets/hero-3-5.webp"}
       onCollect={code => void handleCollect(code)}
+      onEnter={building => { if (building.to) navigate(building.to); }}
     />
 
     {allFound && <div className="pixel-complete" role="status">
