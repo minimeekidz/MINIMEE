@@ -26,17 +26,35 @@ export interface PixelWorldGameProps {
   backdrop: string;
   midground?: string;
   avatar: string;
+  /**
+   * Pickups already earned in an earlier session. They render as taken and
+   * never re-fire onCollect, so returning to the town does not replay every
+   * award the child has already collected.
+   */
+  collectedIds?: string[];
   onCollect?: (pickupId: string) => void;
 }
 
 type Direction = "left" | "right";
 
-export function PixelWorldGame({ pickups, backdrop, midground, avatar, onCollect }: PixelWorldGameProps) {
+export function PixelWorldGame({
+  pickups, backdrop, midground, avatar, collectedIds, onCollect,
+}: PixelWorldGameProps) {
   const [x, setX] = useState(60);
   const [facing, setFacing] = useState<Direction>("right");
   const [walking, setWalking] = useState(false);
-  const [collected, setCollected] = useState<string[]>([]);
+  const [collected, setCollected] = useState<string[]>(collectedIds ?? []);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Earned pickups arrive asynchronously on the real town, so fold them in
+  // once they land rather than only seeding initial state.
+  useEffect(() => {
+    if (!collectedIds?.length) return;
+    setCollected(current => {
+      const merged = new Set([...current, ...collectedIds]);
+      return merged.size === current.length ? current : Array.from(merged);
+    });
+  }, [collectedIds]);
 
   // Held direction lives in a ref so the animation loop reads it without
   // being torn down and recreated on every key event.

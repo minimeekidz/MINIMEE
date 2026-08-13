@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, Archive, BookOpen, CalendarClock, Film, HeartHandshake, IdCard, Plus, QrCode, ShieldCheck, Trash2, Users } from "lucide-react";
+import { AlertTriangle, Archive, BookOpen, CalendarClock, Film, Gamepad2, HeartHandshake, IdCard, Plus, QrCode, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, DemoBadge, EmptyState, FeatureCard, IntegrationNotice, Progress, Shell, StatusPill } from "../components/UI";
 import { activeFriends, friendHistory, notifications, topics } from "../data/mock";
@@ -60,6 +60,7 @@ export function ChildProfilePage() {
     </div>
     <div className="feature-grid">
       <FeatureCard title="自我介紹卡" detail="小朋友嘅電子名片，家長批核後先公開" to={`${base}/card`} icon={<IdCard />} />
+      <FeatureCard title="MEE 小鎮" detail="小朋友行遊戲執 MEE 卡" to={`${base}/play`} icon={<Gamepad2 />} />
       <FeatureCard title="學習主題" detail="產品資料尚未接駁" to={`${base}/themes`} icon={<BookOpen />} />
       <FeatureCard title="訂閱管理" detail="付款服務尚未接駁" to={`${base}/subscription`} icon={<CalendarClock />} />
       <FeatureCard title="影片與相片" detail="私人儲存尚未啟用" to="/parent/media" icon={<Film />} />

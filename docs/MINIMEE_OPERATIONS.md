@@ -522,6 +522,33 @@ transaction: unpublished cards and their tokens invisible to `anon`,
 published ones resolving, a wrong token returning nothing, and lost mode
 switched off instantly killing a previously working token.
 
+### 7d. MEE 小鎮 and how cards are earned
+
+Two surfaces run the same `PixelWorldGame` component:
+
+- **`/play`** is the public demo on the marketing site. Local state only, no
+  account, nothing persists. It exists so a parent can understand "做任務儲
+  MEE 卡" in thirty seconds without signing up.
+- **`/parent/children/:id/play`** is the real town for one child. It lives
+  behind the parent's session because children never have their own login
+  (section 2) — the parent opens it and hands over the phone.
+
+Walking into a pickup writes to `mee_cards` immediately. The award is an
+upsert on the `(kid_card_id, code)` unique constraint with
+`ignoreDuplicates`, so walking back over a pickup, a replayed overlap, or a
+double-fire from the game loop can never mint a duplicate or overwrite the
+rarity a card was first earned at. Previously earned codes are loaded on
+mount and render as already taken.
+
+**A collectible's number and NORMAL/FLASH status are fixed in the
+`COLLECTIBLES` catalogue, never rolled at award time.** Section 5's rule is
+that a card cannot be re-rolled; making rarity a property of the code rather
+than of the awarding moment is what enforces it, and a test asserts it.
+
+Creating a card seeds `STARTER_TASKS` so the child opens the town to
+something to do rather than an empty list. A seeding failure does not block
+card creation — the card is the deliverable.
+
 ### Known open items
 
 - Supabase advisor: **leaked-password protection is disabled**. Turn it on

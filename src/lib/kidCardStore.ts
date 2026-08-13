@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
-import { findExampleCard, type KidCard, type KidTask, type MeeCard } from "./kidCard";
+import {
+  findExampleCard, STARTER_TASKS,
+  type Collectible, type KidCard, type KidTask, type MeeCard,
+} from "./kidCard";
 
 // Row shapes as they come back from Supabase. The public read is a
 // column-level grant (see the kid_cards migration), so `anon` never receives
@@ -282,3 +285,80 @@ export async function setPublished(cardId: string, published: boolean): Promise<
     .eq("id", cardId);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Collection and tasks
+// ---------------------------------------------------------------------------
+
+
+export async function seedStarterTasks(kidCardId: string): Promise<void> {
+  if (!supabase) return;
+  await supabase.from("kid_tasks").insert(
+    STARTER_TASKS.map((task, index) => ({
+      kid_card_id: kidCardId,
+      title: task.title,
+      detail: task.detail,
+      sort_order: index,
+    })),
+  );
+}
+
+export async function loadCollectedCodes(kidCardId: string): Promise<string[]> {
+  if (!supabase) return [];
+  const { data } = await supabase.from("mee_cards").select("code").eq("kid_card_id", kidCardId);
+  return (data ?? []).map(row => row.code as string);
+}
+
+// Awards a MEE card. The (kid_card_id, code) unique constraint plus
+// ignoreDuplicates make this idempotent, so walking back over a pickup — or
+// a double-fire from the game loop — can never mint the same card twice or
+// overwrite the rarity it was originally earned at.
+export async function awardCollectible(
+  kidCardId: string,
+  collectible: Collectible,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Supabase is not configured" };
+  const { error } = await supabase
+    .from("mee_cards")
+    .upsert({
+      kid_card_id: kidCardId,
+      code: collectible.code,
+      name: collectible.name,
+      rarity: collectible.rarity,
+      art: collectible.art,
+      earned_for: "喺 MEE 小鎮執到",
+    }, { onConflict: "kid_card_id,code", ignoreDuplicates: true });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export interface OpenTask {
+  id: string;
+  title: string;
+  detail: string;
+  done: boolean;
+}
+
+export async function loadTasks(kidCardId: string): Promise<OpenTask[]> {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("kid_tasks")
+    .select("id, title, detail, done")
+    .eq("kid_card_id", kidCardId)
+    .order("sort_order", { ascending: true });
+  return (data ?? []).map(row => ({
+    id: row.id as string,
+    title: row.title as string,
+    detail: (row.detail as string) ?? "",
+    done: Boolean(row.done),
+  }));
+}
+
+export async function completeTask(taskId: string): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Supabase is not configured" };
+  const { error } = await supabase
+    .from("kid_tasks")
+    .update({ done: true, done_at: new Date().toISOString() })
+    .eq("id", taskId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+

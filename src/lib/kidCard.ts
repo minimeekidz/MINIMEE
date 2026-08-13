@@ -121,3 +121,32 @@ export function collectedCount(card: KidCard) {
 export function openTasks(card: KidCard) {
   return card.tasks.filter(task => !task.done);
 }
+
+// The MEE cards a child can find in the pixel town. Rarity and art are
+// fixed per code rather than rolled at award time — the ops doc's rule is
+// that a card's number and NORMAL/FLASH status are locked when the child
+// earns it and can never be re-rolled.
+export interface Collectible {
+  code: string;
+  name: string;
+  rarity: CardRarity;
+  art: string;
+  /** Distance along the pixel town where this one sits. */
+  x: number;
+}
+
+export const COLLECTIBLES: Collectible[] = [
+  { code: "MEE-002", name: "珊瑚花園", rarity: "normal", art: "/assets/card-01.webp", x: 420 },
+  { code: "MEE-007", name: "小水母泡泡", rarity: "normal", art: "/assets/card-05.webp", x: 1080 },
+  { code: "MEE-011", name: "小小工程師", rarity: "normal", art: "/assets/card-09.webp", x: 1760 },
+  { code: "MEE-014", name: "海龜朋友", rarity: "flash", art: "/assets/card-11.webp", x: 2540 },
+  { code: "MEE-021", name: "夜空火箭", rarity: "flash", art: "/assets/card-09.webp", x: 3320 },
+];
+
+// Seeded onto a brand-new card so the child has something to do the first
+// time they open the town, instead of an empty task list.
+export const STARTER_TASKS = [
+  { title: "介紹你最鍾意嘅動物", detail: "同鏡頭講 30 秒，講下點解鍾意佢。" },
+  { title: "講一件你最叻嘅事", detail: "可以係畫畫、砌嘢、跳舞，咩都得。" },
+  { title: "行勻成個 MEE 小鎮", detail: "由頭行到尾，睇下搵唔搵到全部卡。" },
+] as const;

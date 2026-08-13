@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
+import { COLLECTIBLES } from "./lib/kidCard";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -422,6 +423,41 @@ describe("MINIMEE route shells", () => {
     // A Chinese-only nickname has no ascii stem, so it must still produce a
     // valid slug rather than an empty or invalid one.
     expect(mintSlug("小明")).toMatch(/^mee-[a-z0-9]+$/);
+  });
+
+  it("sends the child to build a card before the real town is playable", async () => {
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
+    expect(await screen.findByText("要先有自我介紹卡")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /去建立自我介紹卡/ })).toHaveAttribute(
+      "href", "/parent/children/demo-child-01/card");
+  });
+
+  it("renders the real town with previously earned cards already taken", async () => {
+    billing.kidCard = editableCard({ published: true });
+    billing.meeCards = [{ code: "MEE-002" }, { code: "MEE-014" }];
+    billing.kidTasks = [
+      { id: "t1", title: "介紹你最鍾意嘅動物", detail: "講 30 秒", done: false },
+      { id: "t2", title: "已做完嘅嘢", detail: "", done: true },
+    ];
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
+
+    // Two of five already earned, so the HUD must not offer them again.
+    expect(await screen.findByText(/收集咗 2 \/ 5/)).toBeInTheDocument();
+    // Only the open task is actionable.
+    expect(screen.getByText("介紹你最鍾意嘅動物")).toBeInTheDocument();
+    expect(screen.queryByText("已做完嘅嘢")).toBeNull();
+    expect(screen.getByText(/已完成 1 \/ 2 個任務/)).toBeInTheDocument();
+  });
+
+  it("locks a collectible's rarity to its code so it cannot be re-rolled", () => {
+    // Ops doc rule: a card's number and NORMAL/FLASH status are fixed when
+    // earned. Rarity therefore has to be a property of the catalogue entry,
+    // never something computed per award.
+    const byCode = new Map(COLLECTIBLES.map(item => [item.code, item]));
+    expect(byCode.size).toBe(COLLECTIBLES.length);
+    expect(byCode.get("MEE-014")?.rarity).toBe("flash");
+    expect(byCode.get("MEE-002")?.rarity).toBe("normal");
+    for (const item of COLLECTIBLES) expect(item.x).toBeGreaterThan(0);
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {
