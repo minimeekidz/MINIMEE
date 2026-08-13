@@ -10,3 +10,11 @@ vite.config.js
 vite.config.d.ts
 vitest.config.js
 vitest.config.d.ts
+
+# Agent tooling installed locally by `npx skills add` (Higgsfield skills and
+# friends). These are third-party skill definitions and machine-local editor
+# settings, not part of the MINIMEE product — keep them out of the repo so a
+# migration elsewhere carries application code only.
+.agents/
+.claude/
+skills-lock.json

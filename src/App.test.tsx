@@ -117,9 +117,11 @@ beforeEach(() => {
 });
 
 describe("MINIMEE route shells", () => {
-  it("renders the public home page", () => {
+  it("renders the public home page around the kid e-name card idea", () => {
     render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
-    expect(screen.getByRole("heading", { name: /每次學習/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /自我介紹卡/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "睇一張示範卡" })).toHaveAttribute("href", "/kid/mimi");
+    expect(screen.getByRole("link", { name: /試玩儲卡小遊戲/ })).toHaveAttribute("href", "/play");
   });
 
   it("renders the parent dashboard with the connected child profile", () => {
@@ -304,6 +306,40 @@ describe("MINIMEE route shells", () => {
     expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute("href", "https://minimee.me/pricing");
     expect(document.querySelector('meta[name="robots"]')).toBeNull();
     view.unmount();
+  });
+
+  it("shows an example kid card so parents understand the product", () => {
+    render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
+    expect(screen.getByRole("heading", { level: 1, name: "Mimi" })).toBeInTheDocument();
+    expect(screen.getByText(/我最鍾意畫海底世界/)).toBeInTheDocument();
+    expect(screen.getByText("示範卡 · 唔係真實小朋友")).toBeInTheDocument();
+    expect(screen.getByText("MEE-014")).toBeInTheDocument();
+  });
+
+  it("offers the lost-item channel without exposing parent contact details", () => {
+    render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
+    expect(screen.getByRole("link", { name: /聯絡家長/ })).toHaveAttribute("href", "/lost/example-token-mimi");
+    expect(screen.getByText(/電話唔會公開/)).toBeInTheDocument();
+  });
+
+  it("hides the lost-item section on a card that has it switched off", () => {
+    render(<MemoryRouter initialEntries={["/kid/ryan"]}><App /></MemoryRouter>);
+    expect(screen.getByRole("heading", { level: 1, name: "Ryan" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /聯絡家長/ })).toBeNull();
+  });
+
+  it("keeps the intro video unplayable until one has been generated", () => {
+    render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
+    expect(screen.getByText("自我介紹片製作中…")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /自我介紹片製作中/ })).toBeDisabled();
+  });
+
+  it("renders the walkable pixel world with its collectibles", () => {
+    render(<MemoryRouter initialEntries={["/play"]}><App /></MemoryRouter>);
+    expect(screen.getByText(/收集咗 0 \/ 5/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "向左行" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "向右行" })).toBeInTheDocument();
+    expect(screen.getByAltText("你嘅角色")).toBeInTheDocument();
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {
