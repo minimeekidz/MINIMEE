@@ -5,7 +5,7 @@ import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI
 import { useAuth } from "../contexts/AuthContext";
 import { useFamily } from "../contexts/FamilyContext";
 import {
-  createCard, loadEditableCard, mintLostToken, saveCard, setPublished,
+  createCard, loadEditableCard, mintLostToken, saveCard, seedStarterTasks, setPublished,
   type EditableCard,
 } from "../lib/kidCardStore";
 
@@ -57,8 +57,12 @@ export function KidCardEditorPage() {
     const result = await createCard({
       childId, parentId: user.id, nickname: child.nickname, ageGroup: child.age_group,
     });
+    if (!result.ok) { setBusy(false); setError("未能建立卡片，請稍後再試。"); return; }
+    // Seed the starter tasks so the child opens MEE 小鎮 to something to do
+    // rather than an empty list. A failure here is not worth blocking the
+    // card on — the card is the deliverable, tasks can be retried.
+    await seedStarterTasks(result.card.id);
     setBusy(false);
-    if (!result.ok) { setError("未能建立卡片，請稍後再試。"); return; }
     setCard(result.card);
   }
 
