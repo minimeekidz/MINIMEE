@@ -6,6 +6,7 @@ import { PixelTown } from "../components/PixelTown";
 import { TOWN_BUILDINGS, TOWN_PICKUPS } from "../lib/townMap";
 import { useFamily } from "../contexts/FamilyContext";
 import { COLLECTIBLES } from "../lib/kidCard";
+import { FRAGMENTS_PER_CARD, useRooms } from "../lib/rooms";
 import {
   awardCollectible, completeTask, loadCollectedCodes, loadEditableCard, loadTasks,
   type EditableCard, type OpenTask,
@@ -26,6 +27,7 @@ export function KidPlayPage() {
   const [tasks, setTasks] = useState<OpenTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { fragments } = useRooms(card?.id ?? null);
 
   const load = useCallback(async () => {
     if (!childId) return;
@@ -93,9 +95,22 @@ export function KidPlayPage() {
     {error && <div className="payment-result failed" role="alert"><div><strong>提示</strong><p>{error}</p></div></div>}
 
     <p className="kid-section-note">
-      把手機交俾 {child.nickname}，用方向鍵或者下面嘅方向掣四圍行。行埋去就會執到 MEE 卡，
-      執到嘅卡會即刻儲落佢張自我介紹卡度。
+      把手機交俾 {child.nickname}，用方向鍵或者下面嘅方向掣四圍行。
+      行入唔同嘅房睇影片、玩詞語遊戲，每間房完成一次就攞到一塊碎片，
+      儲夠 {FRAGMENTS_PER_CARD} 塊就換到一張 MEE 卡。
     </p>
+
+    <div className="fragment-bar">
+      <span className="fragment-count">
+        {fragments % FRAGMENTS_PER_CARD} / {FRAGMENTS_PER_CARD} 塊碎片
+      </span>
+      <span className="fragment-pips">
+        {Array.from({ length: FRAGMENTS_PER_CARD }, (_, i) => (
+          <i key={i} className={i < fragments % FRAGMENTS_PER_CARD ? "on" : ""} />
+        ))}
+      </span>
+      <span className="fragment-note">已換到 {Math.floor(fragments / FRAGMENTS_PER_CARD)} 張 MEE 卡</span>
+    </div>
 
     <PixelTown
       ground="/assets/town-morning.webp"
@@ -103,7 +118,13 @@ export function KidPlayPage() {
       pickups={TOWN_PICKUPS}
       collectedIds={collected}
       onCollect={code => void handleCollect(code)}
-      onEnter={building => { if (building.to) navigate(building.to); }}
+      onEnter={building => {
+        // The album house holds the collection; every other door is a room
+        // with a lesson behind it.
+        navigate(building.id === "album"
+          ? `/kid/${card.slug}#collection`
+          : `/parent/children/${child.id}/room/${building.id}`);
+      }}
     />
 
     {allFound && <div className="pixel-complete" role="status">

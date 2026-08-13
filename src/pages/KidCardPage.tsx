@@ -201,7 +201,7 @@ function KidLostMode({ card }: { card: KidCard }) {
 
 function KidCallToAction({ card }: { card: KidCard }) {
   return <section className="kid-cta">
-    <PixelPet kind="shiba" facing="down" scale={4} />
+    <PixelPet kind="watermelon-shiba" facing="down" scale={4} />
     <h2>想幫你嘅小朋友整一張？</h2>
     <p>MINIMEE 係小朋友版嘅電子名片：一條連結講齊佢係邊個、鍾意咩、儲咗咩，仲可以開遺失模式。</p>
     <div className="kid-cta-actions">
