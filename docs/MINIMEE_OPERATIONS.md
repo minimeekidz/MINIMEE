@@ -477,6 +477,51 @@ Never inline a secret into a workflow file — `${{ secrets.NAME }}` is the
 only correct form, and a literal value there is also invalid expression
 syntax, which is why that run failed before any job started.
 
+### 7c. The kid card (v2) and its deliberate public read
+
+`kid_cards`, `mee_cards` and `kid_tasks` back `/kid/:slug`. This is the only
+part of the schema `anon` can read, because the product *is* a link that a
+grandparent, a teacher, or whoever found a lost water bottle can open
+without an account. Three deliberate choices make that safe, and none of
+them should be undone without replacing them with something equivalent:
+
+1. **Publishing is the gate.** A card starts `published = false` and is
+   invisible to `anon`. The "card not found" page reads identically for an
+   unpublished card and a nonexistent one, so slugs cannot be probed to
+   confirm a card exists.
+2. **`anon` holds a column-level grant, not a table-level one.** Even on a
+   published row it cannot reach `parent_id`, `child_id`, `lost_mode_token`,
+   `published_at` or `updated_at`. RLS filters rows; the column grant is
+   what filters columns. Adding a sensitive column later means deciding
+   explicitly whether to grant it — the default is that it stays private.
+3. **Name and age group are denormalised onto the card.** Publishing never
+   requires exposing `children`, so the real birth year, interests and
+   private photo path stay parent-only.
+
+**Two Supabase advisor warnings on this design are intentional. Do not
+"fix" them by revoking EXECUTE:**
+
+- `kid_card_for_lost_token(text)` is a `SECURITY DEFINER` function callable
+  by `anon`. That is the point — a finder has no account. It is strictly
+  safer than the alternative of granting `anon` SELECT on a token column:
+  it takes a token and returns only slug, display name and the parent's
+  message, never the token itself or any row it does not match. It also
+  returns nothing the moment the parent switches lost mode off, so a token
+  already printed on a sticker dies immediately rather than waiting for a
+  cache to expire.
+- `is_admin()` is callable by `authenticated`. It only reports whether the
+  *caller* is an admin, so it discloses nothing about anyone else.
+
+**Lost-mode tokens must stay long and cryptographically random.** The
+function is the one anonymous surface in the product, so the only real
+attack on it is guessing tokens. Anything sequential, short, or derived
+from the child's name would make enumeration practical.
+
+RLS was verified against the live database with six checks in a rolled-back
+transaction: unpublished cards and their tokens invisible to `anon`,
+published ones resolving, a wrong token returning nothing, and lost mode
+switched off instantly killing a previously working token.
+
 ### Known open items
 
 - Supabase advisor: **leaked-password protection is disabled**. Turn it on
