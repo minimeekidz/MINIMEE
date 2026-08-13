@@ -67,7 +67,7 @@ export function SideNav({ surface }: { surface: "parent" | "admin" }) {
   const childId = children[0]?.id;
   const childPath = childId ? `/parent/children/${childId}` : "/parent/setup";
   const parent = [
-    ["總覽", "/parent/dashboard"], ["新增孩子", "/parent/setup"], ["小朋友", childPath],
+    ["總覽", "/parent/dashboard"], ["新增孩子", "/parent/setup"], ["小朋友", childPath], ["自我介紹卡", childId ? `${childPath}/card` : "/parent/setup"],
     ["學習主題", childId ? `${childPath}/themes` : "/parent/setup"], ["影片與相片", "/parent/media"],
     ["MEE 紀念冊", "/parent/albums"], ["好友及分享", childId ? `${childPath}/sharing` : "/parent/setup"],
     ["付款與訂閱", childId ? `${childPath}/subscription` : "/parent/setup"], ["私隱與下載", "/parent/privacy"]

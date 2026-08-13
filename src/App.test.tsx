@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -103,6 +104,17 @@ vi.mock("./lib/service", async importOriginal => ({
   cancelSubscription,
   createAiVideoJobs,
 }));
+
+function editableCard(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "card-1", child_id: "demo-child-01", slug: "mimi-ab12cd",
+    display_name: "Mimi", age_group: "6-8", tagline: "", about: "",
+    likes: [], dream_job: "", scene: null, avatar_url: null,
+    intro_video_url: null, published: false,
+    lost_mode_enabled: false, lost_mode_token: null, lost_mode_message: "",
+    ...overrides,
+  };
+}
 
 function activeSubscription(startedDaysAgo = 3) {
   return {
@@ -371,6 +383,45 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByRole("button", { name: "向左行" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "向右行" })).toBeInTheDocument();
     expect(screen.getByAltText("你嘅角色")).toBeInTheDocument();
+  });
+
+  it("offers to create a card and says plainly that it starts private", async () => {
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/card"]}><App /></MemoryRouter>);
+    expect(await screen.findByRole("button", { name: /建立自我介紹卡/ })).toBeInTheDocument();
+    expect(screen.getByText(/撳「發布」先至有人開得到/)).toBeInTheDocument();
+  });
+
+  it("keeps a new card unpublished until the parent presses publish", async () => {
+    billing.kidCard = editableCard({ published: false });
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/card"]}><App /></MemoryRouter>);
+    expect(await screen.findByText("未公開")).toBeInTheDocument();
+    expect(screen.getByText(/而家只有你自己睇到/)).toBeInTheDocument();
+    // The shareable link is only offered once the card is actually public.
+    expect(screen.queryByRole("button", { name: /複製連結/ })).toBeNull();
+  });
+
+  it("shows the shareable link only after publishing", async () => {
+    billing.kidCard = editableCard({ published: true });
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/card"]}><App /></MemoryRouter>);
+    expect(await screen.findByText("已公開")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /複製連結/ })).toBeInTheDocument();
+    expect(screen.getByText(/\/kid\/mimi-ab12cd/)).toBeInTheDocument();
+  });
+
+  it("mints unguessable lost-mode tokens and slugs", () => {
+    // These are the product's only anonymous surface, so a token has to be
+    // infeasible to guess and a slug must not be derivable from the name.
+    const tokens = new Set(Array.from({ length: 50 }, () => mintLostToken()));
+    expect(tokens.size).toBe(50);
+    for (const token of tokens) expect(token).toMatch(/^[0-9a-f]{40}$/);
+
+    const slugs = new Set(Array.from({ length: 50 }, () => mintSlug("Mimi")));
+    expect(slugs.size).toBe(50);
+    for (const slug of slugs) expect(slug).toMatch(/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/);
+
+    // A Chinese-only nickname has no ascii stem, so it must still produce a
+    // valid slug rather than an empty or invalid one.
+    expect(mintSlug("小明")).toMatch(/^mee-[a-z0-9]+$/);
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {
