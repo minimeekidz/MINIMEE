@@ -571,3 +571,34 @@ footer div { display: flex; gap: 20px; }
 .town-dpad button { border: 3px solid #17102a; border-radius: 6px; background: #ffe9b8; color: #2c2140; font-size: 15px; font-weight: 900; cursor: pointer; touch-action: none; }
 .town-dpad button:active { background: var(--gold); translate: 0 2px; }
 .dpad-up { grid-area: 1 / 2; } .dpad-left { grid-area: 2 / 1; } .dpad-right { grid-area: 2 / 3; } .dpad-down { grid-area: 3 / 2; }
+
+/* ---- v2: rooms, word game and fragments ---- */
+.room-header { position: relative; min-height: 190px; display: flex; align-items: flex-end; margin-bottom: 16px; border: 4px solid #2c2140; border-radius: 8px; background-size: cover; background-position: center; overflow: hidden; image-rendering: pixelated; }
+.room-header-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(27,20,48,.05), rgba(27,20,48,.85)); }
+.room-header-inner { position: relative; padding: 20px; color: #fff4e0; }
+.room-header-inner h2 { margin: 8px 0 4px; text-shadow: 2px 2px 0 #2c2140; }
+.room-header-inner p { margin: 0; font-size: 12px; }
+.room-video { margin-bottom: 16px; border: 4px solid #2c2140; border-radius: 8px; overflow: hidden; background: #16101f; }
+.room-video video { width: 100%; display: block; }
+.room-video-poster { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.room-video-poster img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; opacity: .7; image-rendering: pixelated; }
+.word-game { padding: 22px; border: 4px solid #2c2140; border-radius: 8px; background: #fff8ec; box-shadow: 0 6px 0 rgba(0,0,0,.28); }
+.word-game.done { text-align: center; background: #eefaf5; border-color: var(--green); }
+.word-game.done h3 { margin: 8px 0 4px; }
+.word-game.done p { margin: 0; font-size: 12px; color: var(--muted); }
+.word-game-progress { color: var(--muted); font-size: 10px; font-weight: 800; }
+.word-target { margin: 12px 0 18px; text-align: center; }
+.word-target strong { display: block; font-size: 22px; }
+.word-target small { color: var(--muted); font-size: 12px; }
+.word-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.word-option { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 62px; border: 4px solid #2c2140; border-radius: 8px; background: #ffe9b8; color: #2c2140; font-size: 20px; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,.3); }
+.word-option:hover { background: var(--gold); }
+.word-option:active { translate: 0 3px; box-shadow: 0 2px 0 rgba(0,0,0,.3); }
+.word-option.wrong { background: #ffd9dc; border-color: #a32d3b; color: #a32d3b; }
+.fragment-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 14px 0; padding: 13px 18px; border: 3px solid #2c2140; border-radius: 8px; background: var(--lavender); }
+.fragment-count { font-size: 13px; font-weight: 900; color: var(--violet-dark); }
+.fragment-pips { display: inline-flex; gap: 6px; }
+.fragment-pips i { width: 18px; height: 18px; border: 3px solid #2c2140; border-radius: 4px; background: white; }
+.fragment-pips i.on { background: var(--gold); }
+.fragment-note { margin-left: auto; color: var(--muted); font-size: 10px; font-weight: 800; }
+@media (max-width: 720px) { .word-options { grid-template-columns: 1fr; } .fragment-note { margin-left: 0; } }

@@ -61,6 +61,9 @@ const billing = vi.hoisted(() => ({
   kidCard: null as Record<string, unknown> | null,
   meeCards: [] as Record<string, unknown>[],
   kidTasks: [] as Record<string, unknown>[],
+  rooms: [] as Record<string, unknown>[],
+  lessons: [] as Record<string, unknown>[],
+  fragments: [] as Record<string, unknown>[],
 }));
 
 vi.mock("./lib/supabase", () => {
@@ -69,6 +72,9 @@ vi.mock("./lib/supabase", () => {
       : table === "ai_video_jobs" ? billing.jobs
       : table === "mee_cards" ? billing.meeCards
       : table === "kid_tasks" ? billing.kidTasks
+      : table === "rooms" ? billing.rooms
+      : table === "room_lessons" ? billing.lessons
+      : table === "lesson_fragments" ? billing.fragments
       : [];
 
   const singleFor = (table: string) =>
@@ -96,6 +102,7 @@ vi.mock("./lib/supabase", () => {
     supabase: {
       auth: { resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }) },
       rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+      storage: { from: () => ({ createSignedUrl: () => Promise.resolve({ data: null, error: null }) }) },
       from: (table: string) => makeBuilder(table),
     },
   };
@@ -142,6 +149,9 @@ beforeEach(() => {
   billing.kidCard = null;
   billing.meeCards = [];
   billing.kidTasks = [];
+  billing.rooms = [];
+  billing.lessons = [];
+  billing.fragments = [];
   billing.entitlements = [];
   billing.jobs = [];
   createBillingOrder.mockReset().mockResolvedValue({ ok: false, error: "Not authenticated" });
@@ -501,7 +511,7 @@ describe("MINIMEE route shells", () => {
 
   it("never spawns the pet on a pickup or inside a building", () => {
     // Spawning on a card would hand out a free collectible on open.
-    const spawn = { x: 480, y: 1140, size: 48 };
+    const spawn = { x: 560, y: 1100, size: 48 };
     const centre = { x: spawn.x + spawn.size / 2, y: spawn.y + spawn.size / 2 };
     for (const pickup of TOWN_PICKUPS) {
       expect(Math.hypot(pickup.x - centre.x, pickup.y - centre.y)).toBeGreaterThan(44);
@@ -513,6 +523,42 @@ describe("MINIMEE route shells", () => {
         && feet.y < solid.y + solid.h && feet.y + feet.h > solid.y;
       expect(clash, `spawn overlaps ${b.label}`).toBe(false);
     }
+  });
+
+  it("runs a room's word game and awards its fragment once", async () => {
+    billing.kidCard = editableCard({ published: true });
+    billing.rooms = [{ id: "library", name_zh: "MEE 圖書館", blurb: "認字同詞語", art: "/assets/mee-library.webp", sort_order: 1 }];
+    billing.lessons = [{ id: "l1", room_id: "library", theme: "海洋", title: "海洋詞語",
+      words: [{ word: "海豚", meaning: "dolphin" }, { word: "海龜", meaning: "turtle" }] }];
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/room/library"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "海洋詞語" })).toBeInTheDocument();
+    expect(screen.getByText("第 1 / 2 個詞語")).toBeInTheDocument();
+    // Distractors come from the same lesson, so both words are on screen.
+    expect(screen.getByRole("button", { name: "海豚" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "海龜" })).toBeInTheDocument();
+  });
+
+  it("does not re-award a fragment for a lesson already finished", async () => {
+    billing.kidCard = editableCard({ published: true });
+    billing.rooms = [{ id: "library", name_zh: "MEE 圖書館", blurb: "", art: "/assets/mee-library.webp", sort_order: 1 }];
+    billing.lessons = [{ id: "l1", room_id: "library", theme: "海洋", title: "海洋詞語", words: [{ word: "海豚" }] }];
+    billing.fragments = [{ room_id: "library", lesson_id: "l1", spent: false }];
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/room/library"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByText("呢間房嘅碎片已經收集咗")).toBeInTheDocument();
+    expect(screen.queryByText(/個詞語$/)).toBeNull();
+  });
+
+  it("counts fragments toward the next MEE card", async () => {
+    billing.kidCard = editableCard({ published: true });
+    billing.fragments = [
+      { room_id: "library", lesson_id: "l1", spent: false },
+      { room_id: "cinema", lesson_id: "l2", spent: false },
+    ];
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
+    expect(await screen.findByText(/2 \/ 4 塊碎片/)).toBeInTheDocument();
+    expect(screen.getByText(/已換到 0 張 MEE 卡/)).toBeInTheDocument();
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {

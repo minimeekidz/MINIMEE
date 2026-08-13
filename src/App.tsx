@@ -11,6 +11,7 @@ import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
 import { KidCardPage } from "./pages/KidCardPage";
 import { KidCardEditorPage } from "./pages/KidCardEditorPage";
 import { KidPlayPage } from "./pages/KidPlayPage";
+import { RoomPage } from "./pages/RoomPage";
 import { PixelWorldPage } from "./pages/PixelWorldPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -51,6 +52,7 @@ export default function App() {
       <Route path="/parent/children/:id" element={<ProtectedRoute><ChildProfilePage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/card" element={<ProtectedRoute><KidCardEditorPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/play" element={<ProtectedRoute><KidPlayPage /></ProtectedRoute>} />
+      <Route path="/parent/children/:id/room/:roomId" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/themes" element={<ProtectedRoute><ThemesPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/subscription" element={<ProtectedRoute><SubscriptionStatesPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />

@@ -549,6 +549,46 @@ Creating a card seeds `STARTER_TASKS` so the child opens the town to
 something to do rather than an empty list. A seeding failure does not block
 card creation — the card is the deliverable.
 
+### 7e. Rooms, lessons and fragments (the v2 learning loop)
+
+Rooms are **permanent places with fixed identities** — the library is always
+about reading words, the café always about everyday talk. A **theme** swaps
+the video and word list inside a room; it never rearranges what the rooms
+are for.
+
+That split is the whole design, and two things follow from it:
+
+- A child walks into any room in any order. Nothing is a prerequisite for
+  anything else, so the free-roam town is not a course wearing a disguise.
+- **One room can be updated without producing a whole set.** The business
+  can open with three rooms filled and add the rest later. The rejected
+  alternative — one theme spread across rooms, where room 1 is words and
+  room 2 is sentences — would have required producing every room for every
+  theme, and would have made the rooms ordered again by the back door.
+
+`rooms` → `room_lessons` (one `current` per room, enforced by a partial
+unique index) → `lesson_fragments`.
+
+**Fragments:** finishing a room's word game earns one; `FRAGMENTS_PER_CARD`
+(4) of them become a MEE card. Four reads as "visit four places" and is one
+sitting's work. The unique constraint on `(kid_card_id, room_id, lesson_id)`
+makes awarding idempotent, so replaying a lesson never mints a second
+fragment — the child has to visit a different room, or wait for new content.
+
+Cards come with the subscription. There is deliberately no per-card
+purchase: a paid card draw is the thing parents most object to.
+
+**One game type, not one per room.** A room's identity comes from its
+subject and its art, not from a novel interaction the child has to relearn.
+One game can be made good where five would each be mediocre.
+
+**`room_lessons.video_path` is not readable by `anon`.** Note that a
+column-level `REVOKE` does nothing while a table-level `GRANT` stands —
+Postgres treats the table grant as covering every column — so the table
+grant is revoked and the safe columns granted individually. Videos live in
+the private `room-videos` bucket and are played through a signed URL minted
+at play time, so ending a subscription actually takes the video away.
+
 ### Known open items
 
 - Supabase advisor: **leaked-password protection is disabled**. Turn it on

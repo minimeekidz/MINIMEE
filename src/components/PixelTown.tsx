@@ -56,7 +56,7 @@ export function PixelTown({
   // Spawn on open ground: standing on a pickup would hand the child a free
   // card the moment the town opens, and standing in a doorway would pop the
   // "go inside" prompt before they have moved.
-  const [pos, setPos] = useState({ x: 480, y: 1140 });
+  const [pos, setPos] = useState({ x: 560, y: 1100 });
   const [facing, setFacing] = useState<Facing>("down");
   const [walkFrame, setWalkFrame] = useState(0);
   const [moving, setMoving] = useState(false);
