@@ -145,3 +145,140 @@ export async function resolveLostToken(token: string): Promise<LostContact | nul
   };
   return { slug: row.slug, displayName: row.display_name, message: row.lost_mode_message ?? "" };
 }
+
+// ---------------------------------------------------------------------------
+// Parent-side editing
+// ---------------------------------------------------------------------------
+
+export interface EditableCard {
+  id: string;
+  childId: string;
+  slug: string;
+  displayName: string;
+  ageGroup: KidCard["ageGroup"] | null;
+  tagline: string;
+  about: string;
+  likes: string[];
+  dreamJob: string;
+  scene: string | null;
+  avatarUrl: string | null;
+  introVideoUrl: string | null;
+  published: boolean;
+  lostModeEnabled: boolean;
+  lostModeToken: string | null;
+  lostModeMessage: string;
+}
+
+const EDITABLE_COLUMNS =
+  "id, child_id, slug, display_name, age_group, tagline, about, likes, dream_job, scene, avatar_url, intro_video_url, published, lost_mode_enabled, lost_mode_token, lost_mode_message";
+
+function toEditable(row: Record<string, unknown>): EditableCard {
+  return {
+    id: row.id as string,
+    childId: row.child_id as string,
+    slug: row.slug as string,
+    displayName: (row.display_name as string) ?? "",
+    ageGroup: (row.age_group as KidCard["ageGroup"]) ?? null,
+    tagline: (row.tagline as string) ?? "",
+    about: (row.about as string) ?? "",
+    likes: (row.likes as string[]) ?? [],
+    dreamJob: (row.dream_job as string) ?? "",
+    scene: (row.scene as string) ?? null,
+    avatarUrl: (row.avatar_url as string) ?? null,
+    introVideoUrl: (row.intro_video_url as string) ?? null,
+    published: Boolean(row.published),
+    lostModeEnabled: Boolean(row.lost_mode_enabled),
+    lostModeToken: (row.lost_mode_token as string) ?? null,
+    lostModeMessage: (row.lost_mode_message as string) ?? "",
+  };
+}
+
+// Lost-mode tokens are the product's only anonymous surface, so guessing one
+// has to be infeasible: 160 bits from the platform CSPRNG, never derived
+// from the child's name or anything else an attacker could narrow down.
+export function mintLostToken(): string {
+  const bytes = new Uint8Array(20);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+// Slugs are public, so they carry a random suffix as well as a readable
+// stem — otherwise a card's URL could be guessed from the child's name, and
+// the set of published cards would be enumerable.
+export function mintSlug(nickname: string): string {
+  const stem = nickname
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 20);
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const suffix = Array.from(bytes, byte => byte.toString(36)).join("").slice(0, 6);
+  return `${stem || "mee"}-${suffix}`;
+}
+
+export async function loadEditableCard(childId: string): Promise<EditableCard | null> {
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("kid_cards")
+    .select(EDITABLE_COLUMNS)
+    .eq("child_id", childId)
+    .maybeSingle();
+  return data ? toEditable(data as Record<string, unknown>) : null;
+}
+
+export async function createCard(params: {
+  childId: string;
+  parentId: string;
+  nickname: string;
+  ageGroup: KidCard["ageGroup"] | null;
+}): Promise<{ ok: true; card: EditableCard } | { ok: false; error: string }> {
+  if (!supabase) return { ok: false, error: "Supabase is not configured" };
+  const { data, error } = await supabase
+    .from("kid_cards")
+    .insert({
+      child_id: params.childId,
+      parent_id: params.parentId,
+      slug: mintSlug(params.nickname),
+      display_name: params.nickname,
+      age_group: params.ageGroup,
+      // A new card is never public. The parent has to read it over and
+      // press publish before anyone outside the family can open it.
+      published: false,
+    })
+    .select(EDITABLE_COLUMNS)
+    .single();
+  if (error || !data) return { ok: false, error: error?.message ?? "未能建立卡片" };
+  return { ok: true, card: toEditable(data as Record<string, unknown>) };
+}
+
+export async function saveCard(card: EditableCard): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Supabase is not configured" };
+  const { error } = await supabase
+    .from("kid_cards")
+    .update({
+      display_name: card.displayName,
+      age_group: card.ageGroup,
+      tagline: card.tagline || null,
+      about: card.about || null,
+      likes: card.likes,
+      dream_job: card.dreamJob || null,
+      scene: card.scene,
+      lost_mode_enabled: card.lostModeEnabled,
+      // Minted on first enable and kept afterwards, so a sticker already
+      // printed keeps working when the parent toggles lost mode off and on.
+      lost_mode_token: card.lostModeEnabled ? (card.lostModeToken ?? mintLostToken()) : card.lostModeToken,
+      lost_mode_message: card.lostModeMessage || null,
+    })
+    .eq("id", card.id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function setPublished(cardId: string, published: boolean): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Supabase is not configured" };
+  const { error } = await supabase
+    .from("kid_cards")
+    .update({ published, published_at: published ? new Date().toISOString() : null })
+    .eq("id", cardId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
