@@ -54,11 +54,21 @@ const billing = vi.hoisted(() => ({
   subscription: null as Record<string, unknown> | null,
   entitlements: [] as Record<string, unknown>[],
   jobs: [] as Record<string, unknown>[],
+  kidCard: null as Record<string, unknown> | null,
+  meeCards: [] as Record<string, unknown>[],
+  kidTasks: [] as Record<string, unknown>[],
 }));
 
 vi.mock("./lib/supabase", () => {
   const rowsFor = (table: string) =>
-    table === "theme_entitlements" ? billing.entitlements : table === "ai_video_jobs" ? billing.jobs : [];
+    table === "theme_entitlements" ? billing.entitlements
+      : table === "ai_video_jobs" ? billing.jobs
+      : table === "mee_cards" ? billing.meeCards
+      : table === "kid_tasks" ? billing.kidTasks
+      : [];
+
+  const singleFor = (table: string) =>
+    table === "kid_cards" ? billing.kidCard : billing.subscription;
 
   const makeBuilder = (table: string) => {
     const builder: Record<string, unknown> = {
@@ -67,7 +77,7 @@ vi.mock("./lib/supabase", () => {
       in: () => builder,
       order: () => builder,
       limit: () => builder,
-      maybeSingle: () => Promise.resolve({ data: billing.subscription, error: null }),
+      maybeSingle: () => Promise.resolve({ data: singleFor(table), error: null }),
       then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
         Promise.resolve({ data: rowsFor(table), error: null }).then(resolve, reject),
     };
@@ -77,6 +87,7 @@ vi.mock("./lib/supabase", () => {
   return {
     supabase: {
       auth: { resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }) },
+      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
       from: (table: string) => makeBuilder(table),
     },
   };
@@ -109,6 +120,9 @@ function activeSubscription(startedDaysAgo = 3) {
 
 beforeEach(() => {
   billing.subscription = null;
+  billing.kidCard = null;
+  billing.meeCards = [];
+  billing.kidTasks = [];
   billing.entitlements = [];
   billing.jobs = [];
   createBillingOrder.mockReset().mockResolvedValue({ ok: false, error: "Not authenticated" });
@@ -308,30 +322,47 @@ describe("MINIMEE route shells", () => {
     view.unmount();
   });
 
-  it("shows an example kid card so parents understand the product", () => {
+  it("shows an example kid card so parents understand the product", async () => {
     render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
-    expect(screen.getByRole("heading", { level: 1, name: "Mimi" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Mimi" })).toBeInTheDocument();
     expect(screen.getByText(/我最鍾意畫海底世界/)).toBeInTheDocument();
     expect(screen.getByText("示範卡 · 唔係真實小朋友")).toBeInTheDocument();
     expect(screen.getByText("MEE-014")).toBeInTheDocument();
   });
 
-  it("offers the lost-item channel without exposing parent contact details", () => {
+  it("offers the lost-item channel without exposing parent contact details", async () => {
     render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
-    expect(screen.getByRole("link", { name: /聯絡家長/ })).toHaveAttribute("href", "/lost/example-token-mimi");
+    expect(await screen.findByRole("link", { name: /聯絡家長/ })).toHaveAttribute("href", "/lost/example-token-mimi");
     expect(screen.getByText(/電話唔會公開/)).toBeInTheDocument();
   });
 
-  it("hides the lost-item section on a card that has it switched off", () => {
+  it("hides the lost-item section on a card that has it switched off", async () => {
     render(<MemoryRouter initialEntries={["/kid/ryan"]}><App /></MemoryRouter>);
-    expect(screen.getByRole("heading", { level: 1, name: "Ryan" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Ryan" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /聯絡家長/ })).toBeNull();
   });
 
-  it("keeps the intro video unplayable until one has been generated", () => {
+  it("keeps the intro video unplayable until one has been generated", async () => {
     render(<MemoryRouter initialEntries={["/kid/mimi"]}><App /></MemoryRouter>);
-    expect(screen.getByText("自我介紹片製作中…")).toBeInTheDocument();
+    expect(await screen.findByText("自我介紹片製作中…")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /自我介紹片製作中/ })).toBeDisabled();
+  });
+
+  it("does not reveal a real card's lost-mode token to the browser", async () => {
+    // A published card from the database never carries its token — the
+    // finder reaches the parent through the QR sticker instead. Probing a
+    // card page must not hand out a working contact link.
+    billing.kidCard = {
+      id: "card-1", slug: "real-kid", display_name: "小明", age_group: "6-8",
+      tagline: "我係小明", about: "", likes: [], dream_job: "",
+      scene: null, avatar_url: null, intro_video_url: null, intro_video_poster: null,
+      published: true, lost_mode_enabled: true, lost_mode_message: "唔該聯絡我媽咪",
+    };
+    render(<MemoryRouter initialEntries={["/kid/real-kid"]}><App /></MemoryRouter>);
+    expect(await screen.findByRole("heading", { level: 1, name: "小明" })).toBeInTheDocument();
+    expect(screen.getByText("唔該聯絡我媽咪")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /聯絡家長/ })).toBeNull();
+    expect(screen.getByText(/掃描物品上面嘅 MINIMEE QR 貼紙/)).toBeInTheDocument();
   });
 
   it("renders the walkable pixel world with its collectibles", () => {

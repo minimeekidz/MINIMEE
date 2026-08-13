@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Compass, Heart, MapPin, Play, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { PublicHeader, StatusPill } from "../components/UI";
-import { EXAMPLE_CARDS, findExampleCard, type KidCard, type MeeCard } from "../lib/kidCard";
+import { EXAMPLE_CARDS, type KidCard, type MeeCard } from "../lib/kidCard";
+import { useKidCard } from "../lib/kidCardStore";
 import { useStructuredData } from "../lib/seo";
 
 // The public face of MINIMEE v2: a child's self-introduction card. Parents
@@ -11,7 +12,8 @@ import { useStructuredData } from "../lib/seo";
 // grandparent, a teacher or whoever found a lost water bottle.
 export function KidCardPage() {
   const { slug } = useParams();
-  const card = findExampleCard(slug ?? "");
+  const lookup = useKidCard(slug);
+  const card = lookup.state === "found" ? lookup.card : null;
 
   useStructuredData("minimee-kid-card", card
     ? {
@@ -23,7 +25,16 @@ export function KidCardPage() {
       }
     : {});
 
+  if (lookup.state === "loading") {
+    return <div className="public-page"><PublicHeader /><main className="content-page">
+      <p className="lead">載入緊…</p>
+    </main></div>;
+  }
+
   if (!card) {
+    // Covers both "no such card" and "the parent has unpublished it" — the
+    // wording never distinguishes the two, so an unpublished card cannot be
+    // confirmed to exist by probing slugs.
     return <div className="public-page"><PublicHeader /><main className="content-page">
       <h1>搵唔到呢張卡</h1>
       <p className="lead">呢條連結可能已經失效，或者卡主已經收起咗佢。</p>
@@ -121,7 +132,13 @@ function KidLostMode({ card }: { card: KidCard }) {
   return <section className="kid-section kid-lost-section">
     <div className="kid-lost-head"><MapPin /><h2>執到我嘅嘢？</h2></div>
     <p className="kid-about">{card.lostMode.message}</p>
-    <Link className="button" to={`/lost/${card.lostMode.token}`}>聯絡家長（唔會顯示電話號碼）</Link>
+    {/* A real card never ships its lost-mode token to the browser — the
+        finder reaches the parent by scanning the QR sticker on the item,
+        which carries /lost/:token. Only the bundled examples have a token
+        here, so the demo link stays clickable. */}
+    {card.lostMode.token
+      ? <Link className="button" to={`/lost/${card.lostMode.token}`}>聯絡家長（唔會顯示電話號碼）</Link>
+      : <p className="kid-section-note">掃描物品上面嘅 MINIMEE QR 貼紙就可以聯絡家長。</p>}
     <p className="kid-section-note">
       <ShieldCheck size={13} />
       訊息經 MINIMEE 轉交，家長嘅電郵同電話唔會公開俾任何人。
