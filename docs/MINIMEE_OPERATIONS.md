@@ -522,44 +522,66 @@ transaction: unpublished cards and their tokens invisible to `anon`,
 published ones resolving, a wrong token returning nothing, and lost mode
 switched off instantly killing a previously working token.
 
-### 7d. MEE 世界 — connected zones, not one boxed map
+### 7d. MEE 世界 — a town you walk around
 
-The world is **several full-screen zones joined by gates**, not a small
-viewport inside a page. The background *is* the screen.
+The world is **four full-screen maps joined by gates**, and the map is drawn
+**much larger than the window with the camera following the child**. That
+last part is the whole design. An earlier version fitted each zone into one
+viewport, and Em's verdict was exact: 行兩步就撞埋撞吓，根本就冇體驗. Walking
+only feels like walking if it covers ground.
 
 ```
-遊樂場 ←→ MEE 小鎮 ←→ 碼頭 ←→ 蘑菇廣場
-  │           │          │         │
-劇院       圖書館      碼頭市集   收藏館
-寵物房     戲院        Hero Studio
-           Paw Café
+蘑菇村 ←→ MEE 小鎮 ←→ 碼頭
+             │
+           嘉年華
+
+小鎮：圖書館・戲院・Paw Café・Hero Studio・寵物房
+碼頭：碼頭市集          嘉年華：劇院・遊樂場
+蘑菇村：MEE 收藏館
 ```
 
-Walking to a **gate** at the edge of a zone fades across to the next one;
-walking to a **door** opens the room behind it, where the lesson video and
-its word game live.
+The 嘉年華 zone is deliberately not called 遊樂場: 遊樂場 is one of the rooms
+inside it, and a zone sharing a room's name reads as a loop on the signs.
 
-Three things follow from how the art is built:
+Walking to a **gate** fades across to the next map; walking to a **door**
+opens the room behind it, where the lesson video and its word game live.
+
+Four things follow from how the art is built:
 
 - **Buildings are painted into the background.** Nothing is composited on
   top of them — a door is a marker on the ground, not a picture of a door.
   An earlier version pasted framed building images over the art and looked
   like a collage.
-- **Positions are normalised 0-1** against the background, so one layout
-  serves a phone held portrait and a desktop window, and replacing the art
-  does not mean re-tuning every doorway.
-- **Walking is confined to a per-zone ground band** (`walk.top` /
-  `walk.bottom`). That keeps the child out of the sky and off the rooftops
-  without per-pixel collision against a painted scene.
+- **Where you can walk is derived from the art**, not from a rectangle.
+  `scripts/build-walkmask.mjs` classifies the pale warm stone of the paths
+  out of each background and writes `src/lib/walkmask.ts` — one bit per
+  cell on a 96-wide grid, a few hundred bytes a map. The child follows the
+  real roads and cannot stand on a roof or in the sea, which is most of
+  what sells a top-down world. **Rerun it after changing any background.**
+- **Positions are normalised 0-1** over the map, so replacing the art at a
+  different resolution changes nothing in code.
+- **The zoom is keyed to how big the child is on screen**, anchored to the
+  geometric mean of the window's width and height. Keying it to height
+  alone made a phone — tall and narrow — show nothing but the paving slab
+  underfoot.
 
-**Day and night** follow the child's own clock (06:00–18:00 is day), so
-evening play looks like evening. Zones that have only one piece of art use
-it for both and rely on the tint.
+**Movement is tap-to-walk first**, with a d-pad and arrow keys alongside.
+Tapping is what a child reaches for on a phone. Tapping an unreachable spot
+walks to the nearest reachable one rather than doing nothing, and a held key
+cancels a tapped destination so the child never fights the game for control.
+
+**Day and night** follow the child's own clock (06:00–18:00 is day). The
+night maps are **graded from the day art** by `scripts/make-night.mjs`, not
+separate pictures. The night art that shipped with the set is drawn from
+street level while these maps are top-down, so using it would have moved the
+ground under the child every evening and forced every door, path and mask to
+exist twice and agree.
 
 Tests assert the graph is sound: every gate points at a zone that exists,
-every door at a room that exists, every zone is reachable from another one,
-and every hotspot sits inside its zone's walkable band. A dead end would
-otherwise be invisible until a child walked into it.
+every door at a room that has art, every room with art has a door leading to
+it, every zone is reachable from another one, and **every hotspot stands on
+a cell the walk mask actually allows**. That last one immediately caught a
+real off-by-one — the placement pass rounded where `isWalkable` floors.
 
 ### 7d-i. How cards are earned
 
@@ -627,6 +649,21 @@ Postgres treats the table grant as covering every column — so the table
 grant is revoked and the safe columns granted individually. Videos live in
 the private `room-videos` bucket and are played through a signed URL minted
 at play time, so ending a subscription actually takes the video away.
+
+**Publishing new content: `/admin/lessons`** (admin only, in the admin nav as
+「房間內容」). Pick a room, type a title, paste the word list one per line as
+`詞語 | 讀音 | 意思`, optionally give the path of a file already uploaded to
+the private `room-videos` bucket, and publish.
+
+Publishing is **insert-then-flip `current`, never an edit in place.** The
+previous lesson stays in the table, so a bad swap is undone by pressing
+「設為現行」 on the old row rather than by retyping the content. The page
+clears the old `current` first because the partial unique index allows only
+one per room.
+
+A lesson with no `video_path` is legitimate — the word game still works, so
+rooms can open with content before the video is shot. Two words is the
+minimum, since the game needs something to choose between.
 
 ### 7f. Art pipeline and the brand book
 

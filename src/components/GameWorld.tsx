@@ -1,23 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { findHero, TOWN_PETS } from "../lib/characters";
 import {
-  hotspotNear, isDaytime, zoneBackground, ZONES, type Hotspot, type Zone,
+  hotspotNear, isDaytime, isWalkable, nearestWalkable, zoneAspect, zoneBackground,
+  ZONES, type Hotspot, type Zone,
 } from "../lib/world";
 
-// The world screen: the background IS the screen, not a panel inside a page.
+// The world screen. The map is bigger than the window and the camera follows
+// the child, which is the whole point — walking has to cover ground before it
+// feels like walking.
 //
-// Everything is in normalised 0-1 space against the background, so one set
-// of coordinates works on a phone held portrait and on a desktop window, and
-// swapping the art does not mean re-tuning every door.
+// Movement is Sims-style tap-to-walk first, with a d-pad and arrow keys for
+// anyone who prefers them. Tapping is what a child reaches for on a phone,
+// and it also means the walk can route around a fence the child cannot see
+// the edge of.
 
-const SPEED = 0.0042;
-const HERO_H = 0.16;
+/**
+ * How big the child is drawn, as a share of the screen. The map is then sized
+ * to suit, rather than the other way round: keying the zoom off the window
+ * height alone made a phone — tall and narrow — show nothing but the paving
+ * slab underfoot, so the anchor is the geometric mean of both dimensions.
+ */
+const HERO_ON_SCREEN = 0.125;
+/** Map-space units per frame at 60fps. */
+const SPEED = 0.0028;
+/** Hero height as a share of the drawn map height. */
+const HERO_H = 0.062;
+/** Stop this close to a tapped point rather than jittering on top of it. */
+const ARRIVE = 0.006;
 
 interface Wanderer { id: string; art: string; name: string; x: number; y: number; angle: number; flip: boolean }
+interface Point { x: number; y: number }
 
 export interface GameWorldProps {
   heroId?: string | null;
-  /** Zones the child has already finished, drawn with a tick. */
+  /** Rooms the child has already finished, drawn with a tick. */
   doneRooms?: string[];
   onEnterRoom: (roomId: string) => void;
   onExit?: () => void;
@@ -26,66 +42,144 @@ export interface GameWorldProps {
 export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameWorldProps) {
   const hero = findHero(heroId);
   const [zoneId, setZoneId] = useState("town");
-  const [pos, setPos] = useState({ x: 0.5, y: 0.8 });
+  const zone: Zone = ZONES[zoneId] ?? ZONES.town;
+
+  const [pos, setPos] = useState<Point>(zone.spawn);
   const [facing, setFacing] = useState<"left" | "right">("right");
   const [moving, setMoving] = useState(false);
   const [fading, setFading] = useState(false);
   const [near, setNear] = useState<Hotspot | null>(null);
+  const [viewport, setViewport] = useState({ w: 1280, h: 800 });
 
-  const zone: Zone = ZONES[zoneId] ?? ZONES.town;
   const daytime = useMemo(() => isDaytime(), []);
   const held = useRef({ up: false, down: false, left: false, right: false });
+  const target = useRef<Point | null>(null);
   const raf = useRef(0);
+  const stage = useRef<HTMLDivElement | null>(null);
 
-  // Only the pets whose home falls in this zone show up, so each screen has
-  // a couple of neighbours rather than all twelve crowding one street.
+  // Map size in pixels. Never smaller than the window in either axis, or the
+  // background would letterbox and the illusion of standing somewhere breaks.
+  const map = useMemo(() => {
+    const aspect = zoneAspect(zone);
+    const anchor = Math.sqrt(viewport.w * viewport.h);
+    let h = (anchor * HERO_ON_SCREEN) / HERO_H;
+    let w = h * aspect;
+    // Never smaller than the window in either axis, or the map would
+    // letterbox and stop reading as somewhere the child is standing.
+    if (w < viewport.w) { w = viewport.w; h = w / aspect; }
+    if (h < viewport.h) { h = viewport.h; w = h * aspect; }
+    return { w, h };
+  }, [zone, viewport]);
+
+  useEffect(() => {
+    const measure = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  // Camera: centre on the child, then clamp so the map never pulls away from
+  // the edge of the window.
+  const camera = useMemo(() => ({
+    x: Math.min(Math.max(pos.x * map.w - viewport.w / 2, 0), Math.max(0, map.w - viewport.w)),
+    y: Math.min(Math.max(pos.y * map.h - viewport.h / 2, 0), Math.max(0, map.h - viewport.h)),
+  }), [pos, map, viewport]);
+
+  // Only a few pets per zone, so a street has neighbours rather than a crowd.
   const [pets, setPets] = useState<Wanderer[]>([]);
   useEffect(() => {
-    const slice = TOWN_PETS.filter((_, index) => index % 4 === Object.keys(ZONES).indexOf(zoneId) % 4);
-    setPets(slice.map((pet, index) => ({
-      id: pet.id, art: pet.art, name: pet.nameZh,
-      x: 0.15 + (index * 0.23) % 0.7,
-      y: zone.walk.top + 0.05 + ((index * 0.17) % (zone.walk.bottom - zone.walk.top - 0.1)),
-      angle: Math.random() * Math.PI * 2, flip: false,
-    })));
-  }, [zoneId, zone.walk.top, zone.walk.bottom]);
+    const index = Object.keys(ZONES).indexOf(zone.id);
+    const slice = TOWN_PETS.filter((_, i) => i % 4 === index % 4);
+    setPets(slice.map((pet, i) => {
+      const spot = nearestWalkable(zone, 0.2 + (i * 0.27) % 0.6, 0.3 + (i * 0.19) % 0.5)
+        ?? zone.spawn;
+      return {
+        id: pet.id, art: pet.art, name: pet.nameZh,
+        x: spot.x, y: spot.y, angle: Math.random() * Math.PI * 2, flip: false,
+      };
+    }));
+  }, [zone]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
       setPets(current => current.map(pet => {
-        const angle = pet.angle + (Math.random() - 0.5) * 0.7;
-        const x = Math.min(Math.max(pet.x + Math.cos(angle) * 0.006, 0.06), 0.94);
-        const y = Math.min(Math.max(pet.y + Math.sin(angle) * 0.004, zone.walk.top), zone.walk.bottom);
+        const angle = pet.angle + (Math.random() - 0.5) * 0.9;
+        const x = pet.x + Math.cos(angle) * 0.005;
+        const y = pet.y + Math.sin(angle) * 0.005;
+        // Pets obey the paths too. A neighbour standing in the sea would give
+        // the game away faster than anything else on screen.
+        if (!isWalkable(zone, x, y)) return { ...pet, angle: angle + Math.PI };
         return { ...pet, x, y, angle, flip: Math.cos(angle) < 0 };
       }));
-    }, 500);
+    }, 520);
     return () => window.clearInterval(timer);
-  }, [zone.walk.top, zone.walk.bottom]);
+  }, [zone]);
+
+  // Reset when the zone changes. Doing it here rather than in the travel
+  // handler keeps a deep link into a zone landing in the right place too.
+  useEffect(() => {
+    setPos(zone.spawn);
+    target.current = null;
+  }, [zone]);
 
   useEffect(() => {
     let running = true;
     const step = () => {
       if (!running) return;
-      const dx = (held.current.right ? 1 : 0) - (held.current.left ? 1 : 0);
-      const dy = (held.current.down ? 1 : 0) - (held.current.up ? 1 : 0);
-      if (dx === 0 && dy === 0) setMoving(false);
-      else {
-        setMoving(true);
-        if (dx < 0) setFacing("left");
-        else if (dx > 0) setFacing("right");
+      let dx = (held.current.right ? 1 : 0) - (held.current.left ? 1 : 0);
+      let dy = (held.current.down ? 1 : 0) - (held.current.up ? 1 : 0);
+      // A held key cancels a tapped destination, so the child is never
+      // fighting the game for control.
+      if (dx !== 0 || dy !== 0) target.current = null;
+
+      setPos(current => {
+        const goal = target.current;
+        if (dx === 0 && dy === 0 && goal) {
+          const gx = goal.x - current.x;
+          const gy = goal.y - current.y;
+          if (Math.hypot(gx, gy) < ARRIVE) { return current; }
+          dx = gx; dy = gy;
+        }
+        if (dx === 0 && dy === 0) return current;
+
         const length = Math.hypot(dx, dy) || 1;
-        setPos(current => ({
-          x: Math.min(Math.max(current.x + (dx / length) * SPEED, 0.04), 0.96),
-          // Walking is confined to the ground band, which is what keeps the
-          // child out of the sky without per-pixel collision on painted art.
-          y: Math.min(Math.max(current.y + (dy / length) * SPEED * 0.7, zone.walk.top), zone.walk.bottom),
-        }));
-      }
+        // The maps are tall, so a step of the same map-space size covers far
+        // more pixels vertically. Scaling by the aspect keeps the child's
+        // speed the same in every direction on screen.
+        const aspect = map.w / map.h;
+        const stepX = (dx / length) * SPEED;
+        const stepY = (dy / length) * SPEED * aspect;
+
+        // Slide along whatever the child hits instead of sticking to it: try
+        // the full move, then each axis alone.
+        for (const [tx, ty] of [[stepX, stepY], [stepX, 0], [0, stepY]]) {
+          const nx = current.x + tx;
+          const ny = current.y + ty;
+          if (tx === 0 && ty === 0) continue;
+          if (isWalkable(zone, nx, ny)) return { x: nx, y: ny };
+        }
+        target.current = null;
+        return current;
+      });
+
       raf.current = window.requestAnimationFrame(step);
     };
     raf.current = window.requestAnimationFrame(step);
     return () => { running = false; window.cancelAnimationFrame(raf.current); };
-  }, [zone.walk.top, zone.walk.bottom]);
+  }, [zone, map]);
+
+  // Facing and the walk animation are derived from where the child actually
+  // ended up, so they cannot disagree with what is on screen.
+  const previous = useRef(pos);
+  useEffect(() => {
+    const dx = pos.x - previous.current.x;
+    const dy = pos.y - previous.current.y;
+    previous.current = pos;
+    const walked = Math.hypot(dx, dy) > 0.0001;
+    setMoving(walked);
+    if (dx > 0.0002) setFacing("right");
+    else if (dx < -0.0002) setFacing("left");
+  }, [pos]);
 
   useEffect(() => { setNear(hotspotNear(zone, pos.x, pos.y)); }, [zone, pos]);
 
@@ -107,27 +201,85 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, []);
 
-  // Crossing between zones fades rather than cutting, so the world reads as
-  // continuous instead of teleporting.
+  const walkTo = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const box = stage.current?.getBoundingClientRect();
+    if (!box) return;
+    const x = (event.clientX - box.left + camera.x) / map.w;
+    const y = (event.clientY - box.top + camera.y) / map.h;
+    // Tapping a rooftop walks to the doorstep in front of it rather than
+    // doing nothing at all.
+    target.current = nearestWalkable(zone, x, y);
+  }, [camera, map, zone]);
+
   const travel = useCallback((spot: Hotspot) => {
     if (spot.kind === "door") { onEnterRoom(spot.target); return; }
     setFading(true);
-    window.setTimeout(() => {
-      setZoneId(spot.target);
-      // Enter from the side you walked in from.
-      setPos({ x: spot.x > 0.5 ? 0.12 : 0.88, y: 0.85 });
-      setFading(false);
-    }, 420);
+    window.setTimeout(() => { setZoneId(spot.target); setFading(false); }, 420);
   }, [onEnterRoom]);
 
-  function hold(dir: keyof typeof held.current, value: boolean) { held.current[dir] = value; }
+  function hold(dir: keyof typeof held.current, value: boolean) {
+    held.current[dir] = value;
+  }
+
+  // Everything on the ground is placed and depth-sorted the same way, so a
+  // pet in front of the child overlaps them and one behind does not.
+  const place = (x: number, y: number) => ({
+    left: `${x * map.w - camera.x}px`,
+    top: `${y * map.h - camera.y}px`,
+    zIndex: 2 + Math.round(y * 100),
+  });
 
   return <div className="world">
     <div
-      className="world-bg"
-      style={{ backgroundImage: `url(${zoneBackground(zone)})` }}
-      data-zone={zoneId}
-    />
+      ref={stage}
+      className="world-stage"
+      onPointerDown={walkTo}
+      style={{
+        backgroundImage: `url(${zoneBackground(zone)})`,
+        backgroundSize: `${map.w}px ${map.h}px`,
+        backgroundPosition: `${-camera.x}px ${-camera.y}px`,
+      }}
+    >
+      {/* Doors and gates are marked on the ground so there is something to
+          head for without walking the whole map first. */}
+      {zone.hotspots.map(spot => (
+        <div
+          key={spot.id}
+          className={`world-marker ${spot.kind}${doneRooms.includes(spot.target) ? " done" : ""}`}
+          style={place(spot.x, spot.y)}
+        >
+          <span>{spot.kind === "gate" ? "➜" : doneRooms.includes(spot.target) ? "✓" : "▲"}</span>
+          <small>{spot.label}</small>
+        </div>
+      ))}
+
+      {pets.map(pet => (
+        <img
+          key={pet.id}
+          className="world-npc"
+          src={pet.art}
+          alt={pet.name}
+          style={{
+            ...place(pet.x, pet.y),
+            height: `${HERO_H * 0.62 * map.h}px`,
+            transform: `translate(-50%, -100%) scaleX(${pet.flip ? -1 : 1})`,
+          }}
+        />
+      ))}
+
+      <img
+        className={moving ? "world-hero walking" : "world-hero"}
+        src={hero.art}
+        alt={hero.nameZh}
+        style={{
+          ...place(pos.x, pos.y),
+          zIndex: 3 + Math.round(pos.y * 100),
+          height: `${HERO_H * map.h}px`,
+          transform: `translate(-50%, -100%) scaleX(${facing === "left" ? -1 : 1})`,
+        }}
+      />
+    </div>
+
     <div className={daytime ? "world-tint day" : "world-tint night"} />
 
     <div className="world-hud">
@@ -135,40 +287,6 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
       <span className="world-time">{daytime ? "☀ 日頭" : "🌙 夜晚"}</span>
       {onExit && <button className="world-exit" onClick={onExit}>離開</button>}
     </div>
-
-    {/* Doors and gates are marked on the ground so the child can see where
-        there is something to do without walking the whole map first. */}
-    {zone.hotspots.map(spot => (
-      <div
-        key={spot.id}
-        className={`world-marker ${spot.kind}${doneRooms.includes(spot.target) ? " done" : ""}`}
-        style={{ left: `${spot.x * 100}%`, top: `${spot.y * 100}%` }}
-      >
-        <span>{spot.kind === "gate" ? "➜" : doneRooms.includes(spot.target) ? "✓" : "▲"}</span>
-        <small>{spot.label}</small>
-      </div>
-    ))}
-
-    {pets.map(pet => (
-      <img
-        key={pet.id}
-        className="world-npc"
-        src={pet.art}
-        alt={pet.name}
-        style={{ left: `${pet.x * 100}%`, top: `${pet.y * 100}%`, transform: `translate(-50%, -100%) scaleX(${pet.flip ? -1 : 1})` }}
-      />
-    ))}
-
-    <img
-      className={moving ? "world-hero walking" : "world-hero"}
-      src={hero.art}
-      alt={hero.nameZh}
-      style={{
-        left: `${pos.x * 100}%`, top: `${pos.y * 100}%`,
-        height: `${HERO_H * 100}%`,
-        transform: `translate(-50%, -100%) scaleX(${facing === "left" ? -1 : 1})`,
-      }}
-    />
 
     {near && <button className="world-action" onClick={() => travel(near)}>
       {near.kind === "door" ? `入去 ${near.label}` : near.label}
@@ -184,6 +302,8 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
       <button aria-label="向下行" className="pad-down"
         onPointerDown={() => hold("down", true)} onPointerUp={() => hold("down", false)} onPointerLeave={() => hold("down", false)}>▼</button>
     </div>
+
+    <p className="world-hint">撳邊度就行去邊度</p>
 
     <div className={fading ? "world-fade on" : "world-fade"} />
   </div>;

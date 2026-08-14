@@ -229,11 +229,6 @@ footer div { display: flex; gap: 20px; }
 .child-dock a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #d2cbe2; font-size: 9px; font-weight: 700; }
 .child-dock span { font-size: 21px; }
 .pixel-world-hero { position: relative; min-height: 330px; color: white; background: #242044; overflow: hidden; }
-.world-bg { width: 100%; height: 330px; object-fit: cover; }
-.world-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; background: linear-gradient(0deg, rgba(22,17,47,.96), rgba(22,17,47,.03) 75%); }
-.world-overlay h1 { margin: 10px 0 4px; font-size: 28px; }.world-overlay p { margin: 0; color: #d9d3e7; font-size: 11px; }
-.world-overlay .progress-meta { color: #d9d3e7; }.world-overlay .progress-track { background: #49415f; }
-.world-overlay .progress-track span { background: var(--gold); }
 .location-grid { padding: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .location-grid a { min-height: 130px; display: flex; flex-direction: column; justify-content: space-between; padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: white; box-shadow: 0 8px 25px rgba(36,28,56,.06); }
 .location-grid a > span { font-size: 30px; }
@@ -533,8 +528,9 @@ footer div { display: flex; gap: 20px; }
 .editor-grid label, .editor-grid > div { display: flex; flex-direction: column; gap: 6px; }
 .editor-wide { grid-column: 1 / -1; }
 .editor-grid label > span, .editor-label { font-size: 11px; font-weight: 800; }
-.editor-grid input, .editor-grid textarea { padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; font: inherit; font-size: 13px; background: #fbfaff; }
-.editor-grid input:focus, .editor-grid textarea:focus { outline: 0; border-color: var(--violet); background: white; }
+.editor-grid input, .editor-grid textarea, .editor-grid select { padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; font: inherit; font-size: 13px; background: #fbfaff; }
+.editor-grid input:focus, .editor-grid textarea:focus, .editor-grid select:focus { outline: 0; border-color: var(--violet); background: white; }
+.editor-grid textarea { resize: vertical; line-height: 1.6; }
 .editor-grid small { color: var(--muted); font-size: 9px; }
 .like-chips { display: flex; flex-wrap: wrap; gap: 7px; }
 .like-chip { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border: 0; border-radius: 999px; background: var(--lavender); color: var(--violet-dark); font-size: 11px; font-weight: 700; cursor: pointer; }
@@ -626,14 +622,15 @@ footer div { display: flex; gap: 20px; }
 
 /* ---- v2: the world screen (full-bleed, no framed panels) ---- */
 .world { position: fixed; inset: 0; overflow: hidden; background: #0d1020; user-select: none; touch-action: none; }
-/* The background IS the screen. Buildings are painted into the art, so
-   nothing is composited on top of them — only a marker at each doorway. */
-.world-bg { position: absolute; inset: 0; background-size: cover; background-position: center; image-rendering: pixelated; }
-.world-tint { position: absolute; inset: 0; pointer-events: none; }
+/* The map IS the screen, and it is drawn larger than the window so the camera
+   has somewhere to pan. Buildings are painted into the art, so nothing is
+   composited on top of them — only a marker at each doorway. */
+.world-stage { position: absolute; inset: 0; background-repeat: no-repeat; image-rendering: pixelated; cursor: pointer; }
+.world-tint { position: absolute; inset: 0; z-index: 110; pointer-events: none; }
 .world-tint.day { background: linear-gradient(180deg, rgba(255,236,190,.10), rgba(20,33,61,.16)); }
 .world-tint.night { background: linear-gradient(180deg, rgba(20,33,61,.42), rgba(20,33,61,.60)); }
 
-.world-hud { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #fff4e0; background: linear-gradient(180deg, rgba(13,16,32,.75), transparent); font-weight: 900; }
+.world-hud { position: absolute; z-index: 120; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #fff4e0; background: linear-gradient(180deg, rgba(13,16,32,.75), transparent); font-weight: 900; }
 .world-place { font-size: 15px; text-shadow: 2px 2px 0 #14213D; }
 .world-time { font-size: 11px; opacity: .9; }
 .world-exit { margin-left: auto; padding: 7px 14px; border: 3px solid #14213D; border-radius: 6px; background: #ffe9b8; color: #14213D; font-size: 11px; font-weight: 900; cursor: pointer; }
@@ -646,22 +643,24 @@ footer div { display: flex; gap: 20px; }
 .world-marker small { display: inline-block; margin-top: 4px; padding: 2px 7px; border: 2px solid #14213D; border-radius: 4px; background: rgba(255,244,224,.94); color: #14213D; font-size: 9px; font-weight: 900; white-space: nowrap; }
 @keyframes marker-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 
-.world-npc { position: absolute; height: 9%; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(13,16,32,.4)); animation: marker-bob 2.2s steps(2) infinite; }
-.world-hero { position: absolute; z-index: 5; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(13,16,32,.45)); }
+.world-npc { position: absolute; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(13,16,32,.4)); animation: marker-bob 2.2s steps(2) infinite; }
+.world-hero { position: absolute; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(13,16,32,.45)); }
 .world-hero.walking { animation: hero-step .32s steps(2) infinite; }
 @keyframes hero-step { 0%,100% { margin-top: 0; } 50% { margin-top: -6px; } }
 
-.world-action { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); padding: 14px 26px; border: 4px solid #14213D; border-radius: 8px; background: var(--brand-gold); color: #14213D; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 0 rgba(13,16,32,.5); animation: marker-bob 1.1s steps(2) infinite; z-index: 6; }
+.world-action { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); padding: 14px 26px; border: 4px solid #14213D; border-radius: 8px; background: var(--brand-gold); color: #14213D; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 0 rgba(13,16,32,.5); animation: marker-bob 1.1s steps(2) infinite; z-index: 130; }
 
-.world-pad { position: absolute; left: 16px; bottom: 18px; display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 50px); gap: 6px; z-index: 6; }
+/* Kept at the left edge, away from the middle of the screen: gate markers sit
+   at the bottom of a map and the pad used to land right on top of them. */
+.world-pad { position: absolute; left: 16px; bottom: 18px; display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 50px); gap: 6px; z-index: 130; opacity: .85; }
 .world-pad button { border: 3px solid #14213D; border-radius: 8px; background: rgba(255,233,184,.94); color: #14213D; font-size: 16px; font-weight: 900; cursor: pointer; touch-action: none; }
 .world-pad button:active { background: var(--brand-gold); translate: 0 2px; }
 .pad-up { grid-area: 1 / 2; } .pad-left { grid-area: 2 / 1; } .pad-right { grid-area: 2 / 3; } .pad-down { grid-area: 3 / 2; }
 
-.world-fade { position: absolute; inset: 0; background: #0d1020; opacity: 0; pointer-events: none; transition: opacity .4s ease; z-index: 10; }
+.world-hint { position: absolute; right: 16px; bottom: 22px; margin: 0; padding: 7px 13px; border: 3px solid #14213D; border-radius: 6px; background: rgba(255,244,224,.9); color: #14213D; font-size: 10px; font-weight: 900; pointer-events: none; z-index: 130; }
+.world-fade { position: absolute; inset: 0; background: #0d1020; opacity: 0; pointer-events: none; transition: opacity .4s ease; z-index: 200; }
 .world-fade.on { opacity: 1; }
 
 @media (min-width: 900px) {
-  .world-pad { left: 50%; transform: translateX(-50%); }
   .world-marker small { font-size: 10px; }
 }

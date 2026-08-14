@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { hotspotNear, isDaytime, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -334,6 +334,32 @@ describe("MINIMEE route shells", () => {
     expect(screen.getByLabelText("工作台篩選")).toBeInTheDocument();
   });
 
+  it("lists every room and which ones still have no current lesson", async () => {
+    billing.rooms = [
+      { id: "library", name_zh: "MEE 圖書館", blurb: "生活詞語", sort_order: 1 },
+      { id: "cinema", name_zh: "MEE 戲院", blurb: "故事詞語", sort_order: 2 },
+    ];
+    billing.lessons = [{
+      id: "lesson-1", room_id: "library", theme: "海洋", title: "海洋詞語",
+      words: [{ word: "海豚" }, { word: "海龜" }], current: true, video_path: null,
+    }];
+    render(<MemoryRouter initialEntries={["/admin/lessons"]}><App /></MemoryRouter>);
+    expect(await screen.findByText(/海洋詞語/)).toBeInTheDocument();
+    // The empty room has to be visible: an unfilled room is the thing the
+    // operator opened this page to find.
+    expect(screen.getByText("仲未有課程。")).toBeInTheDocument();
+    expect(screen.getByText("空")).toBeInTheDocument();
+  });
+
+  it("refuses to publish a lesson with fewer than two words", async () => {
+    billing.rooms = [{ id: "library", name_zh: "MEE 圖書館", blurb: "生活詞語", sort_order: 1 }];
+    render(<MemoryRouter initialEntries={["/admin/lessons"]}><App /></MemoryRouter>);
+    const title = await screen.findByPlaceholderText("海洋詞語");
+    fireEvent.change(title, { target: { value: "海洋詞語" } });
+    fireEvent.click(screen.getByRole("button", { name: /發布做呢間房嘅現行內容/ }));
+    expect(await screen.findByText("最少要兩個詞語，遊戲先有得揀。")).toBeInTheDocument();
+  });
+
   it("marks parent, child and admin routes noindex without a canonical", () => {
     for (const path of ["/parent/dashboard", "/child/room", "/admin", "/lost/token-1", "/login"]) {
       const view = render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
@@ -503,15 +529,41 @@ describe("MINIMEE route shells", () => {
       for (const spot of zone.hotspots) {
         if (spot.kind === "gate") expect(ZONES[spot.target], `${zone.id} → ${spot.target}`).toBeDefined();
         else expect(ROOM_ART[spot.target], `${zone.id} door → ${spot.target}`).toBeDefined();
-        // Hotspots have to sit on ground the child can actually reach.
-        expect(spot.y).toBeGreaterThanOrEqual(zone.walk.top - 0.06);
-        expect(spot.y).toBeLessThanOrEqual(zone.walk.bottom + 0.06);
+        // Every door and gate has to stand on ground the walk mask actually
+        // allows, or the child can see the marker and never reach it.
+        expect(isWalkable(zone, spot.x, spot.y), `${zone.id}/${spot.id} off the path`).toBe(true);
       }
+      // Every room with art must have a door leading to it. A room nobody can
+      // walk into is content that has been paid for and never seen.
+      for (const room of Object.keys(ROOM_ART)) {
+        const hasDoor = Object.values(ZONES).some(other =>
+          other.hotspots.some(s => s.kind === "door" && s.target === room));
+        expect(hasDoor, `no door leads to ${room}`).toBe(true);
+      }
+      // Arriving has to leave the child standing somewhere they can walk from,
+      // and never on a gate: spawning on the return gate put 返小鎮 under their
+      // thumb the moment they arrived, so the first tap sent them home again.
+      expect(isWalkable(zone, zone.spawn.x, zone.spawn.y), `${zone.id} spawn off the path`).toBe(true);
+      expect(hotspotNear(zone, zone.spawn.x, zone.spawn.y)?.kind,
+        `${zone.id} spawns on a gate`).not.toBe("gate");
+
       // Every zone must be reachable from somewhere, or it is unusable.
       const reachable = Object.values(ZONES).some(other =>
         other.id !== zone.id && other.hotspots.some(s => s.kind === "gate" && s.target === zone.id));
       expect(reachable, `${zone.id} is unreachable`).toBe(true);
     }
+  });
+
+  it("walks to the nearest path when the child taps somewhere unreachable", () => {
+    const town = ZONES.town;
+    // The top of the town map is open sea. A child who taps it should end up
+    // on the nearest shore path rather than nothing happening at all.
+    expect(isWalkable(town, 0.5, 0.04)).toBe(false);
+    const landed = nearestWalkable(town, 0.5, 0.04);
+    expect(landed).not.toBeNull();
+    expect(isWalkable(town, landed!.x, landed!.y)).toBe(true);
+    // A tap on ground that is already walkable must not move the destination.
+    expect(nearestWalkable(town, town.spawn.x, town.spawn.y)).toEqual(town.spawn);
   });
 
   it("switches the world between day and night art", () => {

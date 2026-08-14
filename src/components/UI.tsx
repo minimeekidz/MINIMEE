@@ -73,7 +73,7 @@ export function SideNav({ surface }: { surface: "parent" | "admin" }) {
     ["付款與訂閱", childId ? `${childPath}/subscription` : "/parent/setup"], ["私隱與下載", "/parent/privacy"]
   ];
   const admin = [
-    ["營運總覽", "/admin"], ["內容管理", "/admin/content"], ["資產中心", "/admin/assets"],
+    ["營運總覽", "/admin"], ["房間內容", "/admin/lessons"], ["內容管理", "/admin/content"], ["資產中心", "/admin/assets"],
     ["AI 工作", "/admin/ai-jobs"], ["QC", "/admin/qc"], ["客服", "/admin/support"],
     ["商務", "/admin/commerce"], ["私隱", "/admin/privacy"], ["審計", "/admin/audit"]
   ];
