@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { findHero, TOWN_PETS, type TownPet } from "../lib/characters";
 import { PET_WISHES, WISH_MS } from "../lib/petFriends";
 import { usePetFriends } from "../lib/petStore";
+import { useFullscreen } from "../lib/fullscreen";
 import { PetEncounter } from "./PetEncounter";
 import {
   arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ZONE,
@@ -95,6 +96,7 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
   const [viewport, setViewport] = useState({ w: 1280, h: 800 });
 
   const { friends, usedToday, refresh: refreshFriends } = usePetFriends(cardId);
+  const fullscreen = useFullscreen();
 
   const daytime = useMemo(() => isDaytime(), []);
   const held = useRef({ up: false, down: false, left: false, right: false });
@@ -419,12 +421,13 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
           <button
             className={nearPet?.pet.id === walker.pet.id ? "world-npc close" : "world-npc"}
             onClick={event => { event.stopPropagation(); meetPet(walker); }}
-            style={{
-              height: `${HERO_H * 0.62 * map.h}px`,
-              transform: `scaleX(${walker.flip ? -1 : 1})`,
-            }}
+            style={{ transform: `scaleX(${walker.flip ? -1 : 1})` }}
           >
-            <img src={walker.pet.art} alt={walker.pet.nameZh} />
+            <img
+              src={walker.pet.art}
+              alt={walker.pet.nameZh}
+              style={{ height: `${HERO_H * 0.62 * map.h}px` }}
+            />
           </button>
         </div>
       ))}
@@ -442,11 +445,16 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
       />
     </div>
 
-    <div className={daytime ? "world-tint day" : "world-tint night"} />
+    <div className="world-tint" />
 
     <div className="world-hud">
       <span className="world-place">{zone.name}</span>
       <span className="world-time">{daytime ? "☀ 日頭" : "🌙 夜晚"}</span>
+      {fullscreen.supported && <button
+        className="world-exit ghost"
+        onClick={fullscreen.toggle}
+        aria-label={fullscreen.active ? "退出全螢幕" : "全螢幕"}
+      >{fullscreen.active ? "⤡" : "⤢"}</button>}
       {onExit && <button className="world-exit" onClick={onExit}>離開</button>}
     </div>
 
@@ -462,7 +470,12 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
           <small>空白鍵</small>
         </button>}
 
+    {/* Keyed by pet: without it React reuses the panel across pets, and every
+        bit of its local state — the running total, the bubble, today's
+        question — carries over to the next animal. Two pets on the same
+        stored score (any two at zero) would then share a total. */}
     {meeting && <PetEncounter
+      key={meeting.id}
       pet={meeting}
       cardId={cardId}
       points={friends[meeting.id] ?? 0}

@@ -623,16 +623,34 @@ pixels every half second and read as drift rather than life. Each carries a
 **wish bubble** (`PET_WISHES`), which is pure decoration and the cheapest
 thing on the screen that makes the town look inhabited.
 
-**好感度 (`src/lib/petFriends.ts`)** — eight levels, and two rules hold the
+They **stop and turn when the child comes close**. That reads the way an
+animal behaves, and it is also the practical half: a small child cannot
+reliably tap a target that never stops moving.
+
+They are placed **relative to the zone's arrival point**, not at fixed map
+coordinates. Spread evenly across the map they all landed most of a screen
+above the entrance, so a child's first view was an empty street.
+
+**好感度 (`src/lib/petFriends.ts`)** — eight levels, and three rules hold the
 design up:
 
-- **Every level costs more than the last.** A test asserts it. A flat curve
-  would have a child at the top of all twelve pets inside a week, with
-  nothing left across a year's subscription.
-- **Every action has a daily cap, enforced in the database.** The unique
-  index on `(kid_card_id, pet_id, action, day, seq)` *is* the cap — a repeat
-  simply inserts nothing. Left to the UI, the fastest route to best friends
-  would be tapping 打招呼 two hundred times, which teaches nothing.
+- **Friendship is per pet.** Making friends with the penguin says nothing
+  about the hamster; twelve separate relationships is the point. The panel is
+  **keyed by pet id** for this reason — unkeyed, React reused one component
+  instance and its running total followed the child from animal to animal,
+  which is invisible whenever two pets sit on the same stored score and so is
+  true of every pair at the start.
+- **One point at a time, once a day per action.** The child may keep chatting
+  as much as they like and the replies keep changing — a friend does not stop
+  talking to you because you have run out of points — but the number moves
+  once. The cap is the unique index on
+  `(kid_card_id, pet_id, action, day, seq)`, not UI state: left to the client
+  the fastest route to best friends is tapping 打招呼 two hundred times.
+- **Levels are evenly spaced** (`LEVEL_STEP`). An escalating curve was tried
+  and removed: more actions unlock as the friendship grows, so a day already
+  earns more at level 5 than at level 1, and stretching the steps on top of
+  that turned the back half into a grind. A test asserts the spacing, and
+  asserts that even a perfect day at max level is a fraction of one level.
 
 Actions unlock in tiers: greetings at level 1, hugging and sharing feelings
 in the middle, and at the top the pet gives the child a card — normal at 6,
@@ -729,6 +747,22 @@ Two places consume them: the self-introduction card (興趣 / 職業 chosen by
 picture rather than typed) and the pets' daily question, where the sticker
 *is* the question. **Every learning word wants a same-named sticker** — a
 word without one can only be asked as text.
+
+### 7g. Running as a full-screen web app
+
+The world is meant to read as a game, not a page with a game on it.
+
+- `public/manifest.webmanifest` with `display: standalone` and a
+  `fullscreen` override, so an installed MINIMEE opens with no browser
+  chrome at all. That is the only route to a chrome-free game on iPhone
+  Safari, which has no Fullscreen API.
+- `viewport-fit=cover` so the map reaches under a notch, and
+  `user-scalable=no` — a child dragging to walk must never pinch-zoom the
+  page out from under themselves.
+- A full-screen toggle in the world's HUD (`src/lib/fullscreen.ts`) for the
+  ordinary-tab case. It is **hidden** where the browser has no Fullscreen
+  API rather than shown and doing nothing, and it only ever fires from the
+  button press — the API rejects anything else.
 
 ### 7f. Art pipeline and the brand book
 

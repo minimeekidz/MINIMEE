@@ -74,13 +74,17 @@ export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChange
       return;
     }
     const used = usedToday[`${pet.id}:${action.id}`] ?? 0;
-    if (used >= action.perDay) { setBubble("今日傾夠喇，聽日再嚟搵我啦！"); return; }
+    // Already counted today. The pet still answers, and still says something
+    // different — a friend does not stop talking to you because you have run
+    // out of points. Only the number stops moving.
+    if (used >= action.perDay) { setBubble(pickReply(action)); return; }
     setBusy(true);
     const next = await doPetAction(cardId, pet.id, action.id, used + 1);
     setBusy(false);
-    if (next === null) { setBubble("今日傾夠喇，聽日再嚟搵我啦！"); return; }
     setBubble(pickReply(action));
-    applyTotal(next);
+    // A null total means the database refused the repeat — the cap held on a
+    // request the UI thought was still free. Nothing to report to the child.
+    if (next !== null) applyTotal(next);
 
     // The two card actions are the reward at the top of the ladder.
     if (action.id === "card-normal" || action.id === "card-flash") {
@@ -170,9 +174,10 @@ export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChange
           className={spent ? "pet-action spent" : "pet-action"}
           onClick={() => void run(action)}
           disabled={busy}
-          title={spent ? "今日做過喇" : `+${action.points} 好感度`}
+          title={spent ? "今日嘅好感度加咗喇，不過仲可以傾" : `+${action.points} 好感度`}
         >
           <span aria-hidden>{action.icon}</span>{action.label}
+          {spent && <em aria-label="今日已經加過好感度">✓</em>}
         </button>;
       })}
     </div>

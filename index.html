@@ -2,8 +2,10 @@
 <html lang="zh-HK">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#6c5ce7" />
+    <!-- viewport-fit=cover so the world reaches under a phone's notch, and no
+         user zoom: a child dragging to walk should never pinch-zoom the page. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
+    <meta name="theme-color" content="#0d1020" />
     <meta name="description" content="MINIMEE — 將學習變成孩子的童年收藏" />
     <meta name="application-name" content="MINIMEE" />
     <meta property="og:site_name" content="MINIMEE" />
@@ -19,6 +21,13 @@
     <meta name="twitter:description" content="專為家庭而設的個人化 AI 學習、影片、小遊戲與 MEE 收藏卡體驗。" />
     <meta name="twitter:image" content="https://minimee.me/assets/hero-studio-interior.webp" />
     <link rel="canonical" href="https://minimee.me/" />
+    <!-- Installed to the home screen this opens without browser chrome, which
+         is what makes it read as a game rather than a web page. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MINIMEE" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.svg" />
     <title>MINIMEE｜將學習收藏成童年</title>

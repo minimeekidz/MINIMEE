@@ -626,9 +626,12 @@ footer div { display: flex; gap: 20px; }
    has somewhere to pan. Buildings are painted into the art, so nothing is
    composited on top of them — only a marker at each doorway. */
 .world-stage { position: absolute; inset: 0; background-repeat: no-repeat; image-rendering: pixelated; cursor: pointer; }
-.world-tint { position: absolute; inset: 0; z-index: 110; pointer-events: none; }
-.world-tint.day { background: linear-gradient(180deg, rgba(255,236,190,.10), rgba(20,33,61,.16)); }
-.world-tint.night { background: linear-gradient(180deg, rgba(20,33,61,.42), rgba(20,33,61,.60)); }
+/* No colour wash over the map. Night is already graded into the artwork by
+   scripts/make-night.mjs, so an overlay darkened it twice and came out muddy;
+   over the day art it just muted colours Em had chosen. Only a soft vignette
+   remains, to stop the HUD text floating on a bright sky. */
+.world-tint { position: absolute; inset: 0; z-index: 110; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(13,16,32,.28) 100%); }
 
 .world-hud { position: absolute; z-index: 120; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #fff4e0; background: linear-gradient(180deg, rgba(13,16,32,.75), transparent); font-weight: 900; }
 .world-place { font-size: 15px; text-shadow: 2px 2px 0 #14213D; }
@@ -643,7 +646,6 @@ footer div { display: flex; gap: 20px; }
 .world-marker small { display: inline-block; margin-top: 4px; padding: 2px 7px; border: 2px solid #14213D; border-radius: 4px; background: rgba(255,244,224,.94); color: #14213D; font-size: 9px; font-weight: 900; white-space: nowrap; }
 @keyframes marker-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 
-.world-npc { position: absolute; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(13,16,32,.4)); animation: marker-bob 2.2s steps(2) infinite; }
 .world-hero { position: absolute; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(13,16,32,.45)); }
 .world-hero.walking { animation: hero-step .32s steps(2) infinite; }
 @keyframes hero-step { 0%,100% { margin-top: 0; } 50% { margin-top: -6px; } }
@@ -684,8 +686,11 @@ footer div { display: flex; gap: 20px; }
 /* ---- v2: pets that live here, and talking to them ---- */
 .world-npc-wrap { position: absolute; display: grid; justify-items: center; transform: translate(-50%, -100%); }
 .world-wish { margin-bottom: 3px; padding: 4px 9px; border: 2px solid #14213D; border-radius: 10px 10px 10px 2px; background: rgba(255,247,232,.95); color: #14213D; font-size: 9px; font-weight: 800; white-space: nowrap; animation: marker-bob 3.4s steps(2) infinite; pointer-events: none; }
-.world-npc { display: block; padding: 0; border: 0; background: none; cursor: pointer; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(13,16,32,.4)); animation: marker-bob 2.2s steps(2) infinite; }
-.world-npc img { height: 100%; width: auto; image-rendering: pixelated; }
+/* The height goes on the image, not the button: sizing the button and then
+   asking the image for 100% of it left the sprite's width to resolve against
+   a box that was itself waiting on the image, and the pets came out squashed. */
+.world-npc { display: block; padding: 0; border: 0; background: none; cursor: pointer; line-height: 0; filter: drop-shadow(0 3px 0 rgba(13,16,32,.4)); animation: marker-bob 2.2s steps(2) infinite; }
+.world-npc img { display: block; width: auto; image-rendering: pixelated; }
 .world-npc.close { filter: drop-shadow(0 0 0 #fff) drop-shadow(0 3px 0 rgba(13,16,32,.4)) brightness(1.12); }
 .world-action.pet { background: #ffd7ec; }
 
@@ -722,3 +727,9 @@ footer div { display: flex; gap: 20px; }
 .pet-action:hover:not(:disabled) { background: var(--brand-gold); }
 .pet-action.spent { opacity: .42; }
 .pet-locked { margin: 11px 0 0; color: var(--muted); font-size: 9px; font-weight: 800; }
+
+/* Full-screen toggle, next to 離開. Hidden where the browser has no
+   Fullscreen API at all (iPhone Safari), where installing to the home screen
+   is the route to a chrome-free game instead. */
+.world-exit.ghost { margin-left: auto; padding: 7px 11px; font-size: 13px; }
+.world-exit.ghost + .world-exit { margin-left: 7px; }
