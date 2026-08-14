@@ -1,131 +1,108 @@
 // 好感度 — how a friendship with one town pet grows.
 //
-// The scoring is deliberately tiny and deliberately not per-action:
+// **The authority for all of this is Em's workbook**
+// (`docs/source/MINIMEE_寵物設定與VO規格_v1.xlsx`, sheets 00_玩法總規則 and
+// 02_12級好感度), converted to `src/data/petBible.json`. Level titles,
+// thresholds and what unlocks where are read from there rather than written
+// out here, so the sheet and the game cannot drift apart.
 //
-//   • **Visiting a pet at all earns 1 point, once a day.** Not one point per
-//     action. Pressing every button was homework — a child would work through
-//     the list to farm the number instead of doing the things they actually
-//     felt like. Now the actions are free and unlimited, and a child taps
-//     攬一攬 ten times because they want to, not because it pays.
-//   • **Answering that pet's word question earns 1 more** — but only for the
-//     first two pets a day, across the whole town. That scarcity is the
-//     point: with twelve pets and two slots, a child has to choose who they
-//     are actually building a friendship with rather than spreading thin.
-//   • **A wrong answer costs nothing.** Two tries; miss both and the pet says
-//     try again tomorrow — and the daily slot is *not* spent, so the child
-//     can go and find another friend. Losing a chance for guessing is how you
-//     teach a five-year-old to stop guessing.
+// The scoring, from sheet 00:
 //
-// So a day is worth at most 14 points across all twelve pets, and any one
-// friendship moves 1–2 points a day. Levels are a flat 30 points apart:
-// 15 days a level for a pet you quiz daily, 30 for one you only visit.
+//   • **One point a day per pet for interacting at all** — not per action.
+//     Whichever button the child presses first that day scores; every later
+//     one still has its own VO and animation and adds nothing. The sheet's
+//     stated reason is 避免為刷分而重複按Action；Action回歸純粹互動與角色扮演.
+//   • **One more for answering that pet's question — but only twice a day
+//     across the whole town.** Not two per pet. This is what makes a child
+//     choose who they are really befriending.
+//   • **A wrong first answer must not reveal the answer.** One real retry.
+//     A correct second answer still scores. Two wrong scores nothing and
+//     **does not consume a bonus slot**, so the child can go to another pet.
+//   • **Answering after the two slots are gone still counts as learning.**
+//     It is recorded and praised; it just adds no 好感度.
 //
-// Repetition is handled by events (src/lib/petEvents.ts), not by bigger
-// numbers — the same greeting every day for a month is what actually makes a
-// child stop, and no amount of curve tuning fixes it.
+// So a pet moves at most 2 points a day, a level is a flat 30, and Lv.12 is
+// 330 — 165 days for a pet quizzed daily, 330 for one merely visited.
+//
+// Friendship is a relationship, not a report card. Answer quality is recorded
+// separately (first try / second try / failed) and must never be represented
+// by this number.
+
+import { BIBLE_LEVELS } from "./petBible";
 
 export type PetActionId =
-  | "greet" | "chat" | "wave"
-  | "share-activity" | "jump"
-  | "hug" | "share-likes"
-  | "share-feelings" | "gift"
-  | "gossip"
-  | "card-normal"
-  | "best-friend"
-  | "card-flash";
+  | "greet" | "walk-together" | "hug"
+  | "favourite-activity" | "share-likes"
+  | "secret-1" | "invite" | "share-feelings"
+  | "secret-2" | "outing" | "memories" | "best-friend";
 
 export interface PetAction {
   id: PetActionId;
   label: string;
   /** Emoji stand-in so an action reads before a child can read. */
   icon: string;
-  /** Friendship level this becomes available at. */
+  /** Friendship level this becomes available at, per sheet 02. */
   level: number;
-  /** What the pet does back. Events add more lines on top of these. */
-  reply: string[];
 }
 
-// No points and no daily limit on any of these: the first interaction of the
-// day is what scores, whichever one it happens to be.
+/**
+ * The action ladder, matching 02_12級好感度's 新互動／關係變化 column level for
+ * level. No action carries points or a daily cap of its own — the day's first
+ * interaction is what scores, whichever one it happens to be.
+ */
 export const PET_ACTIONS: PetAction[] = [
-  { id: "greet", label: "打招呼", icon: "👋", level: 1,
-    reply: ["早晨呀！", "你返嚟啦！", "今日好天氣喎～", "我等咗你好耐喇！"] },
-  { id: "chat", label: "傾下計", icon: "💬", level: 1,
-    reply: ["我啱啱喺公園見到隻好肥嘅雀仔！", "你估我今朝食咗咩？", "呢度嘅花開晒喇。", "琴日我發咗個好得意嘅夢。"] },
-  { id: "wave", label: "揮手", icon: "🙌", level: 1,
-    reply: ["嘻嘻！", "揮返俾你～", "我見到你喇！", "喂——！"] },
-
-  { id: "share-activity", label: "分享活動", icon: "🎏", level: 2,
-    reply: ["聽落好好玩喎！", "下次帶埋我去啦～", "哇，我都想試！", "你做咩都咁叻嘅。"] },
-  { id: "jump", label: "一齊跳", icon: "⭐", level: 2,
-    reply: ["跳高啲！", "哈哈哈，好好玩！", "我跳得仲高呀！", "再嚟多次！"] },
-
-  { id: "hug", label: "攬一攬", icon: "🤗", level: 3,
-    reply: ["暖笠笠～", "多謝你呀。", "我今日開心咗好多。", "你好香喎。"] },
-  { id: "share-likes", label: "講下鍾意咩", icon: "💗", level: 3,
-    reply: ["我都鍾意呀！", "原來我哋咁夾嘅。", "記住咗喇！", "下次我搵埋俾你。"] },
-
-  { id: "share-feelings", label: "講下心情", icon: "🌈", level: 4,
-    reply: ["唔開心可以話我知㗎。", "我喺度陪住你。", "聽你講完我都開心。", "你今日笑得好靚。"] },
-  { id: "gift", label: "送小禮物", icon: "🎁", level: 4,
-    reply: ["俾我㗎？多謝！", "我會好好收埋佢。", "哇……我好鍾意。", "我都有嘢想俾你！"] },
-
-  { id: "gossip", label: "聽小秘密", icon: "🤫", level: 6,
-    reply: ["咪話俾人聽呀…", "得你一個知㗎咋。", "噓——過嚟啲。", "呢件事我淨係同你講。"] },
-
-  { id: "card-normal", label: "收下佢送嘅 MEE 卡", icon: "🃏", level: 8,
-    reply: ["呢張送俾你！", "我覺得你會鍾意呢張。", "留住佢啦～"] },
-
-  { id: "best-friend", label: "最好嘅朋友", icon: "💖", level: 10,
-    reply: ["你係我最好嘅朋友。", "永遠都係好朋友呀！", "有你真好。"] },
-
-  { id: "card-flash", label: "收下閃卡", icon: "✨", level: 12,
-    reply: ["呢張好罕有㗎！", "閃閃哋，好靚呀！", "淨係送俾最好嘅朋友。"] },
+  { id: "greet", label: "打招呼／傾偈", icon: "👋", level: 1 },
+  { id: "walk-together", label: "一齊行兩步", icon: "🚶", level: 2 },
+  { id: "hug", label: "攬一攬／摸摸頭", icon: "🤗", level: 3 },
+  { id: "favourite-activity", label: "做佢鍾意嘅活動", icon: "🎏", level: 4 },
+  { id: "share-likes", label: "分享喜好／送小禮物", icon: "🎁", level: 5 },
+  { id: "secret-1", label: "聽小秘密", icon: "🤫", level: 6 },
+  { id: "invite", label: "接受佢嘅邀請", icon: "✉️", level: 7 },
+  { id: "share-feelings", label: "分享心情", icon: "🌈", level: 8 },
+  { id: "secret-2", label: "聽更深嘅秘密", icon: "🔑", level: 9 },
+  { id: "outing", label: "去秘密地點", icon: "🗺️", level: 10 },
+  { id: "memories", label: "珍藏回憶對話", icon: "📸", level: 11 },
+  { id: "best-friend", label: "最好朋友專屬互動", icon: "💖", level: 12 },
 ];
 
 export interface FriendLevel {
   level: number;
   title: string;
   needed: number;
-  /** Levels with no new action are where a surprise reward lands instead. */
-  surprise: boolean;
+  /** Em's own description of what changes at this level. */
+  unlocks: string;
+  reward: string;
 }
 
-/** Points between one level and the next. Flat all the way up. */
-export const LEVEL_STEP = 30;
-
-/** Provisional titles — Em is still deciding the final twelve. */
-const LEVEL_TITLES = [
-  "啱啱識", "識少少", "熟絡咗", "有默契", "講得埋", "好朋友",
-  "老友記", "好夾", "識晒你脾氣", "無所不談", "心照", "最好嘅朋友",
-];
-
-export const FRIEND_LEVELS: FriendLevel[] = LEVEL_TITLES.map((title, index) => {
-  const level = index + 1;
-  return {
-    level,
-    title,
-    needed: index * LEVEL_STEP,
-    // Levels that unlock nothing new are the ones that carry a surprise, so
-    // no level is a dead step.
-    surprise: !PET_ACTIONS.some(action => action.level === level),
-  };
-});
+/** Read from the workbook, so a title change there needs no code change. */
+export const FRIEND_LEVELS: FriendLevel[] = BIBLE_LEVELS.map(level => ({
+  level: level.level,
+  title: level.title,
+  needed: level.needed,
+  unlocks: level.unlocks,
+  reward: level.reward,
+}));
 
 export const MAX_LEVEL = FRIEND_LEVELS[FRIEND_LEVELS.length - 1].level;
+/** Points between levels. Flat, per sheet 00 (「固定30點」). */
+export const LEVEL_STEP = 30;
+/** Lv.12's threshold. Reaching it caps — there is no Lv.13. */
+export const MAX_POINTS = FRIEND_LEVELS[FRIEND_LEVELS.length - 1].needed;
 
 // ---------------------------------------------------------------------------
 // Scoring
 // ---------------------------------------------------------------------------
 
-/** Earned once a day per pet, for turning up at all. */
+/** Earned once a day per pet, for interacting at all. */
 export const VISIT_POINT = 1;
-/** Earned for answering that pet's question, within the daily slots. */
+/** Earned for answering, within the day's global slots. */
 export const QUIZ_POINT = 1;
-/** How many pets a day can pay out for a correct answer, across the town. */
+/** Correct answers a day that can pay, across every pet. */
 export const DAILY_QUIZ_SLOTS = 2;
-/** Tries at one pet's question before it gives the answer away. */
+/** Attempts at one pet's question before it ends for the day. */
 export const QUIZ_TRIES = 2;
+/** Unique fragments that make a topic 已掌握, and so eligible to be asked. */
+export const FRAGMENTS_FOR_MASTERY = 4;
 
 export function levelFor(points: number): FriendLevel {
   let current = FRIEND_LEVELS[0];
@@ -133,16 +110,16 @@ export function levelFor(points: number): FriendLevel {
   return current;
 }
 
-/** Points still to go, and how far through the current level we are. */
 export function levelProgress(points: number): { level: FriendLevel; next: FriendLevel | null; toGo: number; fraction: number } {
-  const level = levelFor(points);
+  const capped = Math.min(points, MAX_POINTS);
+  const level = levelFor(capped);
   const next = FRIEND_LEVELS.find(step => step.level === level.level + 1) ?? null;
   if (!next) return { level, next, toGo: 0, fraction: 1 };
   const span = next.needed - level.needed;
   return {
     level, next,
-    toGo: next.needed - points,
-    fraction: span <= 0 ? 1 : Math.min(1, Math.max(0, (points - level.needed) / span)),
+    toGo: next.needed - capped,
+    fraction: span <= 0 ? 1 : Math.min(1, Math.max(0, (capped - level.needed) / span)),
   };
 }
 
@@ -150,15 +127,13 @@ export function actionsAt(level: number): PetAction[] {
   return PET_ACTIONS.filter(action => action.level <= level);
 }
 
-/** The next thing that unlocks, so the panel can say what is coming. */
 export function nextUnlock(level: number): PetAction | null {
   return PET_ACTIONS.find(action => action.level > level) ?? null;
 }
 
 /**
- * What a pet is thinking about, shown in a bubble over its head — the Sims
- * "wish" Em asked for. Pure decoration, and the cheapest thing on screen that
- * makes the town look inhabited.
+ * What a pet is thinking about, shown over its head. Decoration, and the
+ * cheapest thing on screen that makes the town look inhabited.
  */
 export const PET_WISHES: string[] = [
   "🍰 好想食件蛋糕…", "☀️ 今日出太陽喇！", "💤 想瞓一陣…",
@@ -169,20 +144,16 @@ export const PET_WISHES: string[] = [
   "🫧 想去游水", "⭐ 今晚睇唔睇到星？", "🧸 我個公仔喺邊？",
 ];
 
-/** How long one wish sits in the bubble before the pet thinks of another. */
 export const WISH_MS = 14000;
 
-export function pickReply(action: PetAction, extra: string[] = [], seed = Math.random()): string {
-  // Event lines are mixed in with the pet's ordinary ones rather than
-  // replacing them, so a festival feels like a good day rather than a
-  // different character.
-  const lines = [...extra, ...action.reply];
+export function pickLine(lines: string[], seed = Math.random()): string {
+  if (lines.length === 0) return "";
   return lines[Math.floor(seed * lines.length) % lines.length];
 }
 
 /**
- * Local date key. Daily limits are the child's own day, not UTC — one that
- * rolled over at 8am Hong Kong time would be indefensible to a parent.
+ * Local date key. Daily limits follow the child's own day — one that rolled
+ * over at 8am Hong Kong time would be indefensible to a parent.
  */
 export function today(now: Date = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;

@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { stickerFor } from "./stickers";
-import { today } from "./petFriends";
+import { FRAGMENTS_FOR_MASTERY, today } from "./petFriends";
 
-// Reading and writing 好感度. Everything that changes a number goes through
-// award_pet_points, which records the interaction and adds the points in one
-// step — split in two, a failure between them either burns the child's daily
-// go for nothing or pays them twice, and a child who has been counting will
-// notice either.
+// Reading and writing 好感度.
+//
+// Every point is decided by a database function (award_pet_visit,
+// record_pet_quiz), never by an argument from the browser, and each records
+// its interaction and adds its point in one step. Split in two, a failure
+// between them either burns the child's daily go for nothing or pays them
+// twice, and a child who has been counting notices either.
 
 export interface PetFriendship { petId: string; points: number }
 
@@ -112,42 +114,68 @@ export async function recordQuiz(
 export interface PetQuiz {
   /** The word being asked about. */
   answer: string;
+  /** The lesson's title, for the pet's 「你已經掌握咗『{主題}』喇」 line. */
+  topic: string;
   sticker: string | null;
   options: string[];
 }
 
 /**
- * A question drawn from what this child has actually learnt — only lessons
- * they hold a fragment for. Asking about a word they have never met would be
- * a test rather than a chat, which is the opposite of the point.
+ * A question drawn only from topics the child has **mastered** — all
+ * FRAGMENTS_FOR_MASTERY unique fragments collected, i.e. a complete MEE card.
  *
- * The prompt is the word's sticker, not its text, so a child who cannot yet
- * read four Chinese words still has a real question to answer.
+ * The previous version asked about any lesson the child held a single
+ * fragment of, which sheet 00 rules out explicitly (「不再用『只持有1塊碎片』
+ * 作提問資格」). A pet quizzing a child on a topic they have barely started is
+ * a test, and the pets are not meant to be testing anybody.
+ *
+ * Fragments are counted **distinct by room**, not by row: a duplicate row
+ * would otherwise make one room look like four and let a barely-started topic
+ * through, which is the failure mode QA11 exists to catch.
  */
 export async function petQuizFor(cardId: string): Promise<PetQuiz | null> {
   if (!supabase) return null;
   const { data: fragments } = await supabase
-    .from("lesson_fragments").select("lesson_id").eq("kid_card_id", cardId);
-  const lessonIds = [...new Set((fragments ?? []).map(row => row.lesson_id as string).filter(Boolean))];
-  if (lessonIds.length === 0) return null;
+    .from("lesson_fragments").select("lesson_id, room_id").eq("kid_card_id", cardId);
+
+  const roomsByLesson = new Map<string, Set<string>>();
+  for (const row of fragments ?? []) {
+    const lesson = row.lesson_id as string | null;
+    if (!lesson) continue;
+    if (!roomsByLesson.has(lesson)) roomsByLesson.set(lesson, new Set());
+    roomsByLesson.get(lesson)!.add((row.room_id as string) ?? "");
+  }
+  const mastered = [...roomsByLesson.entries()]
+    .filter(([, rooms]) => rooms.size >= FRAGMENTS_FOR_MASTERY)
+    .map(([lesson]) => lesson);
+  if (mastered.length === 0) return null;
 
   const { data: lessons } = await supabase
-    .from("room_lessons").select("words").in("id", lessonIds);
-  const words = (lessons ?? []).flatMap(row => (row.words as { word: string }[]) ?? [])
-    .map(entry => entry.word).filter(Boolean);
+    .from("room_lessons").select("title, words").in("id", mastered);
+  const pool = (lessons ?? []).filter(row => ((row.words as unknown[]) ?? []).length >= 2);
+  if (pool.length === 0) return null;
+
+  const lesson = pool[Math.floor(Math.random() * pool.length)];
+  const words = ((lesson.words as { word: string }[]) ?? []).map(entry => entry.word).filter(Boolean);
   if (words.length < 2) return null;
 
-  // Prefer a word with a sticker, since that is the whole readability trick;
-  // fall back to text so an incomplete sticker pack still lets pets ask.
+  // Prefer a word with a sticker — the picture is what makes the question
+  // answerable by a child who cannot yet read four Chinese words.
   const drawable = words.filter(word => stickerFor(word));
-  const pool = drawable.length > 0 ? drawable : words;
-  const answer = pool[Math.floor(Math.random() * pool.length)];
+  const answer = (drawable.length > 0 ? drawable : words)[
+    Math.floor(Math.random() * (drawable.length > 0 ? drawable.length : words.length))
+  ];
 
   const distractors = [...new Set(words.filter(word => word !== answer))]
     .sort(() => Math.random() - 0.5).slice(0, 3);
   const options = [...distractors, answer].sort(() => Math.random() - 0.5);
 
-  return { answer, sticker: stickerFor(answer)?.src ?? null, options };
+  return {
+    answer,
+    topic: (lesson.title as string) ?? "",
+    sticker: stickerFor(answer)?.src ?? null,
+    options,
+  };
 }
 
 /** A pet hands over a card. Duplicates are allowed here on purpose — Em's
