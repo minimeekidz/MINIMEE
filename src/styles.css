@@ -876,6 +876,9 @@ footer div { display: flex; gap: 20px; }
 .hero-bubble {
   position: relative;
   grid-column: 2; grid-row: 1;
+  /* A speech bubble, not a banner: past this width it stops looking like
+     something the child said and the row goes hollow. */
+  max-width: 460px; justify-self: start;
   padding: 13px 15px; border-radius: 14px 14px 14px 3px;
   background: #fff; border: 2px solid var(--paper-edge);
 }
@@ -889,15 +892,23 @@ footer div { display: flex; gap: 20px; }
   grid-column: 1 / -1; grid-row: 2;
   display: flex; flex-wrap: wrap; gap: 8px; padding-right: 56px;
 }
+/* A fixed width, or `img { width: 100% }` resolves against the button's
+   max-content size and the pin stretches to the artwork's 512px. */
 .hero-pin {
   display: grid; place-items: center;
-  min-width: 46px; height: 46px; padding: 4px;
-  border: 3px solid #fff; border-radius: 12px;
-  background: var(--paper-warm); color: var(--ink-warm); cursor: pointer;
+  width: 58px; height: 58px; padding: 0;
+  border: 0; border-radius: 12px; background: none; cursor: pointer;
+  color: var(--ink-warm);
+}
+.hero-pin img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(60,40,20,.34));
+}
+.hero-pin.wordonly {
+  width: auto; padding: 4px 12px; font-size: 12px; font-weight: 900;
+  border: 3px solid #fff; background: var(--paper-warm);
   box-shadow: 0 3px 8px rgba(60,40,20,.3);
 }
-.hero-pin img { width: 100%; height: 100%; object-fit: contain; }
-.hero-pin.wordonly { width: auto; padding: 4px 12px; font-size: 12px; font-weight: 900; }
 .hero-pin.wordonly .sticker-wordmark { font-size: 12px; }
 /* Stitching between the portrait and what it likes — not a flowchart arrow. */
 .hero-featured::before {
@@ -910,17 +921,22 @@ footer div { display: flex; gap: 20px; }
 /* ---- stickers ---- */
 .sticker-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .sticker { position: relative; display: grid; justify-items: center; gap: 4px; touch-action: none; }
+/* The artwork is die-cut — every sticker carries its own white outline — so
+   the face is just a hit area. Framing it again in paper gave every sticker
+   a second border inside its own. Only word chips, which have no art to
+   supply an edge, keep the paper look. */
 .sticker-face {
-  display: grid; place-items: center; padding: 6px;
-  border: 3px solid #fff; border-radius: 14px;
-  background: var(--paper-warm); cursor: pointer;
-  box-shadow: 0 4px 10px rgba(60,40,20,.26);
-  transition: transform .12s ease;
+  display: grid; place-items: center; padding: 0;
+  border: 0; border-radius: 14px; background: none; box-shadow: none;
+  cursor: pointer; transition: transform .12s ease;
 }
-.sticker-face img { width: 100%; height: 100%; object-fit: contain; }
-.sticker-s .sticker-face { width: 52px; height: 52px; }
-.sticker-m .sticker-face { width: 66px; height: 66px; }
-.sticker-xl .sticker-face { width: 92px; height: 92px; border-width: 4px; }
+.sticker-face img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(60,40,20,.34));
+}
+.sticker-s .sticker-face { width: 62px; height: 62px; }
+.sticker-m .sticker-face { width: 86px; height: 86px; }
+.sticker-xl .sticker-face { width: 116px; height: 116px; }
 .sticker-label { max-width: 92px; font-size: 10px; font-weight: 900; text-align: center; }
 .sticker:nth-child(3n) .sticker-face { transform: rotate(-3deg); }
 .sticker:nth-child(4n) .sticker-face { transform: rotate(2.5deg); }
@@ -928,7 +944,11 @@ footer div { display: flex; gap: 20px; }
 .sticker-wordmark { font-size: 18px; font-weight: 900; color: var(--ink-soft); }
 /* No artwork for this word yet: the face becomes a paper name chip that grows
    with the word, rather than a fixed square holding a cropped fragment. */
-.sticker-wordonly .sticker-face { width: auto; height: auto; min-height: 44px; padding: 11px 14px; }
+.sticker-wordonly .sticker-face {
+  width: auto; height: auto; min-height: 44px; padding: 11px 14px;
+  border: 3px solid #fff; background: var(--paper-warm);
+  box-shadow: 0 4px 10px rgba(60,40,20,.26);
+}
 .sticker-wordonly .sticker-wordmark { font-size: 14px; color: var(--ink-warm); white-space: nowrap; }
 .sticker-xl.sticker-wordonly .sticker-wordmark { font-size: 19px; }
 .sticker-s.sticker-wordonly .sticker-wordmark { font-size: 12px; }
@@ -945,12 +965,12 @@ footer div { display: flex; gap: 20px; }
 .favourite-label { font-size: 9px; font-weight: 900; color: var(--ink-soft); }
 .favourite-art { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
 .favourite-art.wordonly { aspect-ratio: auto; padding: 10px 4px; }
-.favourite-art img { width: 100%; height: 100%; object-fit: contain; }
+.favourite-art img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(60,40,20,.28)); }
 .favourite-word { font-size: 13px; font-weight: 900; }
 .favourite-slot small { font-size: 9px; font-weight: 800; }
 
 .dream-body { display: flex; align-items: center; gap: 12px; }
-.dream-body img { width: 64px; height: 64px; object-fit: contain; }
+.dream-body img { width: 84px; height: 84px; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(60,40,20,.3)); }
 .dream-body strong { font-size: 15px; }
 .dream-body.wordonly strong { font-size: 20px; }
 /* auto-fit rather than a media query: the pair splits when there is room for
@@ -1063,6 +1083,16 @@ footer div { display: flex; gap: 20px; }
 @media (max-width: 899px) {
   .scrapbook-column { display: grid; gap: 14px; }
   .favourite-grid { grid-template-columns: repeat(2, 1fr); }
+}
+/* Phones: four to a row by construction rather than by arithmetic. Fixed
+   widths meant one sticker wrapped onto a line of its own, which reads as a
+   mistake rather than a cluster — and the reference is a four-across row at
+   this width anyway. Size hierarchy still applies from tablet up. */
+@media (max-width: 480px) {
+  .sticker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: end; }
+  .sticker .sticker-face { width: 100%; height: auto; aspect-ratio: 1; }
+  .sticker-wordonly .sticker-face { height: auto; aspect-ratio: auto; padding: 10px 6px; }
+  .sticker-label { max-width: 100%; }
 }
 .privacy-panel { margin-top: 20px; padding: 22px; border: 1px solid var(--line); border-radius: 20px; background: white; }
 .privacy-panel h2 { margin: 0 0 6px; font-size: 14px; }
