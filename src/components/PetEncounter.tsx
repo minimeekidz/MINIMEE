@@ -152,7 +152,10 @@ export function PetEncounter({
     }
 
     setBusy(true);
-    const result = await recordQuiz(cardId, pet.id, correct);
+    const result = await recordQuiz(cardId, pet.id, correct, {
+      attempts: attempt, word: quiz.answer,
+      lessonId: quiz.lessonId, roomId: quiz.roomId,
+    });
     setBusy(false);
     if (!result) { setBubble("我諗唔起…遲啲再問你啦。"); return; }
 

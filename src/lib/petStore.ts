@@ -96,10 +96,16 @@ export async function recordQuiz(
   cardId: string,
   petId: string,
   correct: boolean,
+  detail: { attempts: number; word: string; lessonId?: string | null; roomId?: string | null },
 ): Promise<QuizResult | null> {
   if (!supabase) return null;
+  // The word and lesson go with the call so the learning record is written in
+  // the same transaction as the point. Recorded separately afterwards, a
+  // failure between the two would leave a child paid but unrecorded.
   const { data, error } = await supabase.rpc("record_pet_quiz", {
     p_card: cardId, p_pet: petId, p_day: today(), p_correct: correct,
+    p_attempts: detail.attempts, p_word: detail.word,
+    p_lesson: detail.lessonId ?? null, p_room: detail.roomId ?? null,
   });
   if (error) return null;
   const row = Array.isArray(data) ? data[0] : data;
@@ -114,6 +120,9 @@ export async function recordQuiz(
 export interface PetQuiz {
   /** The word being asked about. */
   answer: string;
+  /** Which lesson it came from, so the attempt can be attributed. */
+  lessonId: string;
+  roomId: string | null;
   /** The lesson's title, for the pet's 「你已經掌握咗『{主題}』喇」 line. */
   topic: string;
   sticker: string | null;
@@ -151,7 +160,7 @@ export async function petQuizFor(cardId: string): Promise<PetQuiz | null> {
   if (mastered.length === 0) return null;
 
   const { data: lessons } = await supabase
-    .from("room_lessons").select("title, words").in("id", mastered);
+    .from("room_lessons").select("id, room_id, title, words").in("id", mastered);
   const pool = (lessons ?? []).filter(row => ((row.words as unknown[]) ?? []).length >= 2);
   if (pool.length === 0) return null;
 
@@ -172,9 +181,65 @@ export async function petQuizFor(cardId: string): Promise<PetQuiz | null> {
 
   return {
     answer,
+    lessonId: (lesson.id as string) ?? "",
+    roomId: (lesson.room_id as string) ?? null,
     topic: (lesson.title as string) ?? "",
     sticker: stickerFor(answer)?.src ?? null,
     options,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 成績表 — deliberately not derived from 好感度
+// ---------------------------------------------------------------------------
+
+export interface LearningRecord {
+  /** Answered correctly without help. */
+  firstTry: number;
+  /** Got there on the retry — recovered, not failed. */
+  secondTry: number;
+  /** Missed both tries. These are the words worth revisiting. */
+  failed: number;
+  /** Words whose most recent attempt was a miss, most recent first. */
+  needsReview: string[];
+  /** Distinct words the child has been asked about at all. */
+  wordsSeen: number;
+}
+
+/**
+ * What the child has actually learnt, read straight from quiz_attempts.
+ *
+ * Kept apart from 好感度 because sheet 00 is explicit that one must not stand
+ * in for the other: a child who only says hello every day has a high
+ * friendship and an empty record, and a child answering after the day's two
+ * bonus slots are gone has the reverse. A report built off friendship points
+ * would show a parent the wrong thing in both directions.
+ */
+export async function learningRecord(cardId: string): Promise<LearningRecord | null> {
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("quiz_attempts")
+    .select("word, outcome, created_at")
+    .eq("kid_card_id", cardId)
+    .order("created_at", { ascending: false });
+
+  const rows = data ?? [];
+  const latestByWord = new Map<string, string>();
+  for (const row of rows) {
+    // Rows arrive newest first, so the first time a word appears is its most
+    // recent attempt — a word later got right should not stay on the list.
+    const word = row.word as string;
+    if (!latestByWord.has(word)) latestByWord.set(word, row.outcome as string);
+  }
+
+  return {
+    firstTry: rows.filter(row => row.outcome === "first_try_correct").length,
+    secondTry: rows.filter(row => row.outcome === "second_try_correct").length,
+    failed: rows.filter(row => row.outcome === "failed").length,
+    needsReview: [...latestByWord.entries()]
+      .filter(([, outcome]) => outcome === "failed")
+      .map(([word]) => word),
+    wordsSeen: latestByWord.size,
   };
 }
 
