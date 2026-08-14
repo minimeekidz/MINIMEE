@@ -733,3 +733,4 @@ footer div { display: flex; gap: 20px; }
    is the route to a chrome-free game instead. */
 .world-exit.ghost { margin-left: auto; padding: 7px 11px; font-size: 13px; }
 .world-exit.ghost + .world-exit { margin-left: 7px; }
+.pet-event { align-self: start; padding: 2px 8px; border: 2px solid var(--brand-gold); border-radius: 999px; background: #fff2cf; font-size: 9px; font-weight: 900; }

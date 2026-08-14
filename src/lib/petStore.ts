@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { stickerFor } from "./stickers";
-import { PET_ACTIONS, QUIZ_POINTS, today, type PetActionId } from "./petFriends";
+import { today } from "./petFriends";
 
 // Reading and writing 好感度. Everything that changes a number goes through
 // award_pet_points, which records the interaction and adds the points in one
@@ -62,39 +62,51 @@ export function usePetFriends(cardId: string | null) {
 }
 
 /**
- * Do one thing with a pet. Returns the new total, or null when the daily cap
- * has already been used — the caller shows "聽日再嚟" rather than an error,
- * because running out of goes is a normal part of the day, not a fault.
+ * Turning up. One point a day per pet, whichever action the child happened to
+ * tap — the server decides that, so the rule cannot be argued with from a
+ * browser. Returns the pet's new total, or null when there is no card to save
+ * against (the public demo).
  */
-export async function doPetAction(
-  cardId: string,
-  petId: string,
-  actionId: PetActionId,
-  seq: number,
-): Promise<number | null> {
-  const action = PET_ACTIONS.find(candidate => candidate.id === actionId);
-  if (!supabase || !action) return null;
-  const { data, error } = await supabase.rpc("award_pet_points", {
-    p_card: cardId, p_pet: petId, p_action: actionId,
-    p_day: today(), p_seq: seq, p_points: action.points,
+export async function visitPet(cardId: string, petId: string): Promise<number | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("award_pet_visit", {
+    p_card: cardId, p_pet: petId, p_day: today(),
   });
-  if (error) return null;
-  return (data as number | null) ?? null;
+  return error ? null : (data as number | null);
 }
 
-export async function awardQuizPoints(
+export interface QuizResult {
+  /** Whether this answer actually paid, or the day's slots were already gone. */
+  awarded: boolean;
+  total: number;
+  slotsUsed: number;
+}
+
+/**
+ * Record an attempt at a pet's question. Only the first DAILY_QUIZ_SLOTS
+ * correct answers in a day pay, across the whole town — with twelve pets and
+ * two slots, the child has to choose who they are really befriending.
+ *
+ * A wrong answer records that this pet has been asked (no re-rolling the same
+ * animal) but spends no slot, so they can go and find another friend.
+ */
+export async function recordQuiz(
   cardId: string,
   petId: string,
-  usedHint: boolean,
-): Promise<number | null> {
+  correct: boolean,
+): Promise<QuizResult | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.rpc("award_pet_points", {
-    p_card: cardId, p_pet: petId, p_action: "quiz",
-    p_day: today(), p_seq: 1,
-    p_points: usedHint ? QUIZ_POINTS.afterHint : QUIZ_POINTS.correct,
+  const { data, error } = await supabase.rpc("record_pet_quiz", {
+    p_card: cardId, p_pet: petId, p_day: today(), p_correct: correct,
   });
   if (error) return null;
-  return (data as number | null) ?? null;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    awarded: Boolean(row.awarded),
+    total: (row.total as number) ?? 0,
+    slotsUsed: (row.slots_used as number) ?? 0,
+  };
 }
 
 export interface PetQuiz {
