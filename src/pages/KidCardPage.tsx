@@ -7,6 +7,7 @@ import { PublicHeader, StatusPill } from "../components/UI";
 import { PixelPet } from "../components/PixelPet";
 import { EXAMPLE_CARDS, type KidCard, type MeeCard } from "../lib/kidCard";
 import { useKidCard } from "../lib/kidCardStore";
+import { stickerFor } from "../lib/stickers";
 import { useStructuredData } from "../lib/seo";
 
 // The public face of MINIMEE v2, laid out like an adult's commercial e-name
@@ -74,7 +75,10 @@ function KidHero({ card }: { card: KidCard }) {
       <p className="kid-tagline">{card.tagline}</p>
       <div className="kid-hero-meta">
         <span>{card.ageGroup} 歲</span>
-        <span>想做{card.dreamJob || "…仲諗緊"}</span>
+        <span>
+          {(() => { const job = stickerFor(card.dreamJob); return job ? <img className="kid-meta-sticker" src={job.src} alt="" /> : null; })()}
+          想做{card.dreamJob || "…仲諗緊"}
+        </span>
         <span>{card.cards.length} 張 MEE 卡</span>
       </div>
     </div>
@@ -130,7 +134,15 @@ function KidAbout({ card }: { card: KidCard }) {
     {card.about && <p className="kid-about">{card.about}</p>}
     {card.likes.length > 0 && <>
       <h3>我鍾意…</h3>
-      <ul className="kid-likes">{card.likes.map(like => <li key={like}><Heart size={13} />{like}</li>)}</ul>
+      {/* A sticker is matched to the word by name, so a like the artwork does
+          not cover still shows — just with a heart instead of a picture. */}
+      <ul className="kid-likes">{card.likes.map(like => {
+        const sticker = stickerFor(like);
+        return <li key={like} className={sticker ? "has-sticker" : undefined}>
+          {sticker ? <img src={sticker.src} alt="" /> : <Heart size={13} />}
+          {like}
+        </li>;
+      })}</ul>
     </>}
   </section>;
 }

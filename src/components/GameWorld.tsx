@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { findHero, TOWN_PETS } from "../lib/characters";
+import { findHero, TOWN_PETS, type TownPet } from "../lib/characters";
+import { PET_WISHES, WISH_MS } from "../lib/petFriends";
+import { usePetFriends } from "../lib/petStore";
+import { PetEncounter } from "./PetEncounter";
 import {
-  hotspotNear, isDaytime, isWalkable, nearestWalkable, zoneAspect, zoneBackground,
-  ZONES, type Hotspot, type Zone,
+  arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ZONE,
+  zoneAspect, zoneBackground, ZONES, type Hotspot, type Zone,
 } from "../lib/world";
 
 // The world screen. The map is bigger than the window and the camera follows
@@ -28,34 +31,85 @@ const HERO_H = 0.062;
 /** Stop this close to a tapped point rather than jittering on top of it. */
 const ARRIVE = 0.006;
 
-interface Wanderer { id: string; art: string; name: string; x: number; y: number; angle: number; flip: boolean }
+/** How fast a pet ambles, relative to the child. */
+const PET_SPEED = 0.0011;
+/** How far a pet will wander from where it is before picking a new spot. */
+const PET_ROAM = 0.12;
+/** Close enough to say hello. */
+const PET_REACH = 0.06;
+
+/** Somewhere walkable within roaming distance, or stay put if hemmed in. */
+function roam(zone: Zone, at: { x: number; y: number }): Point {
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const angle = Math.random() * Math.PI * 2;
+    const reach = PET_ROAM * (0.35 + Math.random() * 0.65);
+    const candidate = { x: at.x + Math.cos(angle) * reach, y: at.y + Math.sin(angle) * reach * 1.6 };
+    if (isWalkable(zone, candidate.x, candidate.y)) return candidate;
+  }
+  return { x: at.x, y: at.y };
+}
+
+interface Wanderer {
+  pet: TownPet;
+  x: number; y: number;
+  goal: Point;
+  flip: boolean;
+  wish: string;
+}
 interface Point { x: number; y: number }
 
 export interface GameWorldProps {
   heroId?: string | null;
   /** Rooms the child has already finished, drawn with a tick. */
   doneRooms?: string[];
+  /** Room the child has just stepped out of, so they land at its door. */
+  returningFrom?: string | null;
+  /** The child's card, which is what 好感度 is stored against. Null in the
+   *  public demo, where the pets still talk but nothing is kept. */
+  cardId?: string | null;
   onEnterRoom: (roomId: string) => void;
   onExit?: () => void;
 }
 
-export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameWorldProps) {
+export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null, onEnterRoom, onExit }: GameWorldProps) {
   const hero = findHero(heroId);
-  const [zoneId, setZoneId] = useState("town");
+
+  // Coming out of a room starts in that room's own zone, standing at its door.
+  const openedAt = useRef<{ zone: string; from: { room?: string; zone?: string } }>({
+    zone: (returningFrom && ROOM_ZONE[returningFrom]) || "town",
+    from: returningFrom ? { room: returningFrom } : {},
+  });
+  const [zoneId, setZoneId] = useState(openedAt.current.zone);
   const zone: Zone = ZONES[zoneId] ?? ZONES.town;
 
-  const [pos, setPos] = useState<Point>(zone.spawn);
+  // Where the child should appear in whichever zone loads next. Set by travel
+  // before the zone changes, so the arrival effect has it to hand.
+  const arriveFrom = useRef<{ room?: string; zone?: string }>(openedAt.current.from);
+
+  const [pos, setPos] = useState<Point>(() => arrivalPoint(zone, openedAt.current.from));
   const [facing, setFacing] = useState<"left" | "right">("right");
   const [moving, setMoving] = useState(false);
   const [fading, setFading] = useState(false);
   const [near, setNear] = useState<Hotspot | null>(null);
+  const [meeting, setMeeting] = useState<TownPet | null>(null);
   const [viewport, setViewport] = useState({ w: 1280, h: 800 });
+
+  const { friends, usedToday, refresh: refreshFriends } = usePetFriends(cardId);
 
   const daytime = useMemo(() => isDaytime(), []);
   const held = useRef({ up: false, down: false, left: false, right: false });
   const target = useRef<Point | null>(null);
   const raf = useRef(0);
   const stage = useRef<HTMLDivElement | null>(null);
+  // Read by the space/Enter handler at press time, so it can bind once instead
+  // of re-binding every time the child moves.
+  const nearRef = useRef<Hotspot | null>(null);
+  const travelRef = useRef<(spot: Hotspot) => void>(() => {});
+  const petRef = useRef<Wanderer | null>(null);
+  const meetRef = useRef<(walker: Wanderer) => void>(() => {});
+  // The pets' animation loop reads the child's position without re-binding on
+  // every step of the walk, which would restart the loop sixty times a second.
+  const heroAt = useRef<Point>({ x: 0.5, y: 0.8 });
 
   // Map size in pixels. Never smaller than the window in either axis, or the
   // background would letterbox and the illusion of standing somewhere breaks.
@@ -85,40 +139,88 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
     y: Math.min(Math.max(pos.y * map.h - viewport.h / 2, 0), Math.max(0, map.h - viewport.h)),
   }), [pos, map, viewport]);
 
-  // Only a few pets per zone, so a street has neighbours rather than a crowd.
+  // Every pet turns up somewhere. Which zone a pet is in is derived from its
+  // own id rather than shuffled, so the child can learn where a friend lives
+  // and go back to find them — a pet that teleported nightly would make
+  // 好感度 feel like it belonged to nobody.
   const [pets, setPets] = useState<Wanderer[]>([]);
   useEffect(() => {
-    const index = Object.keys(ZONES).indexOf(zone.id);
-    const slice = TOWN_PETS.filter((_, i) => i % 4 === index % 4);
-    setPets(slice.map((pet, i) => {
-      const spot = nearestWalkable(zone, 0.2 + (i * 0.27) % 0.6, 0.3 + (i * 0.19) % 0.5)
+    const zoneIds = Object.keys(ZONES);
+    const index = zoneIds.indexOf(zone.id);
+    const residents = TOWN_PETS.filter((_, i) => i % zoneIds.length === index);
+    // Placed around where the child arrives rather than at fixed map
+    // coordinates. Spread evenly over the map they all landed most of a
+    // screen above the entrance, so the first thing a child saw was an empty
+    // street and the pets were something you had to already know to look for.
+    const nearby = [
+      { x: 0.13, y: -0.04 },
+      { x: -0.15, y: -0.11 },
+      { x: 0.04, y: -0.19 },
+      { x: -0.06, y: -0.27 },
+    ];
+    setPets(residents.map((pet, i) => {
+      const offset = nearby[i % nearby.length];
+      const spot = nearestWalkable(zone, zone.spawn.x + offset.x, zone.spawn.y + offset.y)
         ?? zone.spawn;
       return {
-        id: pet.id, art: pet.art, name: pet.nameZh,
-        x: spot.x, y: spot.y, angle: Math.random() * Math.PI * 2, flip: false,
+        pet, x: spot.x, y: spot.y, goal: spot, flip: false,
+        wish: PET_WISHES[Math.floor(Math.random() * PET_WISHES.length)],
       };
     }));
   }, [zone]);
 
+  // Pets walk, rather than jumping a step every half second. They pick a spot
+  // nearby and amble to it, which is what reads as "alive" — the old version
+  // nudged them a few pixels at a time and looked like drift.
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setPets(current => current.map(pet => {
-        const angle = pet.angle + (Math.random() - 0.5) * 0.9;
-        const x = pet.x + Math.cos(angle) * 0.005;
-        const y = pet.y + Math.sin(angle) * 0.005;
+    let running = true;
+    let frame = 0;
+    const step = () => {
+      if (!running) return;
+      setPets(current => current.map(walker => {
+        // A pet stops and turns when the child comes close. It reads the way
+        // an animal actually behaves, and — the practical half — a small
+        // child cannot reliably tap a target that never stops moving.
+        const toChild = Math.hypot(walker.x - heroAt.current.x, (walker.y - heroAt.current.y) * 0.6);
+        if (toChild < PET_REACH * 1.7) {
+          return { ...walker, flip: heroAt.current.x < walker.x };
+        }
+        const dx = walker.goal.x - walker.x;
+        const dy = walker.goal.y - walker.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance < 0.004) return { ...walker, goal: roam(zone, walker) };
+        const aspect = map.w / map.h;
+        const nx = walker.x + (dx / distance) * PET_SPEED;
+        const ny = walker.y + (dy / distance) * PET_SPEED * aspect;
         // Pets obey the paths too. A neighbour standing in the sea would give
         // the game away faster than anything else on screen.
-        if (!isWalkable(zone, x, y)) return { ...pet, angle: angle + Math.PI };
-        return { ...pet, x, y, angle, flip: Math.cos(angle) < 0 };
+        if (!isWalkable(zone, nx, ny)) return { ...walker, goal: roam(zone, walker) };
+        return { ...walker, x: nx, y: ny, flip: dx < 0 };
       }));
-    }, 520);
-    return () => window.clearInterval(timer);
-  }, [zone]);
+      frame = window.requestAnimationFrame(step);
+    };
+    frame = window.requestAnimationFrame(step);
+    return () => { running = false; window.cancelAnimationFrame(frame); };
+  }, [zone, map]);
 
-  // Reset when the zone changes. Doing it here rather than in the travel
-  // handler keeps a deep link into a zone landing in the right place too.
+  // What each pet is daydreaming about, changed on a timer so the town has
+  // something going on even when the child is standing still.
   useEffect(() => {
-    setPos(zone.spawn);
+    const timer = window.setInterval(() => {
+      setPets(current => current.map(walker => (
+        Math.random() < 0.4
+          ? { ...walker, wish: PET_WISHES[Math.floor(Math.random() * PET_WISHES.length)] }
+          : walker
+      )));
+    }, WISH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // Land at whichever entrance we came through. Doing it on the zone change
+  // rather than inside the travel handler keeps a deep link into a zone
+  // landing in the right place too.
+  useEffect(() => {
+    setPos(arrivalPoint(zone, arriveFrom.current));
     target.current = null;
   }, [zone]);
 
@@ -172,6 +274,7 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
   // ended up, so they cannot disagree with what is on screen.
   const previous = useRef(pos);
   useEffect(() => {
+    heroAt.current = pos;
     const dx = pos.x - previous.current.x;
     const dy = pos.y - previous.current.y;
     previous.current = pos;
@@ -181,7 +284,24 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
     else if (dx < -0.0002) setFacing("left");
   }, [pos]);
 
-  useEffect(() => { setNear(hotspotNear(zone, pos.x, pos.y)); }, [zone, pos]);
+  useEffect(() => {
+    const spot = hotspotNear(zone, pos.x, pos.y);
+    setNear(spot);
+    nearRef.current = spot;
+  }, [zone, pos]);
+
+  // The pet standing closest to the child, if one is within saying-hello
+  // distance. Recomputed from positions rather than tracked, so a pet that
+  // wanders off cancels the prompt by itself.
+  const nearPet = useMemo(() => {
+    let best: Wanderer | null = null;
+    let bestDistance = PET_REACH;
+    for (const walker of pets) {
+      const distance = Math.hypot(walker.x - pos.x, (walker.y - pos.y) * 0.6);
+      if (distance < bestDistance) { best = walker; bestDistance = distance; }
+    }
+    return best;
+  }, [pets, pos]);
 
   useEffect(() => {
     const map: Record<string, keyof typeof held.current> = {
@@ -201,6 +321,20 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, []);
 
+  // Space and Enter do whatever the orange button offers, so walking in with
+  // the keyboard and then going in does not mean reaching for the mouse.
+  useEffect(() => {
+    const act = (event: KeyboardEvent) => {
+      if (event.key !== " " && event.key !== "Enter") return;
+      if (!nearRef.current && !petRef.current) return;
+      event.preventDefault();
+      if (nearRef.current) travelRef.current(nearRef.current);
+      else if (petRef.current) meetRef.current(petRef.current);
+    };
+    window.addEventListener("keydown", act);
+    return () => window.removeEventListener("keydown", act);
+  }, []);
+
   const walkTo = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const box = stage.current?.getBoundingClientRect();
     if (!box) return;
@@ -213,12 +347,35 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
 
   const travel = useCallback((spot: Hotspot) => {
     if (spot.kind === "door") { onEnterRoom(spot.target); return; }
+    // Remember which zone we left, so the next zone puts us at the gate that
+    // leads back here rather than at its own starting point.
+    arriveFrom.current = { zone: zone.id };
     setFading(true);
     window.setTimeout(() => { setZoneId(spot.target); setFading(false); }, 420);
-  }, [onEnterRoom]);
+  }, [onEnterRoom, zone.id]);
+
+  useEffect(() => { travelRef.current = travel; }, [travel]);
+  useEffect(() => { petRef.current = nearPet; }, [nearPet]);
+  // No dependency list on purpose: meetPet closes over the current position,
+  // and assigning the ref during render would not survive StrictMode's
+  // double-invocation.
+  useEffect(() => { meetRef.current = meetPet; });
 
   function hold(dir: keyof typeof held.current, value: boolean) {
     held.current[dir] = value;
+  }
+
+  // Tapping a pet walks over to it and opens the chat. Walking first matters:
+  // a panel that opened from across the map would make the pets feel like
+  // buttons rather than neighbours.
+  function meetPet(walker: Wanderer) {
+    const distance = Math.hypot(walker.x - pos.x, (walker.y - pos.y) * 0.6);
+    if (distance > PET_REACH) {
+      target.current = nearestWalkable(zone, walker.x, walker.y);
+      return;
+    }
+    target.current = null;
+    setMeeting(walker.pet);
   }
 
   // Everything on the ground is placed and depth-sorted the same way, so a
@@ -253,18 +410,23 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
         </div>
       ))}
 
-      {pets.map(pet => (
-        <img
-          key={pet.id}
-          className="world-npc"
-          src={pet.art}
-          alt={pet.name}
-          style={{
-            ...place(pet.x, pet.y),
-            height: `${HERO_H * 0.62 * map.h}px`,
-            transform: `translate(-50%, -100%) scaleX(${pet.flip ? -1 : 1})`,
-          }}
-        />
+      {/* Each pet carries what it is daydreaming about. It is decoration, but
+          it is the decoration that makes the town look inhabited rather than
+          decorated with props. */}
+      {pets.map(walker => (
+        <div key={walker.pet.id} className="world-npc-wrap" style={place(walker.x, walker.y)}>
+          <span className="world-wish">{walker.wish}</span>
+          <button
+            className={nearPet?.pet.id === walker.pet.id ? "world-npc close" : "world-npc"}
+            onClick={event => { event.stopPropagation(); meetPet(walker); }}
+            style={{
+              height: `${HERO_H * 0.62 * map.h}px`,
+              transform: `scaleX(${walker.flip ? -1 : 1})`,
+            }}
+          >
+            <img src={walker.pet.art} alt={walker.pet.nameZh} />
+          </button>
+        </div>
       ))}
 
       <img
@@ -288,9 +450,26 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
       {onExit && <button className="world-exit" onClick={onExit}>離開</button>}
     </div>
 
-    {near && <button className="world-action" onClick={() => travel(near)}>
-      {near.kind === "door" ? `入去 ${near.label}` : near.label}
-    </button>}
+    {/* A door beats a pet for the main prompt: the pet can be tapped directly
+        and will still be there, whereas a covered doorway is a dead end. */}
+    {near
+      ? <button className="world-action" onClick={() => travel(near)}>
+          {near.kind === "door" ? `入去 ${near.label}` : near.label}
+          <small>空白鍵</small>
+        </button>
+      : nearPet && <button className="world-action pet" onClick={() => meetPet(nearPet)}>
+          同 {nearPet.pet.nameZh} 傾計
+          <small>空白鍵</small>
+        </button>}
+
+    {meeting && <PetEncounter
+      pet={meeting}
+      cardId={cardId}
+      points={friends[meeting.id] ?? 0}
+      usedToday={usedToday}
+      onClose={() => setMeeting(null)}
+      onChanged={() => void refreshFriends()}
+    />}
 
     <div className="world-pad">
       <button aria-label="向上行" className="pad-up"
@@ -303,7 +482,7 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
         onPointerDown={() => hold("down", true)} onPointerUp={() => hold("down", false)} onPointerLeave={() => hold("down", false)}>▼</button>
     </div>
 
-    <p className="world-hint">撳邊度就行去邊度</p>
+    <p className="world-hint">撳邊度行去邊度 · 方向鍵行路 · 空白鍵入去</p>
 
     <div className={fading ? "world-fade on" : "world-fade"} />
   </div>;

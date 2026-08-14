@@ -106,7 +106,8 @@ export function RoomPage() {
         </>}
 
     <div className="subscription-actions">
-      <Link className="button secondary" to={`/parent/children/${child.id}/play`}>返 MEE 小鎮</Link>
+      {/* ?from lands the child back outside this room's own door. */}
+      <Link className="button secondary" to={`/parent/children/${child.id}/play?from=${room.id}`}>返出去</Link>
     </div>
   </Shell>;
 }

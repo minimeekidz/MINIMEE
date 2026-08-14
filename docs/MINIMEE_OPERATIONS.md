@@ -610,6 +610,53 @@ Creating a card seeds `STARTER_TASKS` so the child opens the town to
 something to do rather than an empty list. A seeding failure does not block
 card creation — the card is the deliverable.
 
+### 7d-ii. 小寵物 — the town's neighbours and 好感度
+
+Twelve pets live in the world. Which zone a pet lives in is derived from its
+own id, not shuffled: the child should be able to learn where a friend lives
+and go back for them, and a pet that moved every night would make its
+friendship level feel like it belonged to nobody.
+
+They **walk** — pick a spot within roaming distance, amble to it on the same
+walk mask the child uses, pick another. An earlier version nudged them a few
+pixels every half second and read as drift rather than life. Each carries a
+**wish bubble** (`PET_WISHES`), which is pure decoration and the cheapest
+thing on the screen that makes the town look inhabited.
+
+**好感度 (`src/lib/petFriends.ts`)** — eight levels, and two rules hold the
+design up:
+
+- **Every level costs more than the last.** A test asserts it. A flat curve
+  would have a child at the top of all twelve pets inside a week, with
+  nothing left across a year's subscription.
+- **Every action has a daily cap, enforced in the database.** The unique
+  index on `(kid_card_id, pet_id, action, day, seq)` *is* the cap — a repeat
+  simply inserts nothing. Left to the UI, the fastest route to best friends
+  would be tapping 打招呼 two hundred times, which teaches nothing.
+
+Actions unlock in tiers: greetings at level 1, hugging and sharing feelings
+in the middle, and at the top the pet gives the child a card — normal at 6,
+flash at 8.
+
+**The daily word question is the point of the whole system.** A pet asks
+about a word from a lesson the child actually holds a fragment for, and the
+prompt is **the word's sticker, not its text** — a five-year-old who cannot
+yet read four Chinese words still has a real question to answer. It is worth
+more than any other single action (a test asserts that ordering), so 好感度
+tracks what the child has learnt rather than how often they tapped. A wrong
+answer shows the right word and still pays: a child who loses everything for
+one guess stops guessing.
+
+`award_pet_points` records the interaction and adds the points in **one**
+step. Split in two, a failure between them either burns the child's daily go
+for nothing or pays them twice, and a child who has been counting notices.
+
+**Pet-gifted cards are a separate table (`kid_pet_cards`) on purpose.**
+Ordinary MEE cards cannot be re-earned — section 5's no-re-roll rule is
+enforced by a unique constraint. Em's rule for pet gifts is the opposite: a
+duplicate may be passed on to a friend, which is only possible if duplicates
+can exist. Art lives in `src/assets/pet-cards/{normal,flash}/`.
+
 ### 7e. Rooms, lessons and fragments (the v2 learning loop)
 
 Rooms are **permanent places with fixed identities** — the library is always
@@ -664,6 +711,24 @@ one per room.
 A lesson with no `video_path` is legitimate — the word game still works, so
 rooms can open with content before the video is shot. Two words is the
 minimum, since the game needs something to choose between.
+
+### 7e-i. 貼紙包 Sticker packs
+
+`src/assets/stickers/<interest|activity|job|mood>/`, read off the folder at
+build time by `src/lib/stickers.ts`. **The filename is the label** —
+`畫畫.webp` is the sticker for 畫畫.
+
+That one decision is what makes the packs work without maintenance. A
+sticker and the word it illustrates are matched **by name**, so there is no
+lookup table for anyone to keep in step, no second step after uploading, and
+no way to end up with a sticker nothing points at. Everything that shows a
+word falls back to plain text when no sticker exists, so an incomplete pack
+degrades instead of breaking.
+
+Two places consume them: the self-introduction card (興趣 / 職業 chosen by
+picture rather than typed) and the pets' daily question, where the sticker
+*is* the question. **Every learning word wants a same-named sticker** — a
+word without one can only be asked as text.
 
 ### 7f. Art pipeline and the brand book
 

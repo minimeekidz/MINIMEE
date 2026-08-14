@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { actionsAt, FRIEND_LEVELS, levelFor, MAX_LEVEL, PET_ACTIONS, QUIZ_POINTS } from "./lib/petFriends";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -564,6 +565,60 @@ describe("MINIMEE route shells", () => {
     expect(isWalkable(town, landed!.x, landed!.y)).toBe(true);
     // A tap on ground that is already walkable must not move the destination.
     expect(nearestWalkable(town, town.spawn.x, town.spawn.y)).toEqual(town.spawn);
+  });
+
+  it("puts the child back at the entrance they came through", () => {
+    // Walking 小鎮 → 碼頭 → 小鎮 has to land next to the 碼頭 gate, not at the
+    // town's own starting point on the far side of the map.
+    const town = ZONES.town;
+    const gate = town.hotspots.find(spot => spot.target === "dock")!;
+    const back = arrivalPoint(town, { zone: "dock" });
+    expect(isWalkable(town, back.x, back.y)).toBe(true);
+    expect(Math.hypot(back.x - gate.x, back.y - gate.y)).toBeLessThan(0.2);
+    expect(Math.hypot(back.x - town.spawn.x, back.y - town.spawn.y)).toBeGreaterThan(0.2);
+    // And it must not drop them inside the gate's own prompt, or the first
+    // tap would send them straight back where they came from.
+    expect(hotspotNear(town, back.x, back.y)?.id).not.toBe(gate.id);
+
+    // Coming out of a room lands at that room's door.
+    const door = town.hotspots.find(spot => spot.target === "cinema")!;
+    const outside = arrivalPoint(town, { room: "cinema" });
+    expect(Math.hypot(outside.x - door.x, outside.y - door.y)).toBeLessThan(0.2);
+
+    // Somewhere with no known entrance still has to be a legal place to stand.
+    const cold = arrivalPoint(town, null);
+    expect(isWalkable(town, cold.x, cold.y)).toBe(true);
+  });
+
+  it("makes each friendship level cost more than the one before it", () => {
+    // A flat curve would have a child at the top of all twelve pets inside a
+    // week, with nothing left to come back for across a year's subscription.
+    const steps = FRIEND_LEVELS.map((level, index) =>
+      index === 0 ? 0 : level.needed - FRIEND_LEVELS[index - 1].needed);
+    for (let i = 2; i < steps.length; i++) {
+      expect(steps[i], `level ${i + 1} must cost more than level ${i}`).toBeGreaterThan(steps[i - 1]);
+    }
+    expect(levelFor(0).level).toBe(1);
+    expect(levelFor(FRIEND_LEVELS[FRIEND_LEVELS.length - 1].needed).level).toBe(MAX_LEVEL);
+  });
+
+  it("keeps the warmest actions locked until the friendship is earned", () => {
+    // Greetings are available immediately; being given a flash card is not.
+    const early = actionsAt(1).map(action => action.id);
+    expect(early).toContain("greet");
+    expect(early).not.toContain("card-flash");
+    expect(actionsAt(MAX_LEVEL).map(action => action.id)).toContain("card-flash");
+
+    // Every action must be reachable, or it is content nobody ever sees.
+    for (const action of PET_ACTIONS) {
+      expect(action.level, `${action.id} is past the last level`).toBeLessThanOrEqual(MAX_LEVEL);
+      expect(action.perDay, `${action.id} needs a daily cap`).toBeGreaterThan(0);
+    }
+
+    // The word question has to outweigh the greetings, or friendship stops
+    // tracking what the child has actually learnt.
+    const bestChat = Math.max(...PET_ACTIONS.map(action => action.points * action.perDay));
+    expect(QUIZ_POINTS.correct).toBeGreaterThan(bestChat);
   });
 
   it("switches the world between day and night art", () => {

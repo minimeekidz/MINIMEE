@@ -33,13 +33,13 @@ export function HomePage() {
           </div>
         </section>
         <section className="steps-section">
-          <div className="section-heading"><StatusPill>四步完成</StatusPill><h2>由玩，到一張屬於佢嘅卡</h2></div>
+          <div className="section-heading"><StatusPill>四步完成</StatusPill><h2>由行入 MEE 小鎮，到一張屬於佢嘅卡</h2></div>
           <div className="steps-grid">
             {[
-              ["01", "小朋友答問題", "喺遊戲入面答「我鍾意咩」、「我想做咩」"],
-              ["02", "生成自我介紹片", "用佢自己嘅答案，整一段短片"],
-              ["03", "做任務儲卡", "行 MEE 小鎮，完成任務解鎖 MEE 卡"],
-              ["04", "家長批核分享", "家長睇過先公開，可以開遺失模式"]
+              ["01", "行入 MEE 小鎮", "揀個角色，喺小鎮、碼頭、嘉年華同蘑菇村自由行"],
+              ["02", "入房學新詞語", "每間房有段片同一個詞語遊戲，玩完就攞到一塊碎片"],
+              ["03", "同小寵物做朋友", "傾計、分享今日學咗嘅字，好感度愈高解鎖愈多互動"],
+              ["04", "儲夠碎片換 MEE 卡", "四塊碎片換一張卡，家長批核先公開自我介紹卡"]
             ].map(([n, title, copy]) => <article key={n}><span>{n}</span><h3>{title}</h3><p>{copy}</p></article>)}
           </div>
         </section>

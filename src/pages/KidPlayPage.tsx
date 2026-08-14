@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { DashboardHeader, EmptyState, Shell } from "../components/UI";
 import { GameWorld } from "../components/GameWorld";
 import { useFamily } from "../contexts/FamilyContext";
@@ -17,6 +17,10 @@ export function KidPlayPage() {
   const { id: childId } = useParams();
   const { children, loading: familyLoading } = useFamily();
   const navigate = useNavigate();
+  // Set by a room's 返 link, so stepping outside puts the child back at that
+  // room's door rather than at the middle of town.
+  const [params] = useSearchParams();
+  const returningFrom = params.get("from");
   const child = children.find(candidate => candidate.id === childId);
 
   const [card, setCard] = useState<EditableCard | null>(null);
@@ -57,6 +61,8 @@ export function KidPlayPage() {
 
   return <GameWorld
     heroId={card.heroId}
+    cardId={card.id}
+    returningFrom={returningFrom}
     doneRooms={rooms.filter(room => room.earned).map(room => room.id)}
     onEnterRoom={roomId => navigate(`/parent/children/${child.id}/room/${roomId}`)}
     onExit={() => navigate(`/parent/children/${child.id}`)}
