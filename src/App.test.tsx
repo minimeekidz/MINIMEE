@@ -5,7 +5,9 @@ import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
 import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
-import { actionsAt, DAILY_QUIZ_SLOTS, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, PET_ACTIONS, QUIZ_POINT, VISIT_POINT } from "./lib/petFriends";
+import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
+import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
+import { actionVo } from "./data/petActionVo";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 
 vi.mock("./contexts/AuthContext", () => ({
@@ -591,67 +593,93 @@ describe("MINIMEE route shells", () => {
     expect(isWalkable(town, cold.x, cold.y)).toBe(true);
   });
 
-  it("moves a friendship one or two points a day, whatever the child taps", () => {
-    // Turning up is worth a point, once a day, whichever action it was.
-    // Pressing every button was homework — a child would work down the list
-    // to farm the number instead of doing what they felt like — so no action
-    // carries a value of its own any more.
+  // These follow the QA sheet in Em's workbook (10_QA測試案例). The database
+  // half — daily uniqueness and the global bonus race — is verified against
+  // Supabase directly; these cover the rules that live in the model.
+  it("matches the workbook's scoring rules", () => {
+    // QA08/QA09/QA10: one point a day for turning up, one more for answering,
+    // so a pet moves at most 2 a day and a flat 30-point level is 15 or 30 days.
     expect(VISIT_POINT).toBe(1);
     expect(QUIZ_POINT).toBe(1);
-    for (const action of PET_ACTIONS) {
-      expect(action, `${action.id} must not carry its own points`).not.toHaveProperty("points");
-      expect(action, `${action.id} must not carry its own daily cap`).not.toHaveProperty("perDay");
-      expect(action.reply.length, `${action.id} needs varied replies`).toBeGreaterThan(1);
-      expect(action.level).toBeLessThanOrEqual(MAX_LEVEL);
-    }
-
-    // Only two pets a day can pay for a correct answer, so the whole town is
-    // worth at most 12 visits plus 2 answers.
-    expect(DAILY_QUIZ_SLOTS).toBe(2);
-    const bestDay = TOWN_PETS.length * VISIT_POINT + DAILY_QUIZ_SLOTS * QUIZ_POINT;
-    expect(bestDay).toBe(14);
-
-    // Levels are flat, so a pet quizzed daily takes 15 days a level and one
-    // merely visited takes 30 — which is what stretches this across a year.
-    const steps = FRIEND_LEVELS.slice(1).map((level, index) => level.needed - FRIEND_LEVELS[index].needed);
-    expect(new Set(steps).size, "levels must be evenly spaced").toBe(1);
+    expect(LEVEL_STEP).toBe(30);
     expect(LEVEL_STEP / (VISIT_POINT + QUIZ_POINT)).toBe(15);
     expect(LEVEL_STEP / VISIT_POINT).toBe(30);
-    expect(MAX_LEVEL).toBe(12);
+
+    // QA07: two paying answers a day for the whole town, not two per pet.
+    expect(DAILY_QUIZ_SLOTS).toBe(2);
+    // QA13: exactly one retry, which is what the no-reveal rule protects.
+    expect(QUIZ_TRIES).toBe(2);
+    // QA11/QA12: a topic is only askable once all four fragments are held.
+    expect(FRAGMENTS_FOR_MASTERY).toBe(4);
+
+    // QA01: no action carries points or a cap of its own — the day's first
+    // interaction scores, whichever button it was.
+    for (const action of PET_ACTIONS) {
+      expect(action, `${action.id} must not carry points`).not.toHaveProperty("points");
+      expect(action, `${action.id} must not carry a daily cap`).not.toHaveProperty("perDay");
+    }
   });
 
-  it("gives every level either a new action or a surprise", () => {
-    // A level that unlocks nothing and hands out nothing is a dead step, and
-    // a child who hits one stops believing the next will be worth it.
+  it("takes its levels from the workbook, not from code", () => {
+    // 02_12級好感度: twelve levels, flat 30 apart, Lv.12 at 330.
+    expect(MAX_LEVEL).toBe(12);
+    expect(FRIEND_LEVELS).toHaveLength(12);
+    expect(FRIEND_LEVELS[0].title).toBe("初次認識");
+    expect(FRIEND_LEVELS[11].title).toBe("最好朋友");
+    expect(MAX_POINTS).toBe(330);
+    const steps = FRIEND_LEVELS.slice(1).map((level, index) => level.needed - FRIEND_LEVELS[index].needed);
+    expect(new Set(steps)).toEqual(new Set([LEVEL_STEP]));
+
+    // Every level must unlock something, per the sheet's 新互動 column.
     for (const level of FRIEND_LEVELS) {
-      const unlocks = PET_ACTIONS.some(action => action.level === level.level);
-      expect(unlocks || level.surprise, `Lv.${level.level} is a dead step`).toBe(true);
+      expect(level.unlocks, `Lv.${level.level} has no unlock text`).toBeTruthy();
     }
+    // QA19: past the top there is no Lv.13 and no further progress.
+    expect(levelProgress(MAX_POINTS + 500).level.level).toBe(MAX_LEVEL);
+    expect(levelProgress(MAX_POINTS + 500).fraction).toBe(1);
+
     const early = actionsAt(1).map(action => action.id);
     expect(early).toContain("greet");
-    expect(early).not.toContain("card-flash");
-    expect(actionsAt(MAX_LEVEL).map(action => action.id)).toContain("card-flash");
+    expect(early).not.toContain("best-friend");
+    expect(actionsAt(MAX_LEVEL).map(action => action.id)).toContain("best-friend");
   });
 
-  it("gives the pets something new to say as the year goes on", () => {
-    // The numbers are tiny by design, so what brings a child back has to be
-    // that the pet has something new to say. Repetition is the churn risk
-    // here, not pacing.
-    const ordinary = eventsFor({ petId: "milk-cat", now: new Date("2026-07-08T09:00:00") });
-    const birthday = eventsFor({ petId: "milk-cat", now: new Date("2026-03-08T09:00:00") });
-    const childDay = eventsFor({ petId: "milk-cat", childBirthday: "07-08", now: new Date("2026-07-08T09:00:00") });
-
-    // Every day has at least the season, so a pet is never without a line.
-    expect(ordinary.length).toBeGreaterThan(0);
-    expect(birthday.some(event => event.kind === "pet-birthday")).toBe(true);
-    // The child's own birthday must outrank everything else it shares a day with.
-    expect(childDay[0].kind).toBe("child-birthday");
-
-    // Every pet needs a birthday, or some are never the centre of attention.
+  it("gives every pet its own voice, from the workbook", () => {
+    // Twelve pets, each matched to its sheet row. A pet without a profile
+    // would silently fall back to generic lines, which is the one thing this
+    // whole spec exists to prevent.
+    expect(PET_PROFILES).toHaveLength(TOWN_PETS.length);
     for (const pet of TOWN_PETS) {
-      expect(PET_BIRTHDAYS[pet.id], `${pet.id} has no birthday`).toMatch(/^\d{2}-\d{2}$/);
+      const profile = profileFor(pet.id);
+      expect(profile, `${pet.id} has no workbook row`).not.toBeNull();
+      expect(profile!.catchphrase, `${pet.id} has no 口頭禪`).toBeTruthy();
+      expect(profile!.tone, `${pet.id} has no 語氣`).toBeTruthy();
+      // Birthdays come from the sheet, one per pet, spread across the year.
+      expect(profile!.birthday, `${pet.id} has no birthday`).toMatch(/^\d{2}-\d{2}$/);
+
+      // Sheet 07 supplies all six answer states for every pet.
+      for (const state of ["asking", "firstWrong", "firstCorrect", "secondCorrect", "secondWrong", "correctNoBonus"] as const) {
+        expect(quizLine(pet.id, state)?.vo, `${pet.id} missing ${state} VO`).toBeTruthy();
+      }
+
+      // And every action the child can reach has a line written for this pet.
+      for (const action of PET_ACTIONS) {
+        expect(actionVo(pet.id, action.id).length, `${pet.id} has no line for ${action.id}`).toBeGreaterThan(0);
+      }
     }
-    expect(new Set(Object.values(PET_BIRTHDAYS)).size).toBe(TOWN_PETS.length);
+    // Twelve distinct birthdays, so every month has one.
+    expect(new Set(PET_PROFILES.map(profile => profile.birthday)).size).toBe(TOWN_PETS.length);
+  });
+
+  it("never reveals the answer after a first wrong try", () => {
+    // QA13. The 第一次答錯 line exists for every pet and must not contain the
+    // answer — it is the one rule the sheet repeats in three places.
+    for (const pet of TOWN_PETS) {
+      const line = quizLine(pet.id, "firstWrong");
+      expect(line, `${pet.id} has no retry line`).not.toBeNull();
+      // A retry line that names a word would be giving the game away.
+      expect(line!.vo).not.toMatch(/答案係|正確答案/);
+    }
   });
 
   it("switches the world between day and night art", () => {

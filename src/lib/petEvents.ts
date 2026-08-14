@@ -13,6 +13,8 @@
 // one would have a pet say 落雨啦 on a clear day, which a child in Hong Kong
 // would notice immediately. It needs a real feed before it can be honest.
 
+import { eventVoFor, PET_PROFILES, profileFor } from "./petBible";
+
 export type PetEventKind =
   | "season" | "festival" | "child-birthday" | "pet-birthday"
   | "town-event" | "new-theme";
@@ -24,6 +26,27 @@ export interface PetEvent {
   icon: string;
   /** Extra dialogue mixed into whatever the child taps today. */
   lines: string[];
+}
+
+/**
+ * Each event kind against the 事件類別 column in the workbook's 06_事件VO台詞庫,
+ * so a pet speaks its own line for the occasion rather than a shared one. The
+ * generic lines below are only a fallback for a category the sheet has not
+ * filled in — twelve pets saying the same sentence is the exact thing this
+ * whole system exists to avoid.
+ */
+const SHEET_CATEGORY: Record<PetEventKind, string> = {
+  season: "季節",
+  festival: "節日",
+  "child-birthday": "小朋友生日",
+  "pet-birthday": "小寵物生日",
+  "town-event": "城鎮活動",
+  "new-theme": "更新影片",
+};
+
+function withPetVoice(petId: string, event: PetEvent): PetEvent {
+  const own = eventVoFor(petId, SHEET_CATEGORY[event.kind]);
+  return own.length > 0 ? { ...event, lines: own } : event;
 }
 
 /** Hong Kong seasons, roughly, since the art changes with them. */
@@ -57,21 +80,16 @@ const FIXED_FESTIVALS: Record<string, { label: string; icon: string; lines: stri
   "12-25": { label: "聖誕節", icon: "🎁", lines: ["聖誕快樂！", "你收到咩禮物呀？"] },
 };
 
-/** Each pet's birthday, spread through the year so one lands most months. */
-export const PET_BIRTHDAYS: Record<string, string> = {
-  "sunshine-sheep": "01-15",
-  "bao-hamster": "02-12",
-  "milk-cat": "03-08",
-  "watermelon-shiba": "04-20",
-  "wave-penguin": "05-11",
-  "aviator-chick": "06-06",
-  "yarn-granny-mouse": "07-19",
-  "heart-bunny": "08-14",
-  "cowboy-pup": "09-23",
-  "super-pig": "10-09",
-  "spin-hedgehog": "11-17",
-  "kimono-calico": "12-05",
-};
+/**
+ * Birthdays come from the workbook (sheet 01_12寵物Master), not from here.
+ * An earlier version invented a set spread neatly through the year, and every
+ * one of them was wrong — the sheet already assigns birthdays deliberately,
+ * one per month, and inventing a second set would have had a pet celebrating
+ * on the wrong day forever.
+ */
+export const PET_BIRTHDAYS: Record<string, string> = Object.fromEntries(
+  PET_PROFILES.filter(profile => profile.birthday).map(profile => [profile.gameId, profile.birthday]),
+);
 
 function monthDay(date: Date): string {
   return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -120,7 +138,7 @@ export function eventsFor({ petId, childBirthday, newThemeToday, now = new Date(
   }
 
   events.push(seasonOf(now));
-  return events;
+  return events.map(event => withPetVoice(petId, event));
 }
 
 /** The dialogue lines today's events contribute. */

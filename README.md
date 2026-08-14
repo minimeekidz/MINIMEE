@@ -65,3 +65,12 @@ deploy `main` to Cloudflare Workers automatically once
 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are added as GitHub secrets —
 until then it has never run. Do not point `minimee.me` at Cloudflare before
 testing the resulting preview URL (see `docs/MINIMEE_OPERATIONS.md` section 9).
+
+## 小寵物系統
+
+改動小寵物、好感度、答題或事件之前，先讀 **[`docs/MINIMEE_PET_BIBLE.md`](docs/MINIMEE_PET_BIBLE.md)**。
+
+規格嘅唯一權威係 `docs/source/MINIMEE_寵物設定與VO規格_v1.xlsx`；
+`src/data/petBible.json` 由 `scripts/build_pet_bible.py` 生成，唔好手改。
+
+素材上載：掉圖入 [`public/assets/uploads/`](public/assets/uploads/) 對應資料夾就得。

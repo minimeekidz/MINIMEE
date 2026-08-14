@@ -612,6 +612,14 @@ card creation — the card is the deliverable.
 
 ### 7d-ii. 小寵物 — the town's neighbours and 好感度
 
+> **Read `docs/MINIMEE_PET_BIBLE.md` before touching any of this.** The
+> authority for every pet's personality, dialogue, birthday, scoring rule and
+> spawn behaviour is Em's workbook at
+> `docs/source/MINIMEE_寵物設定與VO規格_v1.xlsx`, converted to
+> `src/data/petBible.json` by `scripts/build_pet_bible.py`. Do not hard-code
+> a pet's line into a component, and do not edit the JSON — edit the workbook
+> and rerun the script.
+
 Twelve pets live in the world. Which zone a pet lives in is derived from its
 own id, not shuffled: the child should be able to learn where a friend lives
 and go back for them, and a pet that moved every night would make its
