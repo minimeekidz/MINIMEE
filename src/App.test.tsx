@@ -8,6 +8,7 @@ import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM
 import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
 import { actionVo } from "./data/petActionVo";
+import { learningRecord } from "./lib/petStore";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 
 vi.mock("./contexts/AuthContext", () => ({
@@ -67,6 +68,7 @@ const billing = vi.hoisted(() => ({
   rooms: [] as Record<string, unknown>[],
   lessons: [] as Record<string, unknown>[],
   fragments: [] as Record<string, unknown>[],
+  quizAttempts: [] as Record<string, unknown>[],
 }));
 
 vi.mock("./lib/supabase", () => {
@@ -78,6 +80,7 @@ vi.mock("./lib/supabase", () => {
       : table === "rooms" ? billing.rooms
       : table === "room_lessons" ? billing.lessons
       : table === "lesson_fragments" ? billing.fragments
+      : table === "quiz_attempts" ? billing.quizAttempts
       : [];
 
   const singleFor = (table: string) =>
@@ -155,6 +158,7 @@ beforeEach(() => {
   billing.rooms = [];
   billing.lessons = [];
   billing.fragments = [];
+  billing.quizAttempts = [];
   billing.entitlements = [];
   billing.jobs = [];
   createBillingOrder.mockReset().mockResolvedValue({ ok: false, error: "Not authenticated" });
@@ -680,6 +684,30 @@ describe("MINIMEE route shells", () => {
       // A retry line that names a word would be giving the game away.
       expect(line!.vo).not.toMatch(/答案係|正確答案/);
     }
+  });
+
+  it("keeps the learning record apart from 好感度", async () => {
+    // Sheet 00: 好感度代表關係，不應代替學習成績. A child who only says hello
+    // has friendship and an empty record; one answering after the day's two
+    // bonus slots are gone has the reverse. The report must read the record,
+    // never the points.
+    billing.kidCard = editableCard();
+    billing.quizAttempts = [
+      // Newest first, as the query orders them.
+      { word: "海龜", outcome: "first_try_correct", created_at: "2026-08-14T10:00:00Z" },
+      { word: "珊瑚", outcome: "failed", created_at: "2026-08-14T09:00:00Z" },
+      { word: "海豚", outcome: "second_try_correct", created_at: "2026-08-13T10:00:00Z" },
+      // 海龜 was missed earlier and later got right — it must not stay flagged.
+      { word: "海龜", outcome: "failed", created_at: "2026-08-12T10:00:00Z" },
+    ];
+    const record = await learningRecord("card-1");
+    expect(record).not.toBeNull();
+    expect(record!.firstTry).toBe(1);
+    expect(record!.secondTry).toBe(1);
+    expect(record!.failed).toBe(2);
+    // Only 珊瑚 — 海龜's most recent attempt was correct.
+    expect(record!.needsReview).toEqual(["珊瑚"]);
+    expect(record!.wordsSeen).toBe(3);
   });
 
   it("switches the world between day and night art", () => {

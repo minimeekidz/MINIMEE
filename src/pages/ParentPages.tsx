@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Archive, BookOpen, CalendarClock, Film, Gamepad2, HeartHandshake, IdCard, Plus, QrCode, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, DemoBadge, EmptyState, FeatureCard, IntegrationNotice, Progress, Shell, StatusPill } from "../components/UI";
@@ -6,6 +6,8 @@ import { activeFriends, friendHistory, notifications, topics } from "../data/moc
 import { MAX_CHILDREN_PER_PARENT } from "../domain/rules";
 import { useAuth } from "../contexts/AuthContext";
 import { useFamily } from "../contexts/FamilyContext";
+import { loadEditableCard } from "../lib/kidCardStore";
+import { learningRecord, type LearningRecord } from "../lib/petStore";
 
 const languageLabels = { "zh-HK": "粵語", "zh-CN": "普通話", en: "English" };
 
@@ -51,6 +53,7 @@ export function ChildProfilePage() {
   const { id } = useParams();
   const { children, loading } = useFamily();
   const child = children.find(item => item.id === id);
+  const record = useLearningRecord(id ?? null);
   if (loading) return <Shell surface="parent"><EmptyState title="正在載入孩子檔案" detail="請稍候。" /></Shell>;
   if (!child) return <Shell surface="parent"><EmptyState title="找不到這名孩子" detail="這個檔案不存在，或不屬於目前登入的家長帳戶。" /></Shell>;
   const base = `/parent/children/${child.id}`;
@@ -67,8 +70,65 @@ export function ChildProfilePage() {
       <FeatureCard title="好友與分享" detail="分享資料庫尚未接駁" to={`${base}/sharing`} icon={<HeartHandshake />} />
       <FeatureCard title="遺失物件" detail="匿名通知服務尚未接駁" to={`${base}/lost-items`} icon={<Archive />} />
       <FeatureCard title="資料與私隱" detail="同意、匯出及刪除" to="/parent/privacy" icon={<ShieldCheck />} />
-    </div></Shell>
+    </div>
+    <LearningReport record={record} nickname={child.nickname} />
+    </Shell>
   );
+}
+
+/**
+ * 成績表 — what the child has answered, kept apart from 好感度 on purpose.
+ *
+ * Sheet 00 of the pet spec is explicit that friendship must not stand in for
+ * learning. A child who only says hello every day has a high friendship and
+ * an empty record; a child answering after the day's two bonus slots are gone
+ * has the reverse. Showing a parent friendship points as though they measured
+ * learning would be wrong in both directions.
+ */
+function LearningReport({ record, nickname }: { record: LearningRecord | null; nickname: string }) {
+  if (!record) return null;
+  const answered = record.firstTry + record.secondTry + record.failed;
+  if (answered === 0) {
+    return <section className="learning-report">
+      <h2><BookOpen size={17} />學習紀錄</h2>
+      <p className="kid-note">{nickname} 仲未同小寵物答過題。集齊一個主題嘅四塊碎片之後，小寵物就會開始問問題。</p>
+    </section>;
+  }
+  const firstRate = Math.round((record.firstTry / answered) * 100);
+  return <section className="learning-report">
+    <h2><BookOpen size={17} />學習紀錄</h2>
+    <div className="learning-stats">
+      <div><strong>{firstRate}%</strong><small>一次就答啱</small></div>
+      <div><strong>{record.secondTry}</strong><small>諗多次答返啱</small></div>
+      <div><strong>{record.wordsSeen}</strong><small>問過嘅詞語</small></div>
+    </div>
+    {record.needsReview.length > 0
+      ? <>
+          <h3>可以再溫下呢幾個</h3>
+          <ul className="learning-review">
+            {record.needsReview.slice(0, 12).map(word => <li key={word}>{word}</li>)}
+          </ul>
+          <p className="kid-note">答返啱之後就會自動喺呢度消失。</p>
+        </>
+      : <p className="kid-note">冇詞語需要重溫 —— 錯過嘅都已經答返啱喇。</p>}
+    <p className="kid-note">
+      呢個係學習紀錄，同小寵物嘅好感度係兩件事：好感度代表關係，唔代表學到幾多。
+    </p>
+  </section>;
+}
+
+/** Loads the record once per child. */
+function useLearningRecord(childId: string | null) {
+  const [record, setRecord] = useState<LearningRecord | null>(null);
+  useEffect(() => {
+    if (!childId) return;
+    void (async () => {
+      const card = await loadEditableCard(childId);
+      if (!card) return;
+      setRecord(await learningRecord(card.id));
+    })();
+  }, [childId]);
+  return record;
 }
 
 export function ThemesPage() {
