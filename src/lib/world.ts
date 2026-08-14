@@ -44,7 +44,11 @@ export interface Zone {
   night: string;
   /** Key into WALK_MASKS — shared by day and night. */
   mask: string;
-  /** Where the child stands when they arrive from elsewhere. */
+  /**
+   * Where the child stands on arriving. Deliberately set back from the return
+   * gate: spawning on it put "返小鎮" under their thumb the moment they got
+   * here, so the first tap sent them straight home again.
+   */
   spawn: { x: number; y: number };
   hotspots: Hotspot[];
 }
@@ -64,7 +68,7 @@ export const ZONES: Record<string, Zone> = {
       { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.495, y: 0.488, target: "studio" },
       { id: "d-petroom", kind: "door", label: "寵物房", x: 0.328, y: 0.307, target: "petroom" },
       { id: "g-dock", kind: "gate", label: "去碼頭", x: 0.850, y: 0.260, target: "dock" },
-      { id: "g-park", kind: "gate", label: "去遊樂場", x: 0.500, y: 0.960, target: "park" },
+      { id: "g-fair", kind: "gate", label: "去嘉年華", x: 0.500, y: 0.960, target: "fair" },
       { id: "g-village", kind: "gate", label: "去蘑菇村", x: 0.224, y: 0.909, target: "village" },
     ],
   },
@@ -74,22 +78,25 @@ export const ZONES: Record<string, Zone> = {
     day: "/assets/dock-town-dusk.webp",
     night: "/assets/dock-town-dusk-night.webp",
     mask: "dock-town-dusk",
-    spawn: { x: 0.495, y: 0.833 },
+    spawn: { x: 0.495, y: 0.720 },
     hotspots: [
       { id: "d-market", kind: "door", label: "碼頭市集", x: 0.224, y: 0.640, target: "market" },
       { id: "g-town", kind: "gate", label: "返小鎮", x: 0.495, y: 0.833, target: "town" },
     ],
   },
-  park: {
-    id: "park",
-    name: "遊樂場",
+  // Named 嘉年華 rather than 遊樂場 because 遊樂場 is one of the rooms inside
+  // it — a zone and a room sharing a name would read as a loop on the signs.
+  fair: {
+    id: "fair",
+    name: "嘉年華",
     day: "/assets/amusement-park.webp",
     night: "/assets/amusement-park-night.webp",
     mask: "amusement-park",
-    spawn: { x: 0.464, y: 0.921 },
+    spawn: { x: 0.464, y: 0.780 },
     hotspots: [
       { id: "d-theater", kind: "door", label: "劇院", x: 0.786, y: 0.430, target: "theater" },
-      { id: "g-town", kind: "gate", label: "返小鎮", x: 0.464, y: 0.921, target: "town" },
+      { id: "d-park", kind: "door", label: "遊樂場", x: 0.280, y: 0.500, target: "park" },
+      { id: "g-town", kind: "gate", label: "返小鎮", x: 0.464, y: 0.900, target: "town" },
     ],
   },
   village: {
@@ -98,7 +105,7 @@ export const ZONES: Record<string, Zone> = {
     day: "/assets/mushroom-city-morning.webp",
     night: "/assets/mushroom-city-morning-night.webp",
     mask: "mushroom-city-morning",
-    spawn: { x: 0.500, y: 0.960 },
+    spawn: { x: 0.500, y: 0.850 },
     hotspots: [
       { id: "d-album", kind: "door", label: "MEE 收藏館", x: 0.828, y: 0.371, target: "album" },
       { id: "g-town", kind: "gate", label: "返小鎮", x: 0.500, y: 0.960, target: "town" },
@@ -116,6 +123,7 @@ export const ROOM_ART: Record<string, string> = {
   market: "/assets/wharf-market-morning.webp",
   studio: "/assets/hero-studio.webp",
   theater: "/assets/theater.webp",
+  park: "/assets/amusement-park.webp",
   petroom: "/assets/pet-room.webp",
   album: "/assets/mee-album-house.webp",
 };

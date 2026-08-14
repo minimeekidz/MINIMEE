@@ -533,11 +533,37 @@ describe("MINIMEE route shells", () => {
         // allows, or the child can see the marker and never reach it.
         expect(isWalkable(zone, spot.x, spot.y), `${zone.id}/${spot.id} off the path`).toBe(true);
       }
+      // Every room with art must have a door leading to it. A room nobody can
+      // walk into is content that has been paid for and never seen.
+      for (const room of Object.keys(ROOM_ART)) {
+        const hasDoor = Object.values(ZONES).some(other =>
+          other.hotspots.some(s => s.kind === "door" && s.target === room));
+        expect(hasDoor, `no door leads to ${room}`).toBe(true);
+      }
+      // Arriving has to leave the child standing somewhere they can walk from,
+      // and never on a gate: spawning on the return gate put 返小鎮 under their
+      // thumb the moment they arrived, so the first tap sent them home again.
+      expect(isWalkable(zone, zone.spawn.x, zone.spawn.y), `${zone.id} spawn off the path`).toBe(true);
+      expect(hotspotNear(zone, zone.spawn.x, zone.spawn.y)?.kind,
+        `${zone.id} spawns on a gate`).not.toBe("gate");
+
       // Every zone must be reachable from somewhere, or it is unusable.
       const reachable = Object.values(ZONES).some(other =>
         other.id !== zone.id && other.hotspots.some(s => s.kind === "gate" && s.target === zone.id));
       expect(reachable, `${zone.id} is unreachable`).toBe(true);
     }
+  });
+
+  it("walks to the nearest path when the child taps somewhere unreachable", () => {
+    const town = ZONES.town;
+    // The top of the town map is open sea. A child who taps it should end up
+    // on the nearest shore path rather than nothing happening at all.
+    expect(isWalkable(town, 0.5, 0.04)).toBe(false);
+    const landed = nearestWalkable(town, 0.5, 0.04);
+    expect(landed).not.toBeNull();
+    expect(isWalkable(town, landed!.x, landed!.y)).toBe(true);
+    // A tap on ground that is already walkable must not move the destination.
+    expect(nearestWalkable(town, town.spawn.x, town.spawn.y)).toEqual(town.spawn);
   });
 
   it("switches the world between day and night art", () => {
