@@ -5,7 +5,7 @@ import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
 import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
-import { actionsAt, FRIEND_LEVELS, levelFor, MAX_LEVEL, PET_ACTIONS, QUIZ_POINTS } from "./lib/petFriends";
+import { actionsAt, FRIEND_LEVELS, LEVEL_STEP, levelFor, levelProgress, MAX_LEVEL, PET_ACTIONS, QUIZ_POINTS } from "./lib/petFriends";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -590,35 +590,62 @@ describe("MINIMEE route shells", () => {
     expect(isWalkable(town, cold.x, cold.y)).toBe(true);
   });
 
-  it("makes each friendship level cost more than the one before it", () => {
-    // A flat curve would have a child at the top of all twelve pets inside a
-    // week, with nothing left to come back for across a year's subscription.
-    const steps = FRIEND_LEVELS.map((level, index) =>
-      index === 0 ? 0 : level.needed - FRIEND_LEVELS[index - 1].needed);
-    for (let i = 2; i < steps.length; i++) {
-      expect(steps[i], `level ${i + 1} must cost more than level ${i}`).toBeGreaterThan(steps[i - 1]);
+  it("moves friendship one point at a time, on evenly spaced levels", () => {
+    // Em's aim is a daily habit across a year, not a ladder that can be
+    // climbed in an afternoon, so nothing pays more than a point at a time
+    // and no action may be repeated for points on the same day.
+    for (const action of PET_ACTIONS) {
+      expect(action.points, `${action.id} should pay one point`).toBe(1);
+      expect(action.perDay, `${action.id} should count once a day`).toBe(1);
+      expect(action.level, `${action.id} is past the last level`).toBeLessThanOrEqual(MAX_LEVEL);
+      expect(action.reply.length, `${action.id} needs varied replies`).toBeGreaterThan(1);
     }
+
+    // Evenly spaced: the escalating curve was removed deliberately, because
+    // income already rises as more actions unlock.
+    const steps = FRIEND_LEVELS.slice(1).map((level, index) => level.needed - FRIEND_LEVELS[index].needed);
+    expect(new Set(steps).size, "levels must be evenly spaced").toBe(1);
     expect(levelFor(0).level).toBe(1);
     expect(levelFor(FRIEND_LEVELS[FRIEND_LEVELS.length - 1].needed).level).toBe(MAX_LEVEL);
+
+    // Even a child who does everything available cannot outrun the pace: the
+    // best possible day at the top level is still a small dent in one level.
+    const bestDay = PET_ACTIONS.length * 1 + QUIZ_POINTS.correct;
+    expect(bestDay).toBeLessThan(LEVEL_STEP);
+  });
+
+  it("keeps every pet's friendship separate", async () => {
+    // Making friends with the penguin must say nothing about the hamster.
+    // The panel is keyed by pet for this reason: unkeyed, React reused one
+    // instance and its running total followed the child from pet to pet —
+    // invisible whenever two pets sat on the same stored score, which is
+    // every pair of them at the start.
+    billing.kidCard = editableCard();
+    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
+
+    const pets = await screen.findAllByRole("button", { name: /羊|鼠|貓|柴犬|企鵝|小雞|兔|小狗|豬|刺蝟/ });
+    expect(pets.length).toBeGreaterThan(1);
+
+    // Two different pets must not be the same element, so their panels cannot
+    // share component state.
+    expect(pets[0]).not.toBe(pets[1]);
+    // And each level starts from nothing rather than from a shared pool.
+    expect(levelProgress(0).level.level).toBe(1);
+    expect(levelProgress(0).toGo).toBe(LEVEL_STEP);
   });
 
   it("keeps the warmest actions locked until the friendship is earned", () => {
-    // Greetings are available immediately; being given a flash card is not.
     const early = actionsAt(1).map(action => action.id);
     expect(early).toContain("greet");
     expect(early).not.toContain("card-flash");
     expect(actionsAt(MAX_LEVEL).map(action => action.id)).toContain("card-flash");
 
-    // Every action must be reachable, or it is content nobody ever sees.
-    for (const action of PET_ACTIONS) {
-      expect(action.level, `${action.id} is past the last level`).toBeLessThanOrEqual(MAX_LEVEL);
-      expect(action.perDay, `${action.id} needs a daily cap`).toBeGreaterThan(0);
-    }
-
-    // The word question has to outweigh the greetings, or friendship stops
-    // tracking what the child has actually learnt.
-    const bestChat = Math.max(...PET_ACTIONS.map(action => action.points * action.perDay));
-    expect(QUIZ_POINTS.correct).toBeGreaterThan(bestChat);
+    // The word question has to outweigh any single courtesy, or friendship
+    // stops tracking what the child has actually learnt.
+    const bestAction = Math.max(...PET_ACTIONS.map(action => action.points * action.perDay));
+    expect(QUIZ_POINTS.correct).toBeGreaterThan(bestAction);
+    // Getting there after a hint still pays something.
+    expect(QUIZ_POINTS.afterHint).toBeGreaterThan(0);
   });
 
   it("switches the world between day and night art", () => {

@@ -2,17 +2,21 @@
 //
 // The shape Em asked for: a few plain greetings at the start, and the warmer
 // things — hugging, sharing how you feel, being told secrets, being given a
-// card — earned over time. Two rules keep that honest:
+// card — earned over time. Three rules keep that honest:
 //
-// 1. **Each level costs more than the last.** A flat curve would have a child
-//    at the top of every pet within a week and nothing left to come back for.
-// 2. **Every action has a daily cap.** Without one the fastest route to best
-//    friends is tapping 打招呼 two hundred times, which teaches nothing and
-//    makes the number meaningless. The cap is enforced in the database, not
-//    just hidden in the UI.
+// 1. **Friendship is per pet.** Making friends with the penguin says nothing
+//    about the hamster. Twelve separate relationships is the point.
+// 2. **One point at a time, once a day per action.** The child may keep
+//    chatting as much as they like and the replies keep changing, but the
+//    number only moves once. Em's aim is a daily habit across a year, not a
+//    ladder that can be climbed in an afternoon.
+// 3. **Levels are evenly spaced.** An escalating curve was tried and taken
+//    out: because more actions unlock as you go, income already rises with
+//    level, and making the steps longer as well turned the top half into a
+//    grind for a five-year-old.
 //
-// The point of the whole thing is the daily word share: it is worth far more
-// than any greeting, so friendship tracks what the child has actually learnt.
+// The cap lives in the database, not the UI. Otherwise the fastest route to
+// best friends is tapping 打招呼 two hundred times, which teaches nothing.
 
 export type PetActionId =
   | "greet" | "chat" | "wave"
@@ -39,38 +43,38 @@ export interface PetAction {
 }
 
 export const PET_ACTIONS: PetAction[] = [
-  { id: "greet", label: "打招呼", icon: "👋", level: 1, points: 2, perDay: 1,
+  { id: "greet", label: "打招呼", icon: "👋", level: 1, points: 1, perDay: 1,
     reply: ["早晨呀！", "你返嚟啦！", "今日好天氣喎～"] },
-  { id: "chat", label: "傾下計", icon: "💬", level: 1, points: 3, perDay: 2,
+  { id: "chat", label: "傾下計", icon: "💬", level: 1, points: 1, perDay: 1,
     reply: ["我啱啱喺公園見到隻好肥嘅雀仔！", "你估我今朝食咗咩？", "呢度嘅花開晒喇。"] },
-  { id: "wave", label: "揮手", icon: "🙌", level: 1, points: 2, perDay: 2,
+  { id: "wave", label: "揮手", icon: "🙌", level: 1, points: 1, perDay: 1,
     reply: ["嘻嘻！", "揮返俾你～", "我見到你喇！"] },
 
-  { id: "share-activity", label: "分享活動", icon: "🎏", level: 2, points: 5, perDay: 1,
+  { id: "share-activity", label: "分享活動", icon: "🎏", level: 2, points: 1, perDay: 1,
     reply: ["聽落好好玩喎！", "下次帶埋我去啦～", "哇，我都想試！"] },
-  { id: "jump", label: "一齊跳", icon: "⭐", level: 2, points: 4, perDay: 2,
+  { id: "jump", label: "一齊跳", icon: "⭐", level: 2, points: 1, perDay: 1,
     reply: ["跳高啲！", "哈哈哈，好好玩！", "我跳得仲高呀！"] },
 
-  { id: "hug", label: "攬一攬", icon: "🤗", level: 3, points: 6, perDay: 1,
+  { id: "hug", label: "攬一攬", icon: "🤗", level: 3, points: 1, perDay: 1,
     reply: ["暖笠笠～", "多謝你呀。", "我今日開心咗好多。"] },
-  { id: "share-likes", label: "講下鍾意咩", icon: "💗", level: 3, points: 6, perDay: 1,
+  { id: "share-likes", label: "講下鍾意咩", icon: "💗", level: 3, points: 1, perDay: 1,
     reply: ["我都鍾意呀！", "原來我哋咁夾嘅。", "記住咗喇！"] },
 
-  { id: "share-feelings", label: "講下心情", icon: "🌈", level: 4, points: 8, perDay: 1,
+  { id: "share-feelings", label: "講下心情", icon: "🌈", level: 4, points: 1, perDay: 1,
     reply: ["唔開心可以話我知㗎。", "我喺度陪住你。", "聽你講完我都開心。"] },
-  { id: "gift", label: "送小禮物", icon: "🎁", level: 4, points: 8, perDay: 1,
+  { id: "gift", label: "送小禮物", icon: "🎁", level: 4, points: 1, perDay: 1,
     reply: ["俾我㗎？多謝！", "我會好好收埋佢。", "哇……我好鍾意。"] },
 
-  { id: "gossip", label: "聽小秘密", icon: "🤫", level: 5, points: 10, perDay: 1,
+  { id: "gossip", label: "聽小秘密", icon: "🤫", level: 5, points: 1, perDay: 1,
     reply: ["咪話俾人聽呀…", "得你一個知㗎咋。", "噓——過嚟啲。"] },
 
-  { id: "card-normal", label: "收下佢送嘅 MEE 卡", icon: "🃏", level: 6, points: 12, perDay: 1,
+  { id: "card-normal", label: "收下佢送嘅 MEE 卡", icon: "🃏", level: 6, points: 1, perDay: 1,
     reply: ["呢張送俾你！", "我覺得你會鍾意呢張。", "留住佢啦～"] },
 
-  { id: "best-friend", label: "最好嘅朋友", icon: "💖", level: 7, points: 14, perDay: 1,
+  { id: "best-friend", label: "最好嘅朋友", icon: "💖", level: 7, points: 1, perDay: 1,
     reply: ["你係我最好嘅朋友。", "永遠都係好朋友呀！", "有你真好。"] },
 
-  { id: "card-flash", label: "收下閃卡", icon: "✨", level: 8, points: 18, perDay: 1,
+  { id: "card-flash", label: "收下閃卡", icon: "✨", level: 8, points: 1, perDay: 1,
     reply: ["呢張好罕有㗎！", "閃閃哋，好靚呀！", "淨係送俾最好嘅朋友。"] },
 ];
 
@@ -81,18 +85,15 @@ export interface FriendLevel {
   needed: number;
 }
 
-// Each step costs noticeably more than the one before, so the last levels are
-// something to come back for across a subscription rather than a first week.
+/** Points between one level and the next. Equal all the way up. */
+export const LEVEL_STEP = 30;
+
+// Evenly spaced on purpose. More actions unlock as the friendship grows, so
+// a day already earns more at level 5 than at level 1 — stretching the steps
+// on top of that made the back half a grind rather than a habit.
 export const FRIEND_LEVELS: FriendLevel[] = [
-  { level: 1, title: "啱啱識",    needed: 0 },
-  { level: 2, title: "識少少",    needed: 20 },
-  { level: 3, title: "熟絡咗",    needed: 55 },
-  { level: 4, title: "好朋友",    needed: 115 },
-  { level: 5, title: "老友記",    needed: 215 },
-  { level: 6, title: "好夾",      needed: 370 },
-  { level: 7, title: "無所不談",  needed: 600 },
-  { level: 8, title: "最好嘅朋友", needed: 920 },
-];
+  "啱啱識", "識少少", "熟絡咗", "好朋友", "老友記", "好夾", "無所不談", "最好嘅朋友",
+].map((title, index) => ({ level: index + 1, title, needed: index * LEVEL_STEP }));
 
 export const MAX_LEVEL = FRIEND_LEVELS[FRIEND_LEVELS.length - 1].level;
 
@@ -145,15 +146,17 @@ export const WISH_MS = 14000;
  * Points for the daily word question, and for getting there after the pet
  * had to show the answer.
  *
- * Set above every other action on purpose: answering is the single most
+ * Worth more than any other single action on purpose: answering is the most
  * valuable thing the child can do with a pet, so 好感度 measures what they
  * have learnt rather than how many times they tapped 打招呼. A test asserts
  * the ordering, because it is the kind of thing a later tweak quietly breaks.
+ * Still small in absolute terms — the whole scale moves one or two points a
+ * day, which is what makes it a habit rather than a sprint.
  *
  * Getting there after a hint still pays. A five-year-old who loses everything
  * for one wrong guess stops guessing, which is the opposite of the point.
  */
-export const QUIZ_POINTS = { correct: 20, afterHint: 8 } as const;
+export const QUIZ_POINTS = { correct: 3, afterHint: 1 } as const;
 
 /** How many word questions one pet asks per day. */
 export const QUIZ_PER_DAY = 1;

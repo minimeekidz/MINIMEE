@@ -1,0 +1,17 @@
+{
+  "name": "MINIMEE",
+  "short_name": "MINIMEE",
+  "description": "小朋友嘅自我介紹卡同 MEE 小鎮",
+  "lang": "zh-HK",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#0d1020",
+  "theme_color": "#0d1020",
+  "categories": ["education", "kids", "games"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
