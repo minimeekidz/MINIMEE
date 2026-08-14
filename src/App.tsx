@@ -9,7 +9,7 @@ import { FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pag
 import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
 import { LostItemsPage, NotificationsPage, PrivacyCenterPage, PublicLostItemPage, SupportCasePage } from "./pages/ParentServicePages";
 import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
-import { KidCardPage } from "./pages/KidCardPage";
+import { ChildProfileLanding } from "./pages/ChildProfileLanding";
 import { KidCardEditorPage } from "./pages/KidCardEditorPage";
 import { KidPlayPage } from "./pages/KidPlayPage";
 import { RoomPage } from "./pages/RoomPage";
@@ -35,7 +35,7 @@ export default function App() {
       <Route path="/faq" element={<FaqPage />} />
       {/* v2: the shareable child card and its playable demo — both public,
           so a grandparent or a finder can open them without an account. */}
-      <Route path="/kid/:slug" element={<KidCardPage />} />
+      <Route path="/kid/:slug" element={<ChildProfileLanding />} />
       <Route path="/play" element={<PixelWorldPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register" element={<AuthPage />} />

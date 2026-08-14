@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -10,6 +10,9 @@ import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
 import { actionVo } from "./data/petActionVo";
 import { learningRecord } from "./lib/petStore";
 import { livesIn, petsForZone, spawnWeight } from "./lib/petSpawn";
+import { ageFrom, ageLabel } from "./lib/age";
+import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
+import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 
 vi.mock("./contexts/AuthContext", () => ({
@@ -70,6 +73,9 @@ const billing = vi.hoisted(() => ({
   lessons: [] as Record<string, unknown>[],
   fragments: [] as Record<string, unknown>[],
   quizAttempts: [] as Record<string, unknown>[],
+  publicProfile: null as Record<string, unknown> | null,
+  /** Every table write, so a test can assert a save happened exactly once. */
+  writes: [] as Array<{ table: string; patch: unknown }>,
 }));
 
 vi.mock("./lib/supabase", () => {
@@ -98,7 +104,7 @@ vi.mock("./lib/supabase", () => {
       single: () => Promise.resolve({ data: singleFor(table), error: null }),
       insert: () => builder,
       upsert: () => Promise.resolve({ data: null, error: null }),
-      update: () => builder,
+      update: (patch: unknown) => { billing.writes.push({ table, patch }); return builder; },
       then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
         Promise.resolve({ data: rowsFor(table), error: null }).then(resolve, reject),
     };
@@ -108,8 +114,15 @@ vi.mock("./lib/supabase", () => {
   return {
     supabase: {
       auth: { resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }) },
-      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
-      storage: { from: () => ({ createSignedUrl: () => Promise.resolve({ data: null, error: null }) }) },
+      rpc: vi.fn((name: string) => Promise.resolve(
+        name === "kid_card_public"
+          ? { data: billing.publicProfile ? [billing.publicProfile] : [], error: null }
+          : { data: [], error: null })),
+      storage: { from: () => ({
+        createSignedUrl: () => Promise.resolve({ data: null, error: null }),
+        upload: () => Promise.resolve({ data: null, error: null }),
+        remove: () => Promise.resolve({ data: null, error: null }),
+      }) },
       from: (table: string) => makeBuilder(table),
     },
   };
@@ -162,6 +175,7 @@ beforeEach(() => {
   billing.quizAttempts = [];
   billing.entitlements = [];
   billing.jobs = [];
+  billing.writes = [];
   createBillingOrder.mockReset().mockResolvedValue({ ok: false, error: "Not authenticated" });
   cancelSubscription.mockReset().mockResolvedValue({ ok: true, data: { currentPeriodEnd: null } });
   createAiVideoJobs.mockReset().mockResolvedValue({ ok: true, data: {} });
@@ -415,11 +429,15 @@ describe("MINIMEE route shells", () => {
     // A published card from the database never carries its token — the
     // finder reaches the parent through the QR sticker instead. Probing a
     // card page must not hand out a working contact link.
-    billing.kidCard = {
-      id: "card-1", slug: "real-kid", display_name: "小明", age_group: "6-8",
-      tagline: "我係小明", about: "", likes: [], dream_job: "",
-      scene: null, avatar_url: null, intro_video_url: null, intro_video_poster: null,
-      published: true, lost_mode_enabled: true, lost_mode_message: "唔該聯絡我媽咪",
+    billing.publicProfile = {
+      id: "card-1", slug: "real-kid", display_name: "小明",
+      tagline: "我係小明", about: null, dream_job: null,
+      age: null, age_is_approximate: false, school: null,
+      scene: null, avatar_url: null, hero_id: null,
+      favourite_animal: null, favourite_food: null, favourite_colour: null,
+      favourite_place: null, quote: null,
+      intro_video_url: null, intro_video_poster: null,
+      lost_mode_enabled: true, lost_mode_message: "唔該聯絡我媽咪",
     };
     render(<MemoryRouter initialEntries={["/kid/real-kid"]}><App /></MemoryRouter>);
     expect(await screen.findByRole("heading", { level: 1, name: "小明" })).toBeInTheDocument();
@@ -746,6 +764,101 @@ describe("MINIMEE route shells", () => {
     expect(here.length).toBeLessThanOrEqual(3);
     // Stable within the hour, so stepping out of a room does not reshuffle them.
     expect(petsForZone({ zoneId: "town", now: new Date("2026-08-14T09:40:00") })).toEqual(here);
+  });
+
+  it("derives age from DOB and never stores it", () => {
+    // A stored age is wrong the day after the birthday and nothing would fix
+    // it, so the number is computed on read.
+    const before = ageFrom("2018-03-14", null, new Date("2026-03-13"));
+    const onTheDay = ageFrom("2018-03-14", null, new Date("2026-03-14"));
+    expect(before!.years).toBe(7);
+    expect(onTheDay!.years).toBe(8);
+    expect(onTheDay!.approximate).toBe(false);
+
+    // Families who signed up before children.dob existed have only a year,
+    // which can be one out — so it says 約 rather than claiming to know.
+    const legacy = ageFrom(null, 2018, new Date("2026-03-13"));
+    expect(legacy!.approximate).toBe(true);
+    expect(ageLabel(legacy)).toBe("約 8 歲");
+    expect(ageLabel(onTheDay)).toBe("8 歲");
+
+    // Nothing at all rather than a zero.
+    expect(ageFrom(null, null)).toBeNull();
+    expect(ageLabel(null)).toBe("");
+  });
+
+  it("hides a private profile behind the public read, not behind the UI", async () => {
+    // The visitor path goes through kid_card_public, which applies the
+    // per-field switches server-side. A visitor is never handed private data
+    // and asked not to render it.
+    billing.publicProfile = null;
+    render(<MemoryRouter initialEntries={["/kid/nobody"]}><App /></MemoryRouter>);
+    expect(await screen.findByText("搵唔到呢個檔案")).toBeInTheDocument();
+  });
+
+  it("shows the photo warning only while editing", () => {
+    const sticker = {
+      id: "s1", category: "interest" as const, label: "畫畫", size: "m" as const,
+      sortOrder: 0, note: null, photoPath: null, photoPublic: false, art: null,
+    };
+    // A visitor must never be shown the upload warning — it is a decision for
+    // whoever is uploading, not a notice to the reader.
+    const visitor = render(
+      <StickerDetailPanel sticker={sticker} cardId={null} onClose={() => {}} />);
+    expect(screen.queryByText(/呢張相會俾所有睇到/)).toBeNull();
+    visitor.unmount();
+
+    render(<StickerDetailPanel sticker={sticker} cardId="card-1" editing onClose={() => {}} />);
+    expect(screen.getByText(/呢張相會俾所有睇到/)).toBeInTheDocument();
+  });
+
+  it("reorders stickers by drag and saves the move exactly once", async () => {
+    // Two ways of saying "the drag finished" reach the wall: the sticker's own
+    // pointer-up, and the same event bubbling to the grid. Both used to fire a
+    // write, so every reorder was sent to the database twice.
+    const wall = ["畫畫", "游水", "跳舞"].map((label, index) => ({
+      id: `s${index}`, category: "interest" as const, label, size: "m" as const,
+      sortOrder: index, note: null, photoPath: null, photoPublic: false, art: null,
+    }));
+    const onOpen = vi.fn();
+    render(<StickerWall title="我的興趣" stickers={wall} editing onOpen={onOpen} />);
+
+    const faces = screen.getAllByRole("button", { name: /^(畫畫|游水|跳舞)$/ });
+    // A mouse drags immediately; a finger has to hold first, which is what
+    // stops a scroll gesture from picking a sticker up.
+    fireEvent.pointerDown(faces[2], { pointerType: "mouse" });
+    fireEvent.pointerEnter(faces[0], { pointerType: "mouse" });
+
+    // The list reorders under the finger, before anything is written — a drag
+    // must never wait on the network to show where the sticker landed.
+    expect(screen.getAllByRole("button", { name: /^(畫畫|游水|跳舞)$/ })[0])
+      .toHaveAccessibleName("跳舞");
+
+    fireEvent.pointerUp(faces[0], { pointerType: "mouse" });
+    await waitFor(() => expect(billing.writes.length).toBeGreaterThan(0));
+
+    // 跳舞 moves to the front, so all three rows change index — and each is
+    // written once, not once per handler that saw the pointer-up.
+    expect(billing.writes.filter(write => write.table === "kid_card_stickers"))
+      .toEqual([0, 1, 2].map(sort_order => ({ table: "kid_card_stickers", patch: { sort_order } })));
+
+    // Landing a drag on a sticker is not a tap on it: the child moved 跳舞,
+    // they did not ask to open 畫畫.
+    expect(onOpen).not.toHaveBeenCalled();
+
+    // A plain tap, with no drag in flight, still opens the detail panel.
+    fireEvent.pointerUp(screen.getByRole("button", { name: "游水" }), { pointerType: "mouse" });
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ label: "游水" }));
+
+    // A drag that ends on the sticker it started from is the case where the
+    // pointer-up really is seen twice — by the sticker and by the grid.
+    billing.writes = [];
+    const dancing = screen.getByRole("button", { name: "跳舞" });
+    fireEvent.pointerDown(dancing, { pointerType: "mouse" });
+    fireEvent.pointerEnter(screen.getByRole("button", { name: "畫畫" }), { pointerType: "mouse" });
+    fireEvent.pointerUp(dancing, { pointerType: "mouse" });
+    await waitFor(() => expect(billing.writes.length).toBeGreaterThan(0));
+    expect(billing.writes).toHaveLength(3);
   });
 
   it("switches the world between day and night art", () => {

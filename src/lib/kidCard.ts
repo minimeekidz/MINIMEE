@@ -53,6 +53,18 @@ export interface KidCard {
   /** Lost mode: when on, a finder can reach the parent through /lost/:token. */
   lostMode: { enabled: boolean; token: string; message: string } | null;
   isExample: boolean;
+  // The remaining scrapbook fields live in the database for a real card. The
+  // bundled examples carry them inline so the demo page shows every panel
+  // instead of half a scrapbook.
+  daily?: string[];
+  favourites?: { animal: string; food: string; colour: string; place: string };
+  quote?: string;
+  /**
+   * Demo age. A real card derives age from the child's date of birth; the
+   * examples have no DOB, and taking the low end of `ageGroup` contradicted
+   * the age written into their own self-introductions.
+   */
+  age?: number;
 }
 
 // Two worked examples shipped with the product. They exist so a parent
@@ -84,6 +96,10 @@ export const EXAMPLE_CARDS: KidCard[] = [
     ],
     lostMode: { enabled: true, token: "example-token-mimi", message: "如果你揀到呢張卡，唔該聯絡我媽咪，多謝你！" },
     isExample: true,
+    age: 7,
+    daily: ["畫畫", "睇書", "游水", "同朋友玩"],
+    favourites: { animal: "海龜", food: "西瓜", colour: "藍色", place: "海邊" },
+    quote: "每一日都係新嘅冒險，同朋友一齊，我可以做到更多！",
   },
   {
     id: "example-ryan",
@@ -107,6 +123,10 @@ export const EXAMPLE_CARDS: KidCard[] = [
     ],
     lostMode: null,
     isExample: true,
+    age: 10,
+    daily: ["做功課", "踩單車", "砌模型", "睇書"],
+    favourites: { animal: "貓", food: "壽司", colour: "深藍色", place: "天文館" },
+    quote: "我想飛上去睇下地球係咪真係好靚。",
   },
 ];
 

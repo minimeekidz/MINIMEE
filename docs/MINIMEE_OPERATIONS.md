@@ -522,6 +522,63 @@ transaction: unpublished cards and their tokens invisible to `anon`,
 published ones resolving, a wrong token returning nothing, and lost mode
 switched off instantly killing a previously working token.
 
+### 7c-i. 我的小屋 — the scrapbook profile at `/kid/:slug`
+
+The card page is a scrapbook, not a dashboard: a hero portrait, sticker
+walls for 日常 and 興趣, 我的最愛, 我的夢想, and small previews of the MEE
+collection, learning and friends. `src/pages/ChildProfileLanding.tsx` with
+components under `src/components/profile/`.
+
+**One layout, two permission models.** A visitor and the signed-in owner see
+the same design through different queries, and the difference is enforced in
+the database rather than in the UI:
+
+- Visitors read `kid_card_public(p_slug)` and `kid_card_public_stickers(p_slug)`
+  — `SECURITY DEFINER` functions that apply the per-field `show_*` switches
+  and compute age. A visitor is never handed private data and asked not to
+  render it.
+- Owners read `kid_cards` / `kid_card_stickers` directly under RLS, so notes
+  and private photos are present.
+
+**`anon` has no grant at all on `children.dob` or `kid_cards.school`.** The
+functions derive age and decide about the school; the grants make sure there
+is nothing to derive it from otherwise. Note the Postgres trap this design
+depends on: a column-level `revoke` does nothing while a table-level grant
+stands, so the migration does `revoke all on kid_cards from anon` first and
+then grants the readable columns back one by one. Adding a column later
+means deciding explicitly whether to grant it.
+
+**Age is never stored.** `children.dob` is the source; `src/lib/age.ts`
+derives the number on read, so it is right the day after a birthday without
+anything having to run. `birth_year` remains only as a legacy fallback and
+renders as `約 N 歲`, because a year alone can be one out.
+
+**Photos stay in the private `child-photos` bucket.** A sticker row stores a
+*path*, never a URL, and a signed URL with a 10-minute life is minted at view
+time — so a parent switching the photo off takes the picture away
+immediately. `photo_public` resets to `false` whenever the file is removed,
+so a later upload cannot inherit permission granted to a picture that no
+longer exists. The upload warning is shown to whoever is uploading and never
+to a visitor.
+
+**Who edits what.** Basic profile fields and every privacy switch belong to
+the parent and save on Confirm (`/parent/children/:id/card`). Stickers belong
+to the child — add, remove, reorder, notes, photos — and save as they happen,
+with no parent approval step. The child's edit mode is a permission mode
+inside the authenticated family session, not a separate login.
+
+Two things worth knowing before touching the drag code in
+`StickerWall.tsx`: a pointer-up at the end of a drag is seen by the sticker
+*and* by the grid it bubbles to, so `drop()` is guarded against writing the
+same reorder twice; and the sticker a drag lands on would otherwise treat
+that pointer-up as an ordinary tap and open its detail panel. Both are
+covered by tests.
+
+Sticker artwork follows the same filename-is-the-label contract as
+everything else — see 7e-i. Until the packs are filled, a sticker renders as
+a paper chip with the word on it; nothing is broken and no placeholder
+artwork is invented.
+
 ### 7d. MEE 世界 — a town you walk around
 
 The world is **four full-screen maps joined by gates**, and the map is drawn
