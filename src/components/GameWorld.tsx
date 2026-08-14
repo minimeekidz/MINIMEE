@@ -6,7 +6,7 @@ import { usePetFriends } from "../lib/petStore";
 import { useFullscreen } from "../lib/fullscreen";
 import { PetEncounter } from "./PetEncounter";
 import {
-  arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ZONE,
+  arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ZONE, START_ZONE,
   zoneAspect, zoneBackground, ZONES, type Hotspot, type Zone,
 } from "../lib/world";
 
@@ -82,7 +82,7 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
     from: returningFrom ? { room: returningFrom } : {},
   });
   const [zoneId, setZoneId] = useState(openedAt.current.zone);
-  const zone: Zone = ZONES[zoneId] ?? ZONES.town;
+  const zone: Zone = ZONES[zoneId] ?? ZONES[START_ZONE];
 
   // Where the child should appear in whichever zone loads next. Set by travel
   // before the zone changes, so the arrival effect has it to hand.

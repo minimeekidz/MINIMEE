@@ -23,7 +23,11 @@
 
 import { WALK_MASKS, type WalkMask } from "./walkmask";
 
-export type HotspotKind = "door" | "gate";
+// A board is neither a room nor a zone — it opens a panel in place. 小鎮趣聞
+// and 最新消息 live behind one, and they are kept apart there: a parent who
+// cannot tell a made-up pet story from a real announcement stops trusting
+// both.
+export type HotspotKind = "door" | "gate" | "board";
 
 export interface Hotspot {
   id: string;
@@ -39,9 +43,13 @@ export interface Hotspot {
 export interface Zone {
   id: string;
   name: string;
-  /** Both are the same map; the night one is a graded copy. */
+  /** The same place at different times; all three share one walk mask. */
   day: string;
   night: string;
+  /** Only 小屋區入口 has dawn art; everywhere else goes straight day/night. */
+  dawn?: string;
+  /** 碼頭市集 is the parents' entrance and asks for the parent PIN. */
+  parentsOnly?: boolean;
   /** Key into WALK_MASKS — shared by day and night. */
   mask: string;
   /**
@@ -54,79 +62,147 @@ export interface Zone {
 }
 
 export const ZONES: Record<string, Zone> = {
-  town: {
-    id: "town",
-    name: "MEE 小鎮",
-    day: "/assets/town-morning-v2.webp",
-    night: "/assets/town-morning-v2-night.webp",
-    mask: "town-morning-v2",
-    spawn: { x: 0.500, y: 0.820 },
+  // 小鎮中心 — the hub. Three doors (Buddy Café, Hero Studio, MEE 珍藏館) and
+  // two gates (碼頭市集, 小鎮廣場), which is exactly what the signpost in the
+  // art promises.
+  "town-centre": {
+    id: "town-centre",
+    name: "小鎮中心",
+    day: "/assets/world/town-centre-day.webp",
+    night: "/assets/world/town-centre-night.webp",
+    mask: "town-centre",
+    spawn: { x: 0.450, y: 0.880 },
     hotspots: [
-      { id: "d-library", kind: "door", label: "MEE 圖書館", x: 0.766, y: 0.473, target: "library" },
-      { id: "d-cinema", kind: "door", label: "MEE 戲院", x: 0.266, y: 0.705, target: "cinema" },
-      { id: "d-cafe", kind: "door", label: "Paw Café", x: 0.238, y: 0.497, target: "cafe" },
-      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.495, y: 0.488, target: "studio" },
-      { id: "d-petroom", kind: "door", label: "寵物房", x: 0.328, y: 0.307, target: "petroom" },
-      { id: "g-dock", kind: "gate", label: "去碼頭", x: 0.850, y: 0.260, target: "dock" },
-      { id: "g-fair", kind: "gate", label: "去嘉年華", x: 0.500, y: 0.960, target: "fair" },
-      { id: "g-village", kind: "gate", label: "去蘑菇村", x: 0.224, y: 0.909, target: "village" },
+      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.330, y: 0.260, target: "cafe" },
+      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.800, y: 0.420, target: "studio" },
+      { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.680, y: 0.680, target: "album-hall" },
+      { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.790, y: 0.930, target: "wharf-market" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.460, y: 0.980, target: "town-square" },
     ],
   },
-  dock: {
-    id: "dock",
-    name: "碼頭",
-    day: "/assets/dock-town-dusk.webp",
-    night: "/assets/dock-town-dusk-night.webp",
-    mask: "dock-town-dusk",
-    spawn: { x: 0.495, y: 0.720 },
+
+  // 小鎮廣場 — where the pets gather, and where the notice board lives.
+  "town-square": {
+    id: "town-square",
+    name: "小鎮廣場",
+    day: "/assets/world/town-square-day.webp",
+    night: "/assets/world/town-square-night.webp",
+    mask: "town-square",
+    spawn: { x: 0.440, y: 0.800 },
     hotspots: [
-      { id: "d-market", kind: "door", label: "碼頭市集", x: 0.224, y: 0.640, target: "market" },
-      { id: "g-town", kind: "gate", label: "返小鎮", x: 0.495, y: 0.833, target: "town" },
+      { id: "b-board", kind: "board", label: "公告板", x: 0.460, y: 0.470, target: "notice-board" },
+      { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.450, y: 0.980, target: "town-centre" },
+      { id: "g-park", kind: "gate", label: "散步公園", x: 0.070, y: 0.680, target: "seaside-park" },
+      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.860, y: 0.420, target: "village-gate" },
     ],
   },
-  // Named 嘉年華 rather than 遊樂場 because 遊樂場 is one of the rooms inside
-  // it — a zone and a room sharing a name would read as a loop on the signs.
-  fair: {
-    id: "fair",
-    name: "嘉年華",
-    day: "/assets/amusement-park.webp",
-    night: "/assets/amusement-park-night.webp",
-    mask: "amusement-park",
-    spawn: { x: 0.464, y: 0.780 },
+
+  // 散步公園 — a seaside walk. Two gates and nothing to enter: the point of
+  // it is the walk itself and the pets who like it here.
+  "seaside-park": {
+    id: "seaside-park",
+    name: "散步公園",
+    day: "/assets/world/seaside-park-day.webp",
+    night: "/assets/world/seaside-park-night.webp",
+    mask: "seaside-park",
+    spawn: { x: 0.460, y: 0.870 },
     hotspots: [
-      { id: "d-theater", kind: "door", label: "劇院", x: 0.786, y: 0.430, target: "theater" },
-      { id: "d-park", kind: "door", label: "遊樂場", x: 0.280, y: 0.500, target: "park" },
-      { id: "g-town", kind: "gate", label: "返小鎮", x: 0.464, y: 0.900, target: "town" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.420, y: 0.980, target: "town-square" },
+      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.780, y: 0.280, target: "village-gate" },
     ],
   },
-  village: {
-    id: "village",
-    name: "蘑菇村",
-    day: "/assets/mushroom-city-morning.webp",
-    night: "/assets/mushroom-city-morning-night.webp",
-    mask: "mushroom-city-morning",
-    spawn: { x: 0.500, y: 0.850 },
+
+  // 小屋區入口 — the child's own front door, and the only zone with a dawn
+  // variant.
+  "village-gate": {
+    id: "village-gate",
+    name: "小屋區入口",
+    day: "/assets/world/village-gate-day.webp",
+    night: "/assets/world/village-gate-night.webp",
+    dawn: "/assets/world/village-gate-dawn.webp",
+    mask: "village-gate",
+    spawn: { x: 0.420, y: 0.850 },
     hotspots: [
-      { id: "d-album", kind: "door", label: "MEE 收藏館", x: 0.828, y: 0.371, target: "album" },
-      { id: "g-town", kind: "gate", label: "返小鎮", x: 0.500, y: 0.960, target: "town" },
+      { id: "d-home", kind: "door", label: "我的小屋", x: 0.180, y: 0.630, target: "my-home" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.440, y: 0.980, target: "town-square" },
+      { id: "g-park", kind: "gate", label: "散步公園", x: 0.845, y: 0.355, target: "seaside-park" },
+    ],
+  },
+
+  // 碼頭市集 — the parents' entrance. The船飛 is the existing parent PIN; the
+  // gate itself is in the world so a child can see the place exists and be
+  // told, gently, that it is for grown-ups.
+  "wharf-market": {
+    id: "wharf-market",
+    name: "碼頭市集",
+    day: "/assets/world/wharf-market-day.webp",
+    night: "/assets/world/wharf-market-night.webp",
+    mask: "wharf-market",
+    parentsOnly: true,
+    spawn: { x: 0.470, y: 0.850 },
+    hotspots: [
+      { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.470, y: 0.980, target: "town-centre" },
     ],
   },
 };
 
-export const START_ZONE = "town";
+export const START_ZONE = "town-centre";
+
+/**
+ * The four counters in 碼頭市集, measured off the art and verified to stand on
+ * walkable ground.
+ *
+ * They are not hotspots yet, deliberately. Em marked which stall carries
+ * which parent service on an annotated copy of the map that is not in the
+ * repository, and a counter that opens nothing is worse than a counter that
+ * is not there — the child (or parent) walks up, taps, and the world feels
+ * broken. Give each one a `route` and move them into the zone's hotspots.
+ */
+export const WHARF_STALLS: Array<{ id: string; label: string; x: number; y: number; route?: string }> = [
+  { id: "s-left", label: "左邊攤檔（畫桌）", x: 0.260, y: 0.600 },
+  { id: "s-mid", label: "中間攤檔", x: 0.470, y: 0.500 },
+  { id: "s-right", label: "港務台（船長櫃檯）", x: 0.680, y: 0.600 },
+  { id: "s-corner", label: "角落座位（報紙）", x: 0.720, y: 0.630 },
+];
 
 /** Interior art, used by the page a door leads into. */
 export const ROOM_ART: Record<string, string> = {
-  library: "/assets/mee-library.webp",
-  cinema: "/assets/mee-cinema.webp",
-  cafe: "/assets/paw-cafe.webp",
-  market: "/assets/wharf-market-morning.webp",
-  studio: "/assets/hero-studio.webp",
-  theater: "/assets/theater.webp",
-  park: "/assets/amusement-park.webp",
-  petroom: "/assets/pet-room.webp",
-  album: "/assets/mee-album-house.webp",
+  "cafe": "/assets/world/cafe.webp",
+  "studio": "/assets/world/studio.webp",
+  "album-hall": "/assets/world/album-hall.webp",
+  "album-books": "/assets/world/album-books.webp",
+  "fragment-room": "/assets/world/fragment-room.webp",
+  "library": "/assets/world/library.webp",
+  "cinema-lobby": "/assets/world/cinema-lobby.webp",
+  "cinema-hall": "/assets/world/cinema-hall.webp",
+  "my-home": "/assets/world/my-home.webp",
 };
+
+/**
+ * Rooms reached from inside another room rather than from a zone: the
+ * 珍藏館's two wings, and the 戲院 behind its lobby. Each says which room it
+ * came from so the return door knows where to send the child back to, which
+ * is the whole of Em's "原位入口原位出口" rule for interiors.
+ */
+export const ROOM_DOORS: Record<string, Array<{ id: string; label: string; target: string; side: "left" | "right" }>> = {
+  "album-hall": [
+    { id: "r-books", label: "卡冊珍藏館", target: "album-books", side: "right" },
+    { id: "r-fragments", label: "碎片拼合室", target: "fragment-room", side: "left" },
+  ],
+  "studio": [
+    { id: "r-library", label: "圖書館", target: "library", side: "right" },
+    { id: "r-cinema", label: "戲院大堂", target: "cinema-lobby", side: "left" },
+  ],
+  "cinema-lobby": [
+    { id: "r-hall", label: "入場", target: "cinema-hall", side: "right" },
+  ],
+};
+
+/** The room a return door leads back to, derived from ROOM_DOORS. */
+export const ROOM_PARENT: Record<string, string> = Object.fromEntries(
+  Object.entries(ROOM_DOORS).flatMap(([parent, doors]) =>
+    doors.map(door => [door.target, parent])),
+);
 
 /** Which zone a room lives in, so a deep link can put the child back outside it. */
 export const ROOM_ZONE: Record<string, string> = Object.fromEntries(

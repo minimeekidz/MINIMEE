@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground } from "./lib/world";
 import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
 import { actionVo } from "./data/petActionVo";
@@ -555,17 +555,21 @@ describe("MINIMEE route shells", () => {
       expect(zone.hotspots.length, `${zone.id} needs somewhere to go`).toBeGreaterThan(0);
       for (const spot of zone.hotspots) {
         if (spot.kind === "gate") expect(ZONES[spot.target], `${zone.id} → ${spot.target}`).toBeDefined();
-        else expect(ROOM_ART[spot.target], `${zone.id} door → ${spot.target}`).toBeDefined();
+        else if (spot.kind === "door") expect(ROOM_ART[spot.target], `${zone.id} door → ${spot.target}`).toBeDefined();
         // Every door and gate has to stand on ground the walk mask actually
         // allows, or the child can see the marker and never reach it.
         expect(isWalkable(zone, spot.x, spot.y), `${zone.id}/${spot.id} off the path`).toBe(true);
       }
-      // Every room with art must have a door leading to it. A room nobody can
-      // walk into is content that has been paid for and never seen.
+      // Every room with art must be reachable — from a zone's door, or from
+      // inside another room (卡冊珍藏館 and 碎片拼合室 hang off 珍藏館主廳,
+      // 戲院廳 off its lobby). A room nobody can walk into is content that has
+      // been paid for and never seen.
       for (const room of Object.keys(ROOM_ART)) {
-        const hasDoor = Object.values(ZONES).some(other =>
+        const fromZone = Object.values(ZONES).some(other =>
           other.hotspots.some(s => s.kind === "door" && s.target === room));
-        expect(hasDoor, `no door leads to ${room}`).toBe(true);
+        const fromRoom = Object.values(ROOM_DOORS).some(doors =>
+          doors.some(door => door.target === room));
+        expect(fromZone || fromRoom, `no door leads to ${room}`).toBe(true);
       }
       // Arriving has to leave the child standing somewhere they can walk from,
       // and never on a gate: spawning on the return gate put 返小鎮 under their
@@ -582,9 +586,9 @@ describe("MINIMEE route shells", () => {
   });
 
   it("walks to the nearest path when the child taps somewhere unreachable", () => {
-    const town = ZONES.town;
-    // The top of the town map is open sea. A child who taps it should end up
-    // on the nearest shore path rather than nothing happening at all.
+    const town = ZONES["town-centre"];
+    // The top of the town map is sky and open water. A child who taps it
+    // should end up on the nearest path rather than nothing happening at all.
     expect(isWalkable(town, 0.5, 0.04)).toBe(false);
     const landed = nearestWalkable(town, 0.5, 0.04);
     expect(landed).not.toBeNull();
@@ -594,11 +598,11 @@ describe("MINIMEE route shells", () => {
   });
 
   it("puts the child back at the entrance they came through", () => {
-    // Walking 小鎮 → 碼頭 → 小鎮 has to land next to the 碼頭 gate, not at the
-    // town's own starting point on the far side of the map.
-    const town = ZONES.town;
-    const gate = town.hotspots.find(spot => spot.target === "dock")!;
-    const back = arrivalPoint(town, { zone: "dock" });
+    // Walking 小鎮中心 → 碼頭市集 → 小鎮中心 has to land next to the 碼頭
+    // gate, not at the town's own starting point on the far side of the map.
+    const town = ZONES["town-centre"];
+    const gate = town.hotspots.find(spot => spot.target === "wharf-market")!;
+    const back = arrivalPoint(town, { zone: "wharf-market" });
     expect(isWalkable(town, back.x, back.y)).toBe(true);
     expect(Math.hypot(back.x - gate.x, back.y - gate.y)).toBeLessThan(0.2);
     expect(Math.hypot(back.x - town.spawn.x, back.y - town.spawn.y)).toBeGreaterThan(0.2);
@@ -607,8 +611,8 @@ describe("MINIMEE route shells", () => {
     expect(hotspotNear(town, back.x, back.y)?.id).not.toBe(gate.id);
 
     // Coming out of a room lands at that room's door.
-    const door = town.hotspots.find(spot => spot.target === "cinema")!;
-    const outside = arrivalPoint(town, { room: "cinema" });
+    const door = town.hotspots.find(spot => spot.target === "studio")!;
+    const outside = arrivalPoint(town, { room: "studio" });
     expect(Math.hypot(outside.x - door.x, outside.y - door.y)).toBeLessThan(0.2);
 
     // Somewhere with no known entrance still has to be a legal place to stand.
@@ -862,7 +866,7 @@ describe("MINIMEE route shells", () => {
   });
 
   it("switches the world between day and night art", () => {
-    const town = ZONES.town;
+    const town = ZONES["town-centre"];
     expect(isDaytime(new Date("2026-08-14T09:00:00"))).toBe(true);
     expect(isDaytime(new Date("2026-08-14T21:00:00"))).toBe(false);
     expect(zoneBackground(town, new Date("2026-08-14T09:00:00"))).toBe(town.day);
@@ -870,11 +874,63 @@ describe("MINIMEE route shells", () => {
   });
 
   it("only offers a door when the child is standing at it", () => {
-    const town = ZONES.town;
+    const town = ZONES["town-centre"];
     const door = town.hotspots[0];
     expect(hotspotNear(town, door.x, door.y)?.id).toBe(door.id);
-    // Standing across the map offers nothing, so prompts cannot stack up.
-    expect(hotspotNear(town, 0.5, 0.75)).toBeNull();
+    // Standing in the middle of the road offers nothing, so prompts cannot
+    // stack up while the child is just walking.
+    expect(hotspotNear(town, 0.45, 0.75)).toBeNull();
+  });
+
+  it("routes the world exactly as Em drew it", () => {
+    // The map Em specified, read back out of the model. Every one of these
+    // was a sentence in her brief; if a link goes missing the child ends up
+    // somewhere she never sent them.
+    const gate = (zone: string, target: string) =>
+      ZONES[zone].hotspots.some(s => s.kind === "gate" && s.target === target);
+    const door = (zone: string, target: string) =>
+      ZONES[zone].hotspots.some(s => s.kind === "door" && s.target === target);
+
+    // 小鎮中心 is the hub.
+    expect(door("town-centre", "cafe")).toBe(true);
+    expect(door("town-centre", "studio")).toBe(true);
+    expect(door("town-centre", "album-hall")).toBe(true);
+    expect(gate("town-centre", "wharf-market")).toBe(true);
+    expect(gate("town-centre", "town-square")).toBe(true);
+
+    // 散步公園 joins 小鎮廣場 at its bottom and 小屋區入口 at its top, and
+    // both of those also join each other — the loop Em described.
+    expect(gate("town-square", "seaside-park")).toBe(true);
+    expect(gate("seaside-park", "town-square")).toBe(true);
+    expect(gate("seaside-park", "village-gate")).toBe(true);
+    expect(gate("village-gate", "seaside-park")).toBe(true);
+    expect(gate("town-square", "village-gate")).toBe(true);
+    expect(gate("village-gate", "town-square")).toBe(true);
+
+    // 我的小屋 is the left-hand house off 小屋區入口, not off the square.
+    expect(door("village-gate", "my-home")).toBe(true);
+    expect(door("town-square", "my-home")).toBe(false);
+
+    // Every gate is two-way: walking somewhere and being unable to walk back
+    // is the one thing a child will not forgive.
+    for (const zone of Object.values(ZONES)) {
+      for (const spot of zone.hotspots) {
+        if (spot.kind !== "gate") continue;
+        expect(gate(spot.target, zone.id), `${spot.target} has no way back to ${zone.id}`).toBe(true);
+      }
+    }
+
+    // The wings of the 珍藏館 and the 戲院 hang off their own halls, so
+    // leaving one returns to the hall rather than to the street.
+    expect(ROOM_PARENT["album-books"]).toBe("album-hall");
+    expect(ROOM_PARENT["fragment-room"]).toBe("album-hall");
+    expect(ROOM_PARENT["library"]).toBe("studio");
+    expect(ROOM_PARENT["cinema-lobby"]).toBe("studio");
+    expect(ROOM_PARENT["cinema-hall"]).toBe("cinema-lobby");
+
+    // 碼頭市集 is the parents' entrance and must stay flagged as one.
+    expect(ZONES["wharf-market"].parentsOnly).toBe(true);
+    expect(ZONES["town-centre"].parentsOnly).toBeUndefined();
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {
