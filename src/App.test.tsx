@@ -5,7 +5,8 @@ import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
 import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
-import { actionsAt, FRIEND_LEVELS, LEVEL_STEP, levelFor, levelProgress, MAX_LEVEL, PET_ACTIONS, QUIZ_POINTS } from "./lib/petFriends";
+import { actionsAt, DAILY_QUIZ_SLOTS, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, PET_ACTIONS, QUIZ_POINT, VISIT_POINT } from "./lib/petFriends";
+import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -590,62 +591,67 @@ describe("MINIMEE route shells", () => {
     expect(isWalkable(town, cold.x, cold.y)).toBe(true);
   });
 
-  it("moves friendship one point at a time, on evenly spaced levels", () => {
-    // Em's aim is a daily habit across a year, not a ladder that can be
-    // climbed in an afternoon, so nothing pays more than a point at a time
-    // and no action may be repeated for points on the same day.
+  it("moves a friendship one or two points a day, whatever the child taps", () => {
+    // Turning up is worth a point, once a day, whichever action it was.
+    // Pressing every button was homework — a child would work down the list
+    // to farm the number instead of doing what they felt like — so no action
+    // carries a value of its own any more.
+    expect(VISIT_POINT).toBe(1);
+    expect(QUIZ_POINT).toBe(1);
     for (const action of PET_ACTIONS) {
-      expect(action.points, `${action.id} should pay one point`).toBe(1);
-      expect(action.perDay, `${action.id} should count once a day`).toBe(1);
-      expect(action.level, `${action.id} is past the last level`).toBeLessThanOrEqual(MAX_LEVEL);
+      expect(action, `${action.id} must not carry its own points`).not.toHaveProperty("points");
+      expect(action, `${action.id} must not carry its own daily cap`).not.toHaveProperty("perDay");
       expect(action.reply.length, `${action.id} needs varied replies`).toBeGreaterThan(1);
+      expect(action.level).toBeLessThanOrEqual(MAX_LEVEL);
     }
 
-    // Evenly spaced: the escalating curve was removed deliberately, because
-    // income already rises as more actions unlock.
+    // Only two pets a day can pay for a correct answer, so the whole town is
+    // worth at most 12 visits plus 2 answers.
+    expect(DAILY_QUIZ_SLOTS).toBe(2);
+    const bestDay = TOWN_PETS.length * VISIT_POINT + DAILY_QUIZ_SLOTS * QUIZ_POINT;
+    expect(bestDay).toBe(14);
+
+    // Levels are flat, so a pet quizzed daily takes 15 days a level and one
+    // merely visited takes 30 — which is what stretches this across a year.
     const steps = FRIEND_LEVELS.slice(1).map((level, index) => level.needed - FRIEND_LEVELS[index].needed);
     expect(new Set(steps).size, "levels must be evenly spaced").toBe(1);
-    expect(levelFor(0).level).toBe(1);
-    expect(levelFor(FRIEND_LEVELS[FRIEND_LEVELS.length - 1].needed).level).toBe(MAX_LEVEL);
-
-    // Even a child who does everything available cannot outrun the pace: the
-    // best possible day at the top level is still a small dent in one level.
-    const bestDay = PET_ACTIONS.length * 1 + QUIZ_POINTS.correct;
-    expect(bestDay).toBeLessThan(LEVEL_STEP);
+    expect(LEVEL_STEP / (VISIT_POINT + QUIZ_POINT)).toBe(15);
+    expect(LEVEL_STEP / VISIT_POINT).toBe(30);
+    expect(MAX_LEVEL).toBe(12);
   });
 
-  it("keeps every pet's friendship separate", async () => {
-    // Making friends with the penguin must say nothing about the hamster.
-    // The panel is keyed by pet for this reason: unkeyed, React reused one
-    // instance and its running total followed the child from pet to pet —
-    // invisible whenever two pets sat on the same stored score, which is
-    // every pair of them at the start.
-    billing.kidCard = editableCard();
-    render(<MemoryRouter initialEntries={["/parent/children/demo-child-01/play"]}><App /></MemoryRouter>);
-
-    const pets = await screen.findAllByRole("button", { name: /羊|鼠|貓|柴犬|企鵝|小雞|兔|小狗|豬|刺蝟/ });
-    expect(pets.length).toBeGreaterThan(1);
-
-    // Two different pets must not be the same element, so their panels cannot
-    // share component state.
-    expect(pets[0]).not.toBe(pets[1]);
-    // And each level starts from nothing rather than from a shared pool.
-    expect(levelProgress(0).level.level).toBe(1);
-    expect(levelProgress(0).toGo).toBe(LEVEL_STEP);
-  });
-
-  it("keeps the warmest actions locked until the friendship is earned", () => {
+  it("gives every level either a new action or a surprise", () => {
+    // A level that unlocks nothing and hands out nothing is a dead step, and
+    // a child who hits one stops believing the next will be worth it.
+    for (const level of FRIEND_LEVELS) {
+      const unlocks = PET_ACTIONS.some(action => action.level === level.level);
+      expect(unlocks || level.surprise, `Lv.${level.level} is a dead step`).toBe(true);
+    }
     const early = actionsAt(1).map(action => action.id);
     expect(early).toContain("greet");
     expect(early).not.toContain("card-flash");
     expect(actionsAt(MAX_LEVEL).map(action => action.id)).toContain("card-flash");
+  });
 
-    // The word question has to outweigh any single courtesy, or friendship
-    // stops tracking what the child has actually learnt.
-    const bestAction = Math.max(...PET_ACTIONS.map(action => action.points * action.perDay));
-    expect(QUIZ_POINTS.correct).toBeGreaterThan(bestAction);
-    // Getting there after a hint still pays something.
-    expect(QUIZ_POINTS.afterHint).toBeGreaterThan(0);
+  it("gives the pets something new to say as the year goes on", () => {
+    // The numbers are tiny by design, so what brings a child back has to be
+    // that the pet has something new to say. Repetition is the churn risk
+    // here, not pacing.
+    const ordinary = eventsFor({ petId: "milk-cat", now: new Date("2026-07-08T09:00:00") });
+    const birthday = eventsFor({ petId: "milk-cat", now: new Date("2026-03-08T09:00:00") });
+    const childDay = eventsFor({ petId: "milk-cat", childBirthday: "07-08", now: new Date("2026-07-08T09:00:00") });
+
+    // Every day has at least the season, so a pet is never without a line.
+    expect(ordinary.length).toBeGreaterThan(0);
+    expect(birthday.some(event => event.kind === "pet-birthday")).toBe(true);
+    // The child's own birthday must outrank everything else it shares a day with.
+    expect(childDay[0].kind).toBe("child-birthday");
+
+    // Every pet needs a birthday, or some are never the centre of attention.
+    for (const pet of TOWN_PETS) {
+      expect(PET_BIRTHDAYS[pet.id], `${pet.id} has no birthday`).toMatch(/^\d{2}-\d{2}$/);
+    }
+    expect(new Set(Object.values(PET_BIRTHDAYS)).size).toBe(TOWN_PETS.length);
   });
 
   it("switches the world between day and night art", () => {

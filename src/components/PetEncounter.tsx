@@ -1,92 +1,114 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TownPet } from "../lib/characters";
 import {
-  actionsAt, levelProgress, nextUnlock, PET_ACTIONS, pickReply,
-  type PetAction,
+  actionsAt, DAILY_QUIZ_SLOTS, levelProgress, nextUnlock, pickReply,
+  QUIZ_TRIES, type PetAction,
 } from "../lib/petFriends";
+import { eventLines, headlineEvent } from "../lib/petEvents";
 import {
-  awardQuizPoints, doPetAction, givePetCard, petQuizFor,
+  givePetCard, petQuizFor, recordQuiz, visitPet,
   type PetGiftCard, type PetQuiz,
 } from "../lib/petStore";
 
-// Walking up to a pet and talking to it. Two things happen here: the small
-// daily courtesies that nudge 好感度 along, and the one word question a day
-// that is worth far more than any of them — so friendship follows what the
-// child has actually learnt rather than how many times they tapped 打招呼.
+// Walking up to a pet and talking to it.
 //
-// A wrong answer is never a dead end. The pet shows the right word and the
-// child still earns something, because a five-year-old who loses points for
-// guessing simply stops guessing.
+// Scoring is deliberately almost invisible here: turning up at all is worth a
+// point, once a day, whichever button the child happens to press. Pressing
+// every button was homework — a child would work down the list to farm the
+// number rather than doing what they felt like. Now the buttons are free and
+// unlimited, and the only other point in a day comes from answering the word
+// question, for the first two pets across the whole town.
+//
+// A wrong answer costs nothing. Two tries, then the pet gives the answer and
+// says try again tomorrow — and the day's slot is not spent, so the child can
+// go and find another friend.
 
 export interface PetEncounterProps {
   pet: TownPet;
   cardId: string | null;
   points: number;
-  /** Keyed `${petId}:${actionId}` — how many goes are already used today. */
+  /** Keyed `${petId}:${action}` — what has already happened today. */
   usedToday: Record<string, number>;
+  /** The child's birthday as MM-DD, so a pet can wish them happy birthday. */
+  childBirthday?: string | null;
   onClose: () => void;
   onChanged: () => void;
 }
 
-export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChanged }: PetEncounterProps) {
+export function PetEncounter({
+  pet, cardId, points, usedToday, childBirthday, onClose, onChanged,
+}: PetEncounterProps) {
   const [total, setTotal] = useState(points);
   const [bubble, setBubble] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [quiz, setQuiz] = useState<PetQuiz | null>(null);
-  const [quizState, setQuizState] = useState<"asking" | "wrong" | "done" | "none">("none");
+  const [tries, setTries] = useState(0);
+  const [quizDone, setQuizDone] = useState(false);
   const [gift, setGift] = useState<PetGiftCard | null>(null);
   const [levelUp, setLevelUp] = useState<string | null>(null);
+  const [slotsUsed, setSlotsUsed] = useState(0);
 
   const progress = levelProgress(total);
   const available = actionsAt(progress.level.level);
   const upcoming = nextUnlock(progress.level.level);
 
+  const context = useMemo(() => ({ petId: pet.id, childBirthday }), [pet.id, childBirthday]);
+  const extraLines = useMemo(() => eventLines(context), [context]);
+  const headline = useMemo(() => headlineEvent(context), [context]);
+
+  const visited = (usedToday[`${pet.id}:visit`] ?? 0) > 0;
+  const askedAlready = (usedToday[`${pet.id}:quiz-asked`] ?? 0) > 0;
+
   useEffect(() => { setTotal(points); }, [points]);
 
-  // Today's question, if this child has learnt anything to be asked about.
+  // Today's paid answers across every pet, so the panel can say how many of
+  // the day's two chances are left.
   useEffect(() => {
-    if (!cardId) return;
-    if ((usedToday[`${pet.id}:quiz`] ?? 0) > 0) return;
+    setSlotsUsed(Object.entries(usedToday)
+      .filter(([key]) => key.endsWith(":quiz"))
+      .reduce((sum, [, count]) => sum + count, 0));
+  }, [usedToday]);
+
+  // Today's question, unless this pet has already been asked.
+  useEffect(() => {
+    if (!cardId || askedAlready) return;
     void (async () => {
       const next = await petQuizFor(cardId);
-      if (next) { setQuiz(next); setQuizState("asking"); }
+      if (next) setQuiz(next);
     })();
-  }, [cardId, pet.id, usedToday]);
+  }, [cardId, askedAlready]);
 
-  // Levelling is derived from the total rather than tracked separately, so it
-  // cannot drift out of step with the points that caused it.
   const applyTotal = useCallback((next: number) => {
-    const before = levelProgress(total).level.level;
-    const after = levelProgress(next).level.level;
-    setTotal(next);
-    if (after > before) setLevelUp(levelProgress(next).level.title);
+    setTotal(current => {
+      if (next > current
+        && levelProgress(next).level.level > levelProgress(current).level.level) {
+        setLevelUp(levelProgress(next).level.title);
+      }
+      return next;
+    });
     onChanged();
-  }, [total, onChanged]);
+  }, [onChanged]);
 
   async function run(action: PetAction) {
     if (busy) return;
-    // The public demo has no card to save against. Rather than showing a
-    // panel of dead buttons, it plays for real and keeps nothing — a parent
-    // deciding whether to sign up should get to feel this, not read about it.
+    setBubble(pickReply(action, extraLines));
+
+    // The public demo keeps nothing but still plays: a parent deciding
+    // whether to sign up should get to feel this rather than read about it.
     if (!cardId) {
-      setBubble(pickReply(action));
-      applyTotal(total + action.points);
+      if (!visited) applyTotal(total + 1);
       return;
     }
-    const used = usedToday[`${pet.id}:${action.id}`] ?? 0;
-    // Already counted today. The pet still answers, and still says something
-    // different — a friend does not stop talking to you because you have run
-    // out of points. Only the number stops moving.
-    if (used >= action.perDay) { setBubble(pickReply(action)); return; }
-    setBusy(true);
-    const next = await doPetAction(cardId, pet.id, action.id, used + 1);
-    setBusy(false);
-    setBubble(pickReply(action));
-    // A null total means the database refused the repeat — the cap held on a
-    // request the UI thought was still free. Nothing to report to the child.
-    if (next !== null) applyTotal(next);
 
-    // The two card actions are the reward at the top of the ladder.
+    // The point is for turning up, not for this particular button, so it is
+    // claimed once and every later tap is simply a chat.
+    if (!visited) {
+      setBusy(true);
+      const next = await visitPet(cardId, pet.id);
+      setBusy(false);
+      if (next !== null) applyTotal(next);
+    }
+
     if (action.id === "card-normal" || action.id === "card-flash") {
       const given = await givePetCard(cardId, pet.id, action.id === "card-flash" ? "flash" : "normal");
       if (given) setGift(given);
@@ -95,21 +117,45 @@ export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChange
   }
 
   async function answer(choice: string) {
-    if (!cardId || !quiz || busy) return;
-    if (choice !== quiz.answer) {
-      // Show the answer rather than just marking it wrong: the pet is a
-      // friend helping, not a marker.
-      setQuizState("wrong");
-      setBubble(`係「${quiz.answer}」呀！記住咗未？`);
+    if (!quiz || busy || quizDone) return;
+    const correct = choice === quiz.answer;
+    const attempt = tries + 1;
+
+    if (!correct && attempt < QUIZ_TRIES) {
+      setTries(attempt);
+      setBubble("唔係喎，再諗諗？");
       return;
     }
+
+    setQuizDone(true);
+    setTries(attempt);
+
+    if (!cardId) {
+      setBubble(correct ? "叻仔／叻女！完全啱！" : `係「${quiz.answer}」呀，下次加油！`);
+      if (correct) applyTotal(total + 1);
+      return;
+    }
+
     setBusy(true);
-    const next = await awardQuizPoints(cardId, pet.id, quizState === "wrong");
+    const result = await recordQuiz(cardId, pet.id, correct);
     setBusy(false);
-    setQuizState("done");
-    setBubble(quizState === "wrong" ? "啱喇！下次一次過答啱佢！" : "叻仔／叻女！完全啱！");
-    if (next !== null) applyTotal(next);
+    if (!result) { setBubble("我諗唔起…遲啲再問你啦。"); return; }
+
+    setSlotsUsed(result.slotsUsed);
+    applyTotal(result.total);
+
+    if (!correct) {
+      // Warm, and it says the chance is still there — otherwise a child who
+      // got it wrong assumes they have blown the day and stops.
+      setBubble(`係「${quiz.answer}」呀！下次加油，你今日仲有機會㗎～`);
+    } else if (result.awarded) {
+      setBubble("叻仔／叻女！完全啱！");
+    } else {
+      setBubble("完全啱！不過我今日已經俾夠分喇，聽日再嚟啦～");
+    }
   }
+
+  const slotsLeft = Math.max(0, DAILY_QUIZ_SLOTS - slotsUsed);
 
   return <div className="pet-sheet" role="dialog" aria-label={`同${pet.nameZh}傾計`}>
     <button className="pet-sheet-close" onClick={onClose} aria-label="收埋">✕</button>
@@ -118,6 +164,7 @@ export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChange
       <img className="pet-sheet-art" src={pet.art} alt="" />
       <div>
         <strong>{pet.nameZh}</strong>
+        {headline && <span className="pet-event">{headline.icon} {headline.label}</span>}
         <span className="pet-level">Lv.{progress.level.level} · {progress.level.title}</span>
         <div className="pet-meter"><span style={{ width: `${progress.fraction * 100}%` }} /></div>
         <small>
@@ -132,7 +179,7 @@ export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChange
 
     {levelUp && <div className="pet-levelup" role="status">
       🎉 好感度升咗！而家係「{levelUp}」
-      {upcoming && <small>解鎖咗：{upcoming.icon} {upcoming.label}</small>}
+      {upcoming && <small>再熟啲就解鎖：{upcoming.icon} {upcoming.label}</small>}
       <button className="button small secondary" onClick={() => setLevelUp(null)}>知道喇</button>
     </div>}
 
@@ -146,7 +193,7 @@ export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChange
       <button className="button small secondary" onClick={() => setGift(null)}>收好</button>
     </div>}
 
-    {quiz && quizState !== "done" && <section className="pet-quiz">
+    {quiz && !quizDone && <section className="pet-quiz">
       <p className="pet-quiz-ask">
         {quiz.sticker
           ? <><img src={quiz.sticker} alt="" /> ＝ ？</>
@@ -154,38 +201,30 @@ export function PetEncounter({ pet, cardId, points, usedToday, onClose, onChange
       </p>
       <div className="pet-quiz-options">
         {quiz.options.map(option => (
-          <button
-            key={option}
-            className={quizState === "wrong" && option === quiz.answer ? "pet-quiz-option right" : "pet-quiz-option"}
-            onClick={() => void answer(option)}
-            disabled={busy}
-          >{option}</button>
+          <button key={option} className="pet-quiz-option"
+            onClick={() => void answer(option)} disabled={busy}>{option}</button>
         ))}
       </div>
-      <small className="pet-quiz-note">答啱一次，好感度加好多。</small>
+      <small className="pet-quiz-note">
+        {slotsLeft > 0
+          ? `答啱加 1 點 · 今日仲有 ${slotsLeft} 隻小寵物加得到分`
+          : "今日兩次加分用晒喇，不過仲可以答住玩"}
+      </small>
     </section>}
 
     <div className="pet-actions">
-      {available.map(action => {
-        const used = cardId ? (usedToday[`${pet.id}:${action.id}`] ?? 0) : 0;
-        const spent = used >= action.perDay;
-        return <button
-          key={action.id}
-          className={spent ? "pet-action spent" : "pet-action"}
-          onClick={() => void run(action)}
-          disabled={busy}
-          title={spent ? "今日嘅好感度加咗喇，不過仲可以傾" : `+${action.points} 好感度`}
-        >
+      {available.map(action => (
+        <button key={action.id} className="pet-action"
+          onClick={() => void run(action)} disabled={busy}>
           <span aria-hidden>{action.icon}</span>{action.label}
-          {spent && <em aria-label="今日已經加過好感度">✓</em>}
-        </button>;
-      })}
+        </button>
+      ))}
     </div>
 
-    {upcoming && <p className="pet-locked">
-      🔒 再熟啲就可以：{PET_ACTIONS.filter(action => action.level === upcoming.level)
-        .map(action => `${action.icon} ${action.label}`).join("、")}
-    </p>}
+    <p className="pet-locked">
+      {visited ? "今日嘅好感度加咗喇 —— 但傾幾多都得，唔會扣㗎。" : "同佢傾一句就加 1 點好感度。"}
+      {upcoming && <> · 🔒 Lv.{upcoming.level} 解鎖 {upcoming.icon} {upcoming.label}</>}
+    </p>
 
     {!cardId && <p className="kid-note">呢個示範唔會記住進度。建立咗自我介紹卡先儲得到好感度。</p>}
   </div>;
