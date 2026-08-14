@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { findHero, TOWN_PETS, type TownPet } from "../lib/characters";
 import { PET_WISHES, WISH_MS } from "../lib/petFriends";
+import { petsForZone } from "../lib/petSpawn";
 import { usePetFriends } from "../lib/petStore";
 import { useFullscreen } from "../lib/fullscreen";
 import { PetEncounter } from "./PetEncounter";
@@ -147,9 +148,13 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
   // 好感度 feel like it belonged to nobody.
   const [pets, setPets] = useState<Wanderer[]>([]);
   useEffect(() => {
-    const zoneIds = Object.keys(ZONES);
-    const index = zoneIds.indexOf(zone.id);
-    const residents = TOWN_PETS.filter((_, i) => i % zoneIds.length === index);
+    // Who is here comes from sheet 08_出沒地點規則 — each pet's own home
+    // ground and hours — rather than dealing the twelve out evenly by index,
+    // which made where a pet lived arbitrary.
+    const here = petsForZone({ zoneId: zone.id });
+    const residents = here
+      .map(gameId => TOWN_PETS.find(pet => pet.id === gameId))
+      .filter((pet): pet is TownPet => Boolean(pet));
     // Placed around where the child arrives rather than at fixed map
     // coordinates. Spread evenly over the map they all landed most of a
     // screen above the entrance, so the first thing a child saw was an empty
