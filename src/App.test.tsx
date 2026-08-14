@@ -9,6 +9,7 @@ import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVE
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
 import { actionVo } from "./data/petActionVo";
 import { learningRecord } from "./lib/petStore";
+import { livesIn, petsForZone, spawnWeight } from "./lib/petSpawn";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 
 vi.mock("./contexts/AuthContext", () => ({
@@ -708,6 +709,43 @@ describe("MINIMEE route shells", () => {
     // Only 珊瑚 — 海龜's most recent attempt was correct.
     expect(record!.needsReview).toEqual(["珊瑚"]);
     expect(record!.wordsSeen).toBe(3);
+  });
+
+  it("puts each pet where sheet 08 says it lives", () => {
+    // The penguin belongs at the harbour, the shiba at the carnival, the
+    // granny mouse indoors in town. Dealing the twelve out evenly by index —
+    // which is what happened before — made where a pet lived arbitrary, and a
+    // child cannot learn where to find a friend that moves at random.
+    const morning = new Date("2026-08-14T09:00:00");
+    expect(livesIn("wave-penguin", "dock")).toBe(true);
+    expect(livesIn("watermelon-shiba", "fair")).toBe(true);
+    expect(livesIn("yarn-granny-mouse", "town")).toBe(true);
+
+    // Its own ground during its own hours outranks anywhere else.
+    const atHome = spawnWeight("wave-penguin", { zoneId: "dock", now: new Date("2026-08-14T08:00:00") });
+    const elsewhere = spawnWeight("wave-penguin", { zoneId: "village", now: new Date("2026-08-14T08:00:00") });
+    expect(atHome).toBeGreaterThan(elsewhere);
+
+    // But never impossible elsewhere: a town where pets vanish on a schedule
+    // reads as switched off rather than as somewhere people live.
+    expect(elsewhere).toBeGreaterThan(0);
+
+    // Safety outranks everything (QA16/QA17). In a storm each pet has exactly
+    // one place it will be — its shelter — and is weight zero everywhere else,
+    // so no birthday or festival can pull it back outside.
+    const zones = ["town", "dock", "fair", "village"];
+    for (const pet of TOWN_PETS) {
+      const weights = zones.map(zone =>
+        spawnWeight(pet.id, { zoneId: zone, now: morning, weather: "storm" }));
+      const shelters = weights.filter(weight => weight > 0);
+      expect(shelters.length, `${pet.id} has no storm shelter`).toBe(1);
+    }
+
+    // A zone gets a handful of neighbours, not all twelve.
+    const here = petsForZone({ zoneId: "town", now: morning });
+    expect(here.length).toBeLessThanOrEqual(3);
+    // Stable within the hour, so stepping out of a room does not reshuffle them.
+    expect(petsForZone({ zoneId: "town", now: new Date("2026-08-14T09:40:00") })).toEqual(here);
   });
 
   it("switches the world between day and night art", () => {
