@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { hotspotNear, isDaytime, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -529,9 +529,9 @@ describe("MINIMEE route shells", () => {
       for (const spot of zone.hotspots) {
         if (spot.kind === "gate") expect(ZONES[spot.target], `${zone.id} → ${spot.target}`).toBeDefined();
         else expect(ROOM_ART[spot.target], `${zone.id} door → ${spot.target}`).toBeDefined();
-        // Hotspots have to sit on ground the child can actually reach.
-        expect(spot.y).toBeGreaterThanOrEqual(zone.walk.top - 0.06);
-        expect(spot.y).toBeLessThanOrEqual(zone.walk.bottom + 0.06);
+        // Every door and gate has to stand on ground the walk mask actually
+        // allows, or the child can see the marker and never reach it.
+        expect(isWalkable(zone, spot.x, spot.y), `${zone.id}/${spot.id} off the path`).toBe(true);
       }
       // Every zone must be reachable from somewhere, or it is unusable.
       const reachable = Object.values(ZONES).some(other =>
