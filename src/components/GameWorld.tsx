@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { findHero, TOWN_PETS } from "../lib/characters";
 import {
-  hotspotNear, isDaytime, isWalkable, nearestWalkable, zoneAspect, zoneBackground,
-  ZONES, type Hotspot, type Zone,
+  arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ZONE,
+  zoneAspect, zoneBackground, ZONES, type Hotspot, type Zone,
 } from "../lib/world";
 
 // The world screen. The map is bigger than the window and the camera follows
@@ -35,16 +35,28 @@ export interface GameWorldProps {
   heroId?: string | null;
   /** Rooms the child has already finished, drawn with a tick. */
   doneRooms?: string[];
+  /** Room the child has just stepped out of, so they land at its door. */
+  returningFrom?: string | null;
   onEnterRoom: (roomId: string) => void;
   onExit?: () => void;
 }
 
-export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameWorldProps) {
+export function GameWorld({ heroId, doneRooms = [], returningFrom, onEnterRoom, onExit }: GameWorldProps) {
   const hero = findHero(heroId);
-  const [zoneId, setZoneId] = useState("town");
+
+  // Coming out of a room starts in that room's own zone, standing at its door.
+  const openedAt = useRef<{ zone: string; from: { room?: string; zone?: string } }>({
+    zone: (returningFrom && ROOM_ZONE[returningFrom]) || "town",
+    from: returningFrom ? { room: returningFrom } : {},
+  });
+  const [zoneId, setZoneId] = useState(openedAt.current.zone);
   const zone: Zone = ZONES[zoneId] ?? ZONES.town;
 
-  const [pos, setPos] = useState<Point>(zone.spawn);
+  // Where the child should appear in whichever zone loads next. Set by travel
+  // before the zone changes, so the arrival effect has it to hand.
+  const arriveFrom = useRef<{ room?: string; zone?: string }>(openedAt.current.from);
+
+  const [pos, setPos] = useState<Point>(() => arrivalPoint(zone, openedAt.current.from));
   const [facing, setFacing] = useState<"left" | "right">("right");
   const [moving, setMoving] = useState(false);
   const [fading, setFading] = useState(false);
@@ -56,6 +68,10 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
   const target = useRef<Point | null>(null);
   const raf = useRef(0);
   const stage = useRef<HTMLDivElement | null>(null);
+  // Read by the space/Enter handler at press time, so it can bind once instead
+  // of re-binding every time the child moves.
+  const nearRef = useRef<Hotspot | null>(null);
+  const travelRef = useRef<(spot: Hotspot) => void>(() => {});
 
   // Map size in pixels. Never smaller than the window in either axis, or the
   // background would letterbox and the illusion of standing somewhere breaks.
@@ -115,10 +131,11 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
     return () => window.clearInterval(timer);
   }, [zone]);
 
-  // Reset when the zone changes. Doing it here rather than in the travel
-  // handler keeps a deep link into a zone landing in the right place too.
+  // Land at whichever entrance we came through. Doing it on the zone change
+  // rather than inside the travel handler keeps a deep link into a zone
+  // landing in the right place too.
   useEffect(() => {
-    setPos(zone.spawn);
+    setPos(arrivalPoint(zone, arriveFrom.current));
     target.current = null;
   }, [zone]);
 
@@ -181,7 +198,11 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
     else if (dx < -0.0002) setFacing("left");
   }, [pos]);
 
-  useEffect(() => { setNear(hotspotNear(zone, pos.x, pos.y)); }, [zone, pos]);
+  useEffect(() => {
+    const spot = hotspotNear(zone, pos.x, pos.y);
+    setNear(spot);
+    nearRef.current = spot;
+  }, [zone, pos]);
 
   useEffect(() => {
     const map: Record<string, keyof typeof held.current> = {
@@ -201,6 +222,19 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, []);
 
+  // Space and Enter do whatever the orange button offers, so walking in with
+  // the keyboard and then going in does not mean reaching for the mouse.
+  useEffect(() => {
+    const act = (event: KeyboardEvent) => {
+      if (event.key !== " " && event.key !== "Enter") return;
+      if (!nearRef.current) return;
+      event.preventDefault();
+      travelRef.current(nearRef.current);
+    };
+    window.addEventListener("keydown", act);
+    return () => window.removeEventListener("keydown", act);
+  }, []);
+
   const walkTo = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const box = stage.current?.getBoundingClientRect();
     if (!box) return;
@@ -213,9 +247,14 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
 
   const travel = useCallback((spot: Hotspot) => {
     if (spot.kind === "door") { onEnterRoom(spot.target); return; }
+    // Remember which zone we left, so the next zone puts us at the gate that
+    // leads back here rather than at its own starting point.
+    arriveFrom.current = { zone: zone.id };
     setFading(true);
     window.setTimeout(() => { setZoneId(spot.target); setFading(false); }, 420);
-  }, [onEnterRoom]);
+  }, [onEnterRoom, zone.id]);
+
+  useEffect(() => { travelRef.current = travel; }, [travel]);
 
   function hold(dir: keyof typeof held.current, value: boolean) {
     held.current[dir] = value;
@@ -290,6 +329,7 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
 
     {near && <button className="world-action" onClick={() => travel(near)}>
       {near.kind === "door" ? `入去 ${near.label}` : near.label}
+      <small>空白鍵</small>
     </button>}
 
     <div className="world-pad">
@@ -303,7 +343,7 @@ export function GameWorld({ heroId, doneRooms = [], onEnterRoom, onExit }: GameW
         onPointerDown={() => hold("down", true)} onPointerUp={() => hold("down", false)} onPointerLeave={() => hold("down", false)}>▼</button>
     </div>
 
-    <p className="world-hint">撳邊度就行去邊度</p>
+    <p className="world-hint">撳邊度行去邊度 · 方向鍵行路 · 空白鍵入去</p>
 
     <div className={fading ? "world-fade on" : "world-fade"} />
   </div>;

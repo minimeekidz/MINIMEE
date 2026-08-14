@@ -269,6 +269,12 @@ export async function saveCard(card: EditableCard): Promise<{ ok: boolean; error
       likes: card.likes,
       dream_job: card.dreamJob || null,
       scene: card.scene,
+      // Was missing, which is why the card icon could never be set: the
+      // picker wrote to state, the save dropped it, and reloading put the
+      // fallback back. The icon is chosen from bundled art, never uploaded —
+      // the card is a public URL and ops doc section 10 keeps a child's photo
+      // off one of those.
+      avatar_url: card.avatarUrl,
       lost_mode_enabled: card.lostModeEnabled,
       // Minted on first enable and kept afterwards, so a sticker already
       // printed keeps working when the parent toggles lost mode off and on.

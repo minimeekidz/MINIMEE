@@ -664,3 +664,19 @@ footer div { display: flex; gap: 20px; }
 @media (min-width: 900px) {
   .world-marker small { font-size: 10px; }
 }
+
+/* The action button names its keyboard shortcut, so walking in with the keys
+   and then going in does not mean reaching for the mouse. */
+.world-action small { display: block; margin-top: 3px; font-size: 9px; font-weight: 800; opacity: .72; }
+
+/* ---- v2: sticker packs on the self-introduction card ---- */
+.editor-help { margin: 0 0 4px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.sticker-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.sticker-option { display: grid; justify-items: center; gap: 4px; padding: 8px 5px; border: 2px solid var(--line); border-radius: 14px; background: white; cursor: pointer; }
+.sticker-option img { width: 42px; height: 42px; object-fit: contain; image-rendering: pixelated; }
+.sticker-option span { font-size: 9px; font-weight: 800; text-align: center; }
+.sticker-option.selected { border-color: var(--violet); background: var(--lavender); }
+.sticker-option:hover { border-color: var(--violet); }
+.kid-likes li.has-sticker { padding-left: 6px; }
+.kid-likes li img { width: 26px; height: 26px; object-fit: contain; image-rendering: pixelated; }
+.kid-meta-sticker { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; object-fit: contain; image-rendering: pixelated; }

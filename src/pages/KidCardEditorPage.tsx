@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, Copy, Eye, EyeOff, MapPin, Plus, Save, ShieldCheck, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI";
-import { HEROES } from "../lib/characters";
+import { HEROES, TOWN_PETS } from "../lib/characters";
+import { CATEGORY_LABELS, stickersIn, type StickerCategory } from "../lib/stickers";
 import { useAuth } from "../contexts/AuthContext";
 import { useFamily } from "../contexts/FamilyContext";
 import {
@@ -178,7 +179,43 @@ export function KidCardEditorPage() {
       </label>
 
       <div className="editor-wide">
+        <span className="editor-label">揀個職業貼紙</span>
+        <StickerPicker
+          category="job"
+          chosen={card.dreamJob ? [card.dreamJob] : []}
+          onPick={label => patch({ dreamJob: label })}
+        />
+      </div>
+
+      <div className="editor-wide">
+        <span className="editor-label">卡片頭像</span>
+        <p className="editor-help">
+          揀一個圖案代表小朋友。<strong>唔會用真人相</strong> —— 張卡係公開連結，
+          小朋友嘅相唔應該擺喺公開網址度。
+        </p>
+        <div className="hero-picker">
+          {[...HEROES.map(hero => [hero.art, hero.nameZh] as const),
+            ...TOWN_PETS.map(pet => [pet.art, pet.nameZh] as const)].map(([src, label]) => (
+            <button
+              key={src}
+              className={card.avatarUrl === src ? "hero-option selected" : "hero-option"}
+              onClick={() => patch({ avatarUrl: src })}
+              aria-pressed={card.avatarUrl === src}
+            >
+              <img src={src} alt="" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="editor-wide">
         <span className="editor-label">我鍾意…</span>
+        <StickerPicker
+          category="interest"
+          chosen={card.likes}
+          onPick={label => patch({ likes: card.likes.includes(label) ? card.likes : [...card.likes, label] })}
+        />
         <div className="like-chips">
           {card.likes.map(like => (
             <button key={like} className="like-chip" onClick={() => patch({ likes: card.likes.filter(item => item !== like) })}>
@@ -279,4 +316,33 @@ export function KidCardEditorPage() {
       {saved && <span className="editor-saved" role="status"><Check size={15} />已儲存</span>}
     </div>
   </Shell>;
+}
+
+// Picks a word by its picture. A child filling in their own card should be
+// choosing from things they can see, not typing — and because a sticker's
+// filename is the word it stands for, tapping one writes the right text with
+// no separate mapping for anyone to maintain.
+//
+// Renders nothing at all when that pack is empty, so the editor stays tidy
+// until Em has uploaded the artwork.
+function StickerPicker({ category, chosen, onPick }: {
+  category: StickerCategory;
+  chosen: string[];
+  onPick: (label: string) => void;
+}) {
+  const stickers = stickersIn(category);
+  if (stickers.length === 0) return null;
+  return <div className="sticker-picker" role="group" aria-label={`${CATEGORY_LABELS[category]}貼紙`}>
+    {stickers.map(sticker => (
+      <button
+        key={sticker.src}
+        className={chosen.includes(sticker.label) ? "sticker-option selected" : "sticker-option"}
+        onClick={() => onPick(sticker.label)}
+        aria-pressed={chosen.includes(sticker.label)}
+      >
+        <img src={sticker.src} alt="" />
+        <span>{sticker.label}</span>
+      </button>
+    ))}
+  </div>;
 }

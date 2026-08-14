@@ -209,6 +209,63 @@ export function nearestWalkable(zone: Zone, x: number, y: number): { x: number; 
   return best;
 }
 
+/**
+ * Where the child stands on arriving from somewhere specific — the gate they
+ * came through, or the door of the room they just left.
+ *
+ * Arriving always used the zone's fixed spawn, so walking to the 碼頭 and back
+ * dropped the child at the town's roundabout instead of at the 碼頭 gate they
+ * had just stepped out of. A world loses its shape fast if leaving a place
+ * does not put you back outside it.
+ *
+ * The landing point is nudged away from the entrance so its own prompt is not
+ * already under the child's thumb, which would send them straight back.
+ */
+export function arrivalPoint(zone: Zone, from?: { zone?: string; room?: string } | null): { x: number; y: number } {
+  const entrance = from?.room
+    ? zone.hotspots.find(spot => spot.kind === "door" && spot.target === from.room)
+    : from?.zone
+      ? zone.hotspots.find(spot => spot.kind === "gate" && spot.target === from.zone)
+      : null;
+  if (!entrance) return zone.spawn;
+  return stepAwayFrom(zone, entrance, zone.spawn);
+}
+
+/**
+ * The closest walkable spot that is out of `at`'s own reach, preferring ones
+ * on the `toward` side of it.
+ *
+ * A straight line toward the middle of the map was the obvious approach and
+ * the wrong one: several entrances sit at the mouth of a narrow path, so the
+ * line left walkable ground on its first step and the child never got clear
+ * of the prompt. Searching the mask always finds standing room if any exists.
+ */
+function stepAwayFrom(zone: Zone, at: { x: number; y: number }, toward: { x: number; y: number }): { x: number; y: number } {
+  const mask = maskFor(zone);
+  if (!mask) return at;
+  const bytes = bitsFor(mask);
+  const clear = REACH * 1.7;
+  let best: { x: number; y: number } | null = null;
+  let bestCost = Infinity;
+  for (let cy = 0; cy < mask.height; cy++) {
+    for (let cx = 0; cx < mask.width; cx++) {
+      const index = cy * mask.width + cx;
+      if (((bytes[index >> 3] >> (index & 7)) & 1) === 0) continue;
+      const nx = (cx + 0.5) / mask.width;
+      const ny = (cy + 0.5) / mask.height;
+      // Measured the same way hotspotNear measures, or the child could land
+      // just inside the prompt they were meant to step out of.
+      if (Math.hypot(nx - at.x, (ny - at.y) * 0.6) <= clear) continue;
+      const away = Math.hypot(nx - at.x, ny - at.y);
+      const inward = Math.hypot(nx - toward.x, ny - toward.y);
+      // Close to the entrance, and on the side facing the rest of the map.
+      const cost = away + inward * 0.25;
+      if (cost < bestCost) { bestCost = cost; best = { x: nx, y: ny }; }
+    }
+  }
+  return best ?? at;
+}
+
 /** Close enough to a hotspot for its prompt to appear. */
 export const REACH = 0.055;
 

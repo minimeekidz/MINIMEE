@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -564,6 +564,29 @@ describe("MINIMEE route shells", () => {
     expect(isWalkable(town, landed!.x, landed!.y)).toBe(true);
     // A tap on ground that is already walkable must not move the destination.
     expect(nearestWalkable(town, town.spawn.x, town.spawn.y)).toEqual(town.spawn);
+  });
+
+  it("puts the child back at the entrance they came through", () => {
+    // Walking 小鎮 → 碼頭 → 小鎮 has to land next to the 碼頭 gate, not at the
+    // town's own starting point on the far side of the map.
+    const town = ZONES.town;
+    const gate = town.hotspots.find(spot => spot.target === "dock")!;
+    const back = arrivalPoint(town, { zone: "dock" });
+    expect(isWalkable(town, back.x, back.y)).toBe(true);
+    expect(Math.hypot(back.x - gate.x, back.y - gate.y)).toBeLessThan(0.2);
+    expect(Math.hypot(back.x - town.spawn.x, back.y - town.spawn.y)).toBeGreaterThan(0.2);
+    // And it must not drop them inside the gate's own prompt, or the first
+    // tap would send them straight back where they came from.
+    expect(hotspotNear(town, back.x, back.y)?.id).not.toBe(gate.id);
+
+    // Coming out of a room lands at that room's door.
+    const door = town.hotspots.find(spot => spot.target === "cinema")!;
+    const outside = arrivalPoint(town, { room: "cinema" });
+    expect(Math.hypot(outside.x - door.x, outside.y - door.y)).toBeLessThan(0.2);
+
+    // Somewhere with no known entrance still has to be a legal place to stand.
+    const cold = arrivalPoint(town, null);
+    expect(isWalkable(town, cold.x, cold.y)).toBe(true);
   });
 
   it("switches the world between day and night art", () => {
