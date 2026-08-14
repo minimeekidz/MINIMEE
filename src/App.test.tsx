@@ -5,6 +5,7 @@ import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
 import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { actionsAt, FRIEND_LEVELS, levelFor, MAX_LEVEL, PET_ACTIONS, QUIZ_POINTS } from "./lib/petFriends";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -587,6 +588,37 @@ describe("MINIMEE route shells", () => {
     // Somewhere with no known entrance still has to be a legal place to stand.
     const cold = arrivalPoint(town, null);
     expect(isWalkable(town, cold.x, cold.y)).toBe(true);
+  });
+
+  it("makes each friendship level cost more than the one before it", () => {
+    // A flat curve would have a child at the top of all twelve pets inside a
+    // week, with nothing left to come back for across a year's subscription.
+    const steps = FRIEND_LEVELS.map((level, index) =>
+      index === 0 ? 0 : level.needed - FRIEND_LEVELS[index - 1].needed);
+    for (let i = 2; i < steps.length; i++) {
+      expect(steps[i], `level ${i + 1} must cost more than level ${i}`).toBeGreaterThan(steps[i - 1]);
+    }
+    expect(levelFor(0).level).toBe(1);
+    expect(levelFor(FRIEND_LEVELS[FRIEND_LEVELS.length - 1].needed).level).toBe(MAX_LEVEL);
+  });
+
+  it("keeps the warmest actions locked until the friendship is earned", () => {
+    // Greetings are available immediately; being given a flash card is not.
+    const early = actionsAt(1).map(action => action.id);
+    expect(early).toContain("greet");
+    expect(early).not.toContain("card-flash");
+    expect(actionsAt(MAX_LEVEL).map(action => action.id)).toContain("card-flash");
+
+    // Every action must be reachable, or it is content nobody ever sees.
+    for (const action of PET_ACTIONS) {
+      expect(action.level, `${action.id} is past the last level`).toBeLessThanOrEqual(MAX_LEVEL);
+      expect(action.perDay, `${action.id} needs a daily cap`).toBeGreaterThan(0);
+    }
+
+    // The word question has to outweigh the greetings, or friendship stops
+    // tracking what the child has actually learnt.
+    const bestChat = Math.max(...PET_ACTIONS.map(action => action.points * action.perDay));
+    expect(QUIZ_POINTS.correct).toBeGreaterThan(bestChat);
   });
 
   it("switches the world between day and night art", () => {

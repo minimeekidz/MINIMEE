@@ -61,6 +61,7 @@ export function KidPlayPage() {
 
   return <GameWorld
     heroId={card.heroId}
+    cardId={card.id}
     returningFrom={returningFrom}
     doneRooms={rooms.filter(room => room.earned).map(room => room.id)}
     onEnterRoom={roomId => navigate(`/parent/children/${child.id}/room/${roomId}`)}

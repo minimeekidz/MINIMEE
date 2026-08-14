@@ -648,7 +648,7 @@ footer div { display: flex; gap: 20px; }
 .world-hero.walking { animation: hero-step .32s steps(2) infinite; }
 @keyframes hero-step { 0%,100% { margin-top: 0; } 50% { margin-top: -6px; } }
 
-.world-action { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); padding: 14px 26px; border: 4px solid #14213D; border-radius: 8px; background: var(--brand-gold); color: #14213D; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 0 rgba(13,16,32,.5); animation: marker-bob 1.1s steps(2) infinite; z-index: 130; }
+.world-action { position: absolute; left: 50%; bottom: 13%; transform: translateX(-50%); padding: 14px 26px; border: 4px solid #14213D; border-radius: 8px; background: var(--brand-gold); color: #14213D; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 0 rgba(13,16,32,.5); animation: marker-bob 1.1s steps(2) infinite; z-index: 130; }
 
 /* Kept at the left edge, away from the middle of the screen: gate markers sit
    at the bottom of a map and the pad used to land right on top of them. */
@@ -680,3 +680,45 @@ footer div { display: flex; gap: 20px; }
 .kid-likes li.has-sticker { padding-left: 6px; }
 .kid-likes li img { width: 26px; height: 26px; object-fit: contain; image-rendering: pixelated; }
 .kid-meta-sticker { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; object-fit: contain; image-rendering: pixelated; }
+
+/* ---- v2: pets that live here, and talking to them ---- */
+.world-npc-wrap { position: absolute; display: grid; justify-items: center; transform: translate(-50%, -100%); }
+.world-wish { margin-bottom: 3px; padding: 4px 9px; border: 2px solid #14213D; border-radius: 10px 10px 10px 2px; background: rgba(255,247,232,.95); color: #14213D; font-size: 9px; font-weight: 800; white-space: nowrap; animation: marker-bob 3.4s steps(2) infinite; pointer-events: none; }
+.world-npc { display: block; padding: 0; border: 0; background: none; cursor: pointer; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(13,16,32,.4)); animation: marker-bob 2.2s steps(2) infinite; }
+.world-npc img { height: 100%; width: auto; image-rendering: pixelated; }
+.world-npc.close { filter: drop-shadow(0 0 0 #fff) drop-shadow(0 3px 0 rgba(13,16,32,.4)) brightness(1.12); }
+.world-action.pet { background: #ffd7ec; }
+
+.pet-sheet { position: absolute; z-index: 140; left: 50%; bottom: 12px; transform: translateX(-50%); width: min(440px, calc(100% - 24px)); max-height: 76vh; overflow-y: auto; padding: 18px; border: 4px solid #14213D; border-radius: 18px; background: #fff7e8; box-shadow: 0 10px 0 rgba(13,16,32,.45); }
+.pet-sheet-close { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border: 3px solid #14213D; border-radius: 6px; background: #ffe9b8; color: #14213D; font-weight: 900; cursor: pointer; }
+.pet-sheet-head { display: flex; align-items: center; gap: 12px; }
+.pet-sheet-head > div { display: grid; gap: 3px; }
+.pet-sheet-head strong { font-size: 14px; }
+.pet-sheet-art { width: 58px; height: 58px; object-fit: contain; image-rendering: pixelated; }
+.pet-level { color: var(--violet-dark); font-size: 10px; font-weight: 900; }
+.pet-meter { height: 9px; border: 2px solid #14213D; border-radius: 5px; background: #efe6d4; overflow: hidden; }
+.pet-meter span { display: block; height: 100%; background: var(--brand-gold); transition: width .4s ease; }
+.pet-sheet-head small { color: var(--muted); font-size: 9px; }
+
+.pet-bubble-line { margin: 12px 0 0; padding: 10px 13px; border: 3px solid #14213D; border-radius: 12px 12px 12px 3px; background: white; font-size: 12px; font-weight: 700; }
+.pet-levelup { display: grid; gap: 5px; margin-top: 12px; padding: 12px; border: 3px solid var(--brand-gold); border-radius: 12px; background: #fff2cf; font-size: 11px; font-weight: 900; }
+.pet-levelup small { color: var(--muted); font-size: 9px; font-weight: 800; }
+.pet-gift { display: flex; align-items: center; gap: 11px; margin-top: 12px; padding: 11px; border: 3px solid var(--violet); border-radius: 12px; background: var(--lavender); }
+.pet-gift img { width: 54px; height: 72px; object-fit: cover; border-radius: 6px; }
+.pet-gift div { display: grid; gap: 2px; }
+.pet-gift strong { font-size: 11px; } .pet-gift span { font-size: 10px; font-weight: 800; } .pet-gift small { color: var(--muted); font-size: 9px; }
+
+.pet-quiz { margin-top: 14px; padding: 13px; border: 3px dashed #14213D; border-radius: 13px; background: white; }
+.pet-quiz-ask { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 0 0 11px; font-size: 20px; font-weight: 900; }
+.pet-quiz-ask img { width: 62px; height: 62px; object-fit: contain; image-rendering: pixelated; }
+.pet-quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pet-quiz-option { padding: 13px 8px; border: 3px solid #14213D; border-radius: 10px; background: #ffe9b8; font-size: 14px; font-weight: 900; cursor: pointer; }
+.pet-quiz-option:hover:not(:disabled) { background: var(--brand-gold); }
+.pet-quiz-option.right { background: #b6f0cd; }
+.pet-quiz-note { display: block; margin-top: 9px; color: var(--muted); font-size: 9px; }
+
+.pet-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.pet-action { display: flex; align-items: center; gap: 5px; padding: 9px 12px; border: 3px solid #14213D; border-radius: 9px; background: #ffe9b8; font-size: 11px; font-weight: 900; cursor: pointer; }
+.pet-action:hover:not(:disabled) { background: var(--brand-gold); }
+.pet-action.spent { opacity: .42; }
+.pet-locked { margin: 11px 0 0; color: var(--muted); font-size: 9px; font-weight: 800; }
