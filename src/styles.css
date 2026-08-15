@@ -1415,3 +1415,12 @@ footer div { display: flex; gap: 20px; }
 /* The binder page sits behind its pockets, never instead of them — a child
    has to be able to see which slot is still empty. */
 .book-cover { display: block; width: 100%; margin: 0 0 12px; border: 3px solid #2c2140; border-radius: 8px; }
+
+/* Answer buttons made of Em's stickers. The word stays under the picture
+   rather than only inside it: a screen reader still gets a label, and an
+   option with no art (a number, a borrowed word) sits in the same row
+   without looking broken. */
+.word-options.picture { grid-template-columns: repeat(2, 1fr); }
+.word-options.picture .word-option { flex-direction: column; gap: 4px; min-height: 128px; padding: 8px 6px; font-size: 15px; }
+.word-options.picture .word-option img { width: 82px; height: 82px; object-fit: contain; }
+@media (min-width: 560px) { .word-options.picture { grid-template-columns: repeat(4, 1fr); } }
