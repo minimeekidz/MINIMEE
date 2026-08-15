@@ -126,6 +126,19 @@ export function useCollection(kidCardId: string | null): Collection {
   }, [kidCardId]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  // Whatever today has earned — birthday, anniversary, first friend, pet
+  // Lv12, the 18/36-theme achievements — handed out once per load. Every
+  // grant underneath is idempotent, so a poll is the right shape and there
+  // is no scheduled job to forget to run.
+  useEffect(() => {
+    if (!kidCardId) return;
+    void (async () => {
+      const given = await claimOccasions(kidCardId);
+      if (given > 0) await refresh();
+    })();
+  }, [kidCardId, refresh]);
+
   return { cards, trays, loading, refresh };
 }
 
@@ -141,17 +154,27 @@ export const THEME_SLOTS = THEME_BOOKS * CARDS_PER_BOOK;
  * normal/flash pair side by side.
  *
  * Books have no names yet. 「第 N 本」 is deliberately plain rather than an
- * invented title — a made-up name on a shelf is one a child reads as real.
+ * invented title — a made-up name on a shelf is one a child reads as real —
+ * and it also happens to be the filename of the cover Em drew.
  */
-export const BOOKS: Array<{ no: number; name: string }> =
+export const BOOKS: Array<{ no: number; name: string; cover: string }> =
   Array.from({ length: THEME_BOOKS }, (_, index) => ({
     no: index + 1,
     name: `第 ${index + 1} 本`,
+    cover: `/assets/uploads/卡牌冊/第${index + 1}冊.png`,
   }));
+
+/** The special pages. Two drawn so far, and the count is meant to grow. */
+export const SPECIAL_COVERS = [
+  "/assets/uploads/卡牌冊/特別版第1冊.png",
+  "/assets/uploads/卡牌冊/特別版第2冊.png",
+];
 
 export interface Book {
   no: number;
   name: string;
+  /** The binder page Em drew for this book. */
+  cover: string;
   slots: Array<CollectedCard | null>;
 }
 
@@ -170,6 +193,7 @@ export function booksFrom(cards: CollectedCard[]): Book[] {
   return BOOKS.map(book => ({
     no: book.no,
     name: book.name,
+    cover: book.cover,
     slots: Array.from({ length: CARDS_PER_BOOK },
       (_, index) => at.get(`${book.no}:${index + 1}`) ?? null),
   }));
@@ -230,5 +254,25 @@ export async function forgeCard(kidCardId: string, themeId: string): Promise<For
 export async function backfillFlash(kidCardId: string): Promise<number> {
   if (!supabase) return 0;
   const { data } = await supabase.rpc("backfill_flash", { p_kid_card_id: kidCardId });
+  return typeof data === "number" ? data : 0;
+}
+
+/**
+ * Hand out whatever today has earned: birthday, festival, anniversary, first
+ * friend, pet Lv12, and the 18/36-theme achievements.
+ *
+ * Safe to call on every load — every grant underneath is idempotent, which is
+ * exactly what lets this be a poll rather than a job somebody has to run.
+ * Only the festival comes from here, because only the browser has spoken to
+ * the 天文台; everything else is read server-side so a page cannot ask itself
+ * a card.
+ */
+export async function claimOccasions(
+  kidCardId: string, festival?: "cny" | "midautumn" | null,
+): Promise<number> {
+  if (!supabase) return 0;
+  const { data } = await supabase.rpc("claim_occasion_cards", {
+    p_kid_card_id: kidCardId, p_festival: festival ?? null,
+  });
   return typeof data === "number" ? data : 0;
 }

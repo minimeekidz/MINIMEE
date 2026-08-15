@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { FRAGMENTS_PER_CARD } from "../../lib/rooms";
 import {
-  booksFrom, forgeCard, specialCards, themeProgress, TRAY_SLOTS,
+  booksFrom, forgeCard, SPECIAL_COVERS, specialCards, themeProgress, TRAY_SLOTS,
   type CollectedCard, type ForgedCard, type ThemeTray,
 } from "../../lib/collection";
 
@@ -74,6 +74,9 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
 
       <div className="book-spread">
         <h3>{book.name}<em>{owned} / {book.slots.length}</em></h3>
+        {/* The binder page Em drew, behind the pockets rather than instead of
+            them: a child has to be able to see which slot is still empty. */}
+        <img className="book-cover" src={book.cover} alt="" loading="lazy" />
         <div className="book-grid">
           {book.slots.map((card, index) => card ? (
             <figure className={card.rarity === "flash" ? "book-slot flash" : "book-slot"} key={card.id}>
@@ -97,6 +100,7 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
           to measure anything. */}
       <div className="book-spread specials">
         <h3>特別回憶<em>已收藏 {specials.length} 張</em></h3>
+        <img className="book-cover" src={SPECIAL_COVERS[0]} alt="" loading="lazy" />
         <p className="panel-note">
           特別回憶係喺特別時刻先攞到嘅，唔計入主題收藏。
         </p>

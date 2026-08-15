@@ -16,8 +16,8 @@ import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
 import {
-  booksFrom, BOOKS, CARDS_PER_BOOK, specialCards, themeProgress, THEME_BOOKS,
-  THEME_SLOTS, TRAY_SLOTS, type CollectedCard,
+  booksFrom, BOOKS, CARDS_PER_BOOK, SPECIAL_COVERS, specialCards, themeProgress,
+  THEME_BOOKS, THEME_SLOTS, TRAY_SLOTS, type CollectedCard,
 } from "./lib/collection";
 import themeSeed from "./data/activeTheme.seed.v1.json";
 import themeBook from "./data/themeBook.json";
@@ -1247,6 +1247,19 @@ describe("MINIMEE route shells", () => {
     // A card with no album position is still theirs, and still shown.
     expect(specialCards([card("T10-N", 4, 1), card("SP-001", null, null)])
       .map(item => item.code)).toEqual(["SP-001"]);
+  });
+
+  it("binds twelve books that carry the covers Em drew", () => {
+    // 12 books of six is 36 normal plus 36 flash — and at three themes a
+    // month it is also one book a month. The cover filename is the book
+    // number, which is why the books need no invented names.
+    expect(BOOKS).toHaveLength(12);
+    expect(BOOKS[0].cover).toBe("/assets/uploads/卡牌冊/第1冊.png");
+    expect(BOOKS[11].cover).toBe("/assets/uploads/卡牌冊/第12冊.png");
+    expect(SPECIAL_COVERS[0]).toContain("特別版第1冊");
+    // Every book carries its cover through to the bound view, or the spread
+    // renders a broken image where the binder page should be.
+    for (const book of booksFrom([])) expect(book.cover).toMatch(/第\d+冊\.png$/);
   });
 
   it("keeps 特別回憶 out of the 72 and counts them instead of dividing them", () => {
