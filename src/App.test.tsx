@@ -19,6 +19,7 @@ import { booksFrom, BOOKS, CARDS_PER_BOOK, looseCards, type CollectedCard } from
 import { checkParentPin, closeParentGate, openParentGate, parentGateOpen } from "./lib/parentGate";
 import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
 import { NoticeBoardPanel } from "./components/interior/HomePanels";
+import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -987,6 +988,33 @@ describe("MINIMEE route shells", () => {
     expect(INTERIORS["cinema-hall"].back.target).toBe("cinema-lobby");
     // 我的小屋 is off 小屋區入口, not off the town.
     expect(INTERIORS["my-home"].back.target).toBe("village-gate");
+  });
+
+  it("sends a child out of a lesson back into the room they came from", () => {
+    // A lesson is reached through the 戲院廳 or Hero Studio, not off the
+    // street, so the link into it has to carry where the child came from —
+    // otherwise finishing a film drops them on the town map.
+    const room = {
+      id: "r1", nameZh: "海洋", blurb: "", art: "/a.webp", sortOrder: 1,
+      lesson: { id: "l1", roomId: "r1", theme: "海洋", title: "海底世界", words: [{ word: "海龜" }] },
+      earned: false,
+    };
+
+    const studio = render(
+      <MemoryRouter>
+        <CurrentWordsPanel rooms={[room]} childId="c1" backTo="studio" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: /睇片同玩遊戲/ }))
+      .toHaveAttribute("href", "/parent/children/c1/room/r1?back=studio");
+    studio.unmount();
+
+    // The lobby hands the choice to the hall rather than straight to the
+    // player, because the hall is where Em's design says the film plays.
+    const picked: string[] = [];
+    render(<TicketsPanel rooms={[room]} onPick={id => picked.push(id)} />);
+    fireEvent.click(screen.getByRole("button", { name: /海底世界/ }));
+    expect(picked).toEqual(["r1"]);
   });
 
   it("keeps every 碼頭市集 counter pointing at a page that exists", () => {

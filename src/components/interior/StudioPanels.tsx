@@ -31,7 +31,9 @@ function WordChips({ words }: { words: Array<{ word: string; meaning?: string }>
 }
 
 /** 今期詞語 — what is running right now, one theme at a time. */
-export function CurrentWordsPanel({ rooms, childId }: { rooms: RoomWithLesson[]; childId: string }) {
+export function CurrentWordsPanel({ rooms, childId, backTo }: {
+  rooms: RoomWithLesson[]; childId: string; backTo: string;
+}) {
   const live = rooms.filter(room => room.lesson);
   if (live.length === 0) {
     return <p className="panel-empty">今期嘅詞語仲未出。出咗會喺呢度見到。</p>;
@@ -48,7 +50,7 @@ export function CurrentWordsPanel({ rooms, childId }: { rooms: RoomWithLesson[];
           </header>
           <p className="lesson-theme">{room.lesson!.theme}</p>
           <WordChips words={room.lesson!.words} />
-          <Link className="tape-button" to={`/parent/children/${childId}/room/${room.id}`}>
+          <Link className="tape-button" to={`/parent/children/${childId}/room/${room.id}?back=${backTo}`}>
             <Play size={14} />睇片同玩遊戲
           </Link>
         </section>

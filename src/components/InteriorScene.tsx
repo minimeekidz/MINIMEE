@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { Interior, InteriorSpot } from "../lib/interiors";
 
@@ -27,11 +27,19 @@ export function InteriorScene({ interior, onSpot, onBack, backLabel, children }:
   // Markers fade in after the art so the room reads as a place first and a
   // menu second.
   const [ready, setReady] = useState(false);
+  const art = useRef<HTMLImageElement>(null);
+
+  // The loading screen already decoded this image, so it comes back from
+  // cache and `load` can fire before React attaches its handler. Without
+  // this check the markers never appear and the room is a dead end.
+  useEffect(() => {
+    if (art.current?.complete) setReady(true);
+  }, [interior.id]);
 
   return (
     <main className="interior-scene">
       <div className="interior-art">
-        <img src={interior.art} alt="" onLoad={() => setReady(true)} />
+        <img ref={art} src={interior.art} alt="" onLoad={() => setReady(true)} />
 
         {ready && interior.spots.map(spot => (
           <button

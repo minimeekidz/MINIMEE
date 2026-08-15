@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Play, Sparkles, X } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI";
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
@@ -16,6 +16,12 @@ import { ROOM_ART } from "../lib/world";
 // good, where five would each be mediocre.
 export function RoomPage() {
   const { id: childId, roomId } = useParams();
+  // Which building the child walked in from. A lesson is reached through the
+  // 戲院廳 or Hero Studio, so 返出去 has to put them back in that room —
+  // dropping them on the town map would break 原位入口原位出口 the moment
+  // the film finishes.
+  const [params] = useSearchParams();
+  const cameFrom = params.get("back");
   const { children, loading: familyLoading } = useFamily();
   const child = children.find(candidate => candidate.id === childId);
 

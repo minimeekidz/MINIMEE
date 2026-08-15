@@ -88,7 +88,7 @@ export function InteriorPage() {
             />
           )}
 
-          {open.target === "current-words" && <CurrentWordsPanel rooms={rooms} childId={childId} />}
+          {open.target === "current-words" && <CurrentWordsPanel rooms={rooms} childId={childId} backTo={interior.id} />}
           {open.target === "past-words" && <PastWordsPanel rooms={rooms} />}
           {open.target === "tickets" && (
             <TicketsPanel
@@ -99,7 +99,7 @@ export function InteriorPage() {
           {open.target === "screen" && (
             <TicketsPanel
               rooms={chosenFilm ? rooms.filter(room => room.id === chosenFilm) : rooms}
-              onPick={roomKey => navigate(`/parent/children/${childId}/room/${roomKey}`)}
+              onPick={roomKey => navigate(`/parent/children/${childId}/room/${roomKey}?back=${interior.id}`)}
             />
           )}
 
