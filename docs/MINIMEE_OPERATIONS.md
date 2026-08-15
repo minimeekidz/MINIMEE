@@ -613,6 +613,21 @@ were before, which may be nowhere in the world.
   leave one half-finished while working on another, so six covers the
   overlap. The artwork is drawn as a 3x3 grid; **the artwork does not define
   the data model** and must not be read as nine.
+
+  **A theme's card is configured, never chosen.** `theme_releases` says which
+  card a theme pays out, `card_catalog` says where that card sits (卡號／
+  Book／Slot 為固定), and `forge_theme_card` reads both. An earlier version
+  minted the lowest-numbered card the child did not own, which meant 海洋
+  could pay out a 城市 card and the album filled in unlock order. The case
+  that proves the rule: 軌道交通 is theme 01 and its card is MEE-019, BOOK 4
+  slot 1 — the first theme's card is at the *back* of the album.
+
+  A theme may later have a second card. That is another release row, never an
+  edit to the old one: the original album identity is not overwritten.
+
+  Switching the month is `/admin/themes` — six rows, one button each, and it
+  changes every child at once. Retiring a theme does **not** delete a child's
+  fragments; the theme picks up where it left off if it returns.
 - **Hero Studio** — 今期詞語. **圖書館** — 過往詞語重溫, review only, no
   second fragment. **戲院大堂** — the posters are the real lesson themes and
   the 買飛 counter picks one; **戲院廳** plays it.

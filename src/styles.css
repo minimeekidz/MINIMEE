@@ -444,7 +444,7 @@ footer div { display: flex; gap: 20px; }
 .kid-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; margin-top: 14px; }
 .mee-card { border: 3px solid #2c2140; border-radius: 6px; overflow: hidden; background: white; box-shadow: 0 5px 0 rgba(0,0,0,.28); }
 .mee-card.flash { border-color: var(--gold); box-shadow: 0 5px 0 rgba(160,120,20,.5); }
-.mee-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; image-rendering: pixelated; }
+.mee-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; image-rendering: pixelated; }
 .mee-card-body { padding: 10px 12px 13px; }
 .mee-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .mee-code { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .8px; }
@@ -983,7 +983,7 @@ footer div { display: flex; gap: 20px; }
 /* ---- small modules ---- */
 .mee-strip { display: flex; gap: 8px; }
 .mee-mini { flex: 1; display: grid; gap: 4px; padding: 6px; border-radius: 10px; background: #fff; border: 2px solid var(--paper-edge); }
-.mee-mini img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 6px; }
+.mee-mini img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; }
 .mee-mini span { font-size: 9px; font-weight: 900; text-align: center; }
 .mee-mini.flash { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(217,164,65,.3); }
 .mee-code { font-size: 8px; font-weight: 800; text-align: center; letter-spacing: .04em; color: var(--ink-soft); }
@@ -1165,9 +1165,9 @@ footer div { display: flex; gap: 20px; }
 /* ---- collection ---- */
 .collection-count { margin: 0 0 12px; font-size: 12px; font-weight: 800; }
 .collection-count strong { font-size: 18px; }
-.card-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.card-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .shelf-card { margin: 0; display: grid; gap: 4px; padding: 6px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
-.shelf-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; }
+.shelf-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; }
 .shelf-card figcaption { display: grid; text-align: center; }
 .shelf-card strong { font-size: 10px; font-weight: 900; }
 .shelf-card small { font-size: 8px; color: var(--ink-soft, #8a7458); }
@@ -1184,15 +1184,15 @@ footer div { display: flex; gap: 20px; }
 .book-spine small { font-size: 9px; opacity: .75; }
 .book-spread h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 14px; }
 .book-spread h3 em { font-size: 11px; font-style: normal; color: var(--ink-soft, #8a7458); }
-.book-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.book-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .book-slot { margin: 0; display: grid; gap: 4px; padding: 6px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
-.book-slot img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; }
+.book-slot img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; }
 .book-slot strong { font-size: 10px; font-weight: 900; }
 .book-slot small { font-size: 8px; color: var(--ink-soft, #8a7458); }
 .book-slot.flash { border-color: var(--brand-gold); }
 /* An empty slot is deliberately legible: the gap is what says "keep going". */
 .book-slot.empty {
-  display: grid; place-items: center; gap: 4px; aspect-ratio: 3/4;
+  display: grid; place-items: center; gap: 4px; aspect-ratio: 16/9;
   border-style: dashed; background: rgba(160,130,90,.10); color: var(--ink-soft, #8a7458);
 }
 .book-slot.empty span { font-size: 26px; font-weight: 900; opacity: .45; }
@@ -1301,8 +1301,25 @@ footer div { display: flex; gap: 20px; }
   display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
   padding: 10px; border-radius: 14px; background: var(--brand-gold); color: #3a2a12;
 }
-.forged-card img { width: 64px; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; }
+.forged-card img { width: 96px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; }
 .forged-card strong { display: block; font-size: 13px; }
 .forged-card p { margin: 2px 0 0; font-size: 12px; font-weight: 800; }
 .forged-card em { font-style: normal; }
 .pet-gift.mystery { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(217,164,65,.35); }
+
+/* The four unified words a tray is for, so a child can see what they are
+   collecting rather than only how many pieces are left. */
+.tray-words { display: block; font-size: 9px; font-style: normal; color: var(--ink-soft, #8a7458); line-height: 1.5; }
+.tray.done { background: rgba(217,164,65,.16); border-color: var(--brand-gold); }
+
+/* ---- 主題後台 ---- */
+.admin-block { margin-top: 26px; }
+.admin-block h2 { margin: 0 0 4px; font-size: 15px; }
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+.admin-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--line); font-size: 11px; }
+.admin-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.admin-table td small { color: var(--muted); font-size: 10px; }
+.admin-table button + button { margin-left: 6px; }
+.admin-new-release { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
+.admin-new-release label { display: grid; gap: 4px; font-size: 11px; font-weight: 800; }
+.admin-new-release select { min-width: 190px; padding: 9px 11px; border: 2px solid var(--line); border-radius: 10px; font: inherit; }

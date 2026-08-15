@@ -1,0 +1,917 @@
+{
+ "_source": "MINIMEE_36主題_ActiveTheme_v1.xlsm",
+ "_generatedBy": "scripts/build_theme_book.py",
+ "_warning": "GENERATED — edit the workbook, not this file.",
+ "themes": [
+  {
+   "themeId": "theme-01",
+   "themeNo": 1,
+   "nameZh": "軌道交通",
+   "words": [
+    "港鐵",
+    "電車",
+    "火車",
+    "輕鐵"
+   ],
+   "vo": "城市入面有好多沿住路軌行嘅交通工具。港鐵帶我哋去唔同地區，電車慢慢穿過街道，火車可以去更遠地方，新界仲有輕鐵。下次搭車，不妨留意吓佢哋行嘅路線有咩唔同。",
+   "question": "你最鍾意搭邊一種有路軌嘅交通工具？",
+   "answerPattern": "我最鍾意搭{answer}。"
+  },
+  {
+   "themeId": "theme-02",
+   "themeNo": 2,
+   "nameZh": "道路英雄",
+   "words": [
+    "巴士",
+    "的士",
+    "小巴",
+    "電單車"
+   ],
+   "vo": "馬路上有好多唔同角色。巴士載住一大班乘客，的士帶人直接去目的地，小巴靈活咁穿梭街道，電單車就細細架、行動方便。每種交通工具都有自己嘅用途。",
+   "question": "你最常見到邊一種車？",
+   "answerPattern": "我最常見到{answer}。"
+  },
+  {
+   "themeId": "theme-03",
+   "themeNo": 3,
+   "nameZh": "藍天與海洋",
+   "words": [
+    "飛機",
+    "直升機",
+    "輪船",
+    "帆船"
+   ],
+   "vo": "天空同海面都有唔同交通工具。飛機飛得又高又遠，直升機可以喺空中停留同轉向；海上有大型輪船，亦有靠風力前進嘅帆船。佢哋用唔同方法帶我哋去唔同地方。",
+   "question": "你最想坐邊一種交通工具？",
+   "answerPattern": "我最想坐{answer}。"
+  },
+  {
+   "themeId": "theme-04",
+   "themeNo": 4,
+   "nameZh": "社區守護者",
+   "words": [
+    "警察",
+    "消防員",
+    "醫生",
+    "護士"
+   ],
+   "vo": "社區入面有好多照顧大家嘅人。警察維持安全，消防員處理火警同救援，醫生幫人檢查同治療，護士就照顧病人。大家分工合作，令社區運作得更安心。",
+   "question": "你最想了解邊一種工作？",
+   "answerPattern": "我最想了解{answer}嘅工作。"
+  },
+  {
+   "themeId": "theme-05",
+   "themeNo": 5,
+   "nameZh": "城市建築物",
+   "words": [
+    "屋企",
+    "學校",
+    "公園",
+    "醫院"
+   ],
+   "vo": "我哋每日都會去唔同地方。屋企係休息同相聚嘅地方，學校係學習同識朋友嘅地方，公園可以遊玩同放鬆，而醫院就喺我哋唔舒服或者需要治療時提供幫助。",
+   "question": "你最熟悉邊一個地方？",
+   "answerPattern": "我最熟悉{answer}。"
+  },
+  {
+   "themeId": "theme-06",
+   "themeNo": 6,
+   "nameZh": "地底秘密",
+   "words": [
+    "水管",
+    "電線",
+    "泥土",
+    "老鼠"
+   ],
+   "vo": "地面下面其實藏住好多平時睇唔到嘅東西。水管將水送到屋企，電線連接唔同設備，泥土入面有植物嘅根，有時亦會有細小動物活動。原來城市地下都有自己嘅世界。",
+   "question": "你最想知道地底邊一樣嘢係點運作？",
+   "answerPattern": "我最想知道{answer}係點運作。"
+  },
+  {
+   "themeId": "theme-07",
+   "themeNo": 7,
+   "nameZh": "街頭美食",
+   "words": [
+    "雞蛋仔",
+    "奶茶",
+    "麵包",
+    "雪糕"
+   ],
+   "vo": "行過街頭，可能會聞到好多熟悉嘅香味。雞蛋仔外脆內軟，奶茶香濃，麵包新鮮出爐時特別香，天氣熱仲可以食雪糕。食物亦係城市記憶嘅一部分。",
+   "question": "你最想揀邊一樣？",
+   "answerPattern": "我最想揀{answer}。"
+  },
+  {
+   "themeId": "theme-08",
+   "themeNo": 8,
+   "nameZh": "綠色公園",
+   "words": [
+    "大樹",
+    "小草",
+    "花朵",
+    "長椅"
+   ],
+   "vo": "公園係城市入面一個可以慢落嚟嘅地方。大樹提供樹蔭，小草鋪滿地面，花朵令環境更有顏色，行攰咗仲可以坐喺長椅休息。綠色空間令城市舒服好多。",
+   "question": "你去公園最鍾意見到邊一樣？",
+   "answerPattern": "我去公園最鍾意見到{answer}。"
+  },
+  {
+   "themeId": "theme-09",
+   "themeNo": 9,
+   "nameZh": "金錢與商店",
+   "words": [
+    "超市",
+    "玩具店",
+    "麵包店",
+    "書店"
+   ],
+   "vo": "城市入面有好多唔同商店。超市可以買日用品，麵包店有新鮮食物，書店可以揀書，玩具店就有好多有趣玩具。買嘢之前，可以先諗清楚自己真正需要啲咩。",
+   "question": "你最想行邊一間店？",
+   "answerPattern": "我最想行{answer}。"
+  },
+  {
+   "themeId": "theme-10",
+   "themeNo": 10,
+   "nameZh": "城市聲音",
+   "words": [
+    "喇叭聲",
+    "鳥叫聲",
+    "音樂",
+    "說話聲"
+   ],
+   "vo": "城市唔單止有畫面，仲有好多聲音。馬路會聽到喇叭聲，樹邊可能有鳥叫聲，商店或者街頭會播音樂，身邊亦一直有人說話。試吓靜落嚟，你會發現城市其實好有節奏。",
+   "question": "你今日最留意到邊一種聲音？",
+   "answerPattern": "我今日最留意到{answer}。"
+  },
+  {
+   "themeId": "theme-11",
+   "themeNo": 11,
+   "nameZh": "夜幕低垂",
+   "words": [
+    "月亮",
+    "星星",
+    "霓虹燈",
+    "燈籠"
+   ],
+   "vo": "天黑之後，城市會換上另一個樣。天空有月亮同星星，街上可能亮起霓虹燈，節日或者特別地方仲會見到燈籠。唔同嘅光，會令同一個地方有完全唔同嘅感覺。",
+   "question": "夜晚你最鍾意睇邊一種光？",
+   "answerPattern": "夜晚我最鍾意睇{answer}。"
+  },
+  {
+   "themeId": "theme-12",
+   "themeNo": 12,
+   "nameZh": "未來智慧城",
+   "words": [
+    "機器人",
+    "飛天車",
+    "智能牆",
+    "智能鏡"
+   ],
+   "vo": "如果城市變得更聰明，生活可能會有好多新工具。機器人可以幫手做工作，飛天車係一種未來想像，智能牆可以顯示資訊，智能鏡亦可以提供提示。科技最重要係幫人生活得更方便。",
+   "question": "你最想試邊一樣未來科技？",
+   "answerPattern": "我最想試{answer}。"
+  },
+  {
+   "themeId": "theme-13",
+   "themeNo": 13,
+   "nameZh": "恐龍帝國",
+   "words": [
+    "霸王龍",
+    "三角龍",
+    "長頸龍",
+    "甲龍"
+   ],
+   "vo": "恐龍世界有好多唔同外形。霸王龍有強壯嘅牙齒，三角龍頭上有角，長頸龍用長長嘅頸去到較高嘅植物，甲龍身上就有好似盔甲咁嘅保護。每種恐龍都有自己特色。",
+   "question": "你最想認識邊一隻恐龍？",
+   "answerPattern": "我最想認識{answer}。"
+  },
+  {
+   "themeId": "theme-14",
+   "themeNo": 14,
+   "nameZh": "神秘深海",
+   "words": [
+    "小魚",
+    "章魚",
+    "鯊魚",
+    "海龜"
+   ],
+   "vo": "海面以下有一個好大嘅世界。小魚成群游過珊瑚，章魚有好多靈活嘅觸手，鯊魚係海洋捕食者，而海龜就會游過好遠嘅海域。海洋動物各有自己嘅生存方法。",
+   "question": "你最想近距離觀察邊一種海洋動物？",
+   "answerPattern": "我最想觀察{answer}。"
+  },
+  {
+   "themeId": "theme-15",
+   "themeNo": 15,
+   "nameZh": "奇幻森林",
+   "words": [
+    "大象",
+    "馬騮",
+    "獅子",
+    "長頸鹿"
+   ],
+   "vo": "森林同草原有好多大型動物。大象有長長嘅鼻，馬騮擅長攀爬，獅子係強壯嘅捕食者，長頸鹿就可以食到高處嘅樹葉。留意佢哋嘅身體，就會發現每種動物都適應唔同生活方式。",
+   "question": "你最鍾意邊一種動物？",
+   "answerPattern": "我最鍾意{answer}。"
+  },
+  {
+   "themeId": "theme-16",
+   "themeNo": 16,
+   "nameZh": "極地冰原",
+   "words": [
+    "企鵝",
+    "北極熊",
+    "冰塊",
+    "雪人"
+   ],
+   "vo": "冰雪世界睇落好似一樣，其實南北極各有唔同動物。企鵝主要生活喺南半球，北極熊就生活喺北極。冰塊同積雪形成寒冷景色，而雪人就係我哋用雪做出嚟嘅作品。",
+   "question": "你對冰雪世界邊一樣最有興趣？",
+   "answerPattern": "我對{answer}最有興趣。"
+  },
+  {
+   "themeId": "theme-17",
+   "themeNo": 17,
+   "nameZh": "微觀昆蟲",
+   "words": [
+    "螞蟻",
+    "蝴蝶",
+    "蜜蜂",
+    "甲蟲"
+   ],
+   "vo": "如果我哋蹲低仔細睇，細小昆蟲其實好忙。螞蟻會合作搬運食物，蝴蝶用翅膀飛行，蜜蜂會採花蜜，甲蟲身上有硬硬嘅外殼。細小世界都有好多值得觀察嘅地方。",
+   "question": "你最想觀察邊一種昆蟲？",
+   "answerPattern": "我最想觀察{answer}。"
+  },
+  {
+   "themeId": "theme-18",
+   "themeNo": 18,
+   "nameZh": "天氣魔法",
+   "words": [
+    "落雨",
+    "晴天",
+    "大風",
+    "落雪"
+   ],
+   "vo": "天氣每日都可能唔同。落雨要記得避雨，晴天可以見到陽光，大風時要留意安全，而落雪就只會喺夠凍嘅地方出現。識得留意天氣，我哋就可以準備得更好。",
+   "question": "你今日見到邊一種天氣？",
+   "answerPattern": "我今日見到{answer}。"
+  },
+  {
+   "themeId": "theme-19",
+   "themeNo": 19,
+   "nameZh": "沙灘探索",
+   "words": [
+    "沙",
+    "貝殼",
+    "水桶",
+    "太陽帽"
+   ],
+   "vo": "去沙灘可以發現好多細節。腳下有沙，岸邊可能見到貝殼，用水桶可以裝沙同海水，陽光猛烈時就要戴太陽帽做好防曬。玩得開心之餘，都要記得保護自己同海灘。",
+   "question": "去沙灘你最想帶邊一樣？",
+   "answerPattern": "去沙灘我最想帶{answer}。"
+  },
+  {
+   "themeId": "theme-20",
+   "themeNo": 20,
+   "nameZh": "植物的秘密",
+   "words": [
+    "種子",
+    "花朵",
+    "樹根",
+    "果實"
+   ],
+   "vo": "一棵植物可以由細細粒種子開始。樹根喺泥土入面吸收水分，植物慢慢長大開出花朵，有啲之後仲會結出果實。由種子到果實，每一步都係植物生長嘅一部分。",
+   "question": "你最想觀察植物邊一個部分？",
+   "answerPattern": "我最想觀察{answer}。"
+  },
+  {
+   "themeId": "theme-21",
+   "themeNo": 21,
+   "nameZh": "太陽系家族",
+   "words": [
+    "太陽",
+    "地球",
+    "月球",
+    "星星"
+   ],
+   "vo": "我哋住喺地球，而地球會圍住太陽運行。月球就圍住地球運行；夜晚見到嘅星星，大部分都比我哋想像中遠好多。抬頭望天空，就可以開始認識宇宙。",
+   "question": "你最想進一步認識邊一樣？",
+   "answerPattern": "我最想認識{answer}。"
+  },
+  {
+   "themeId": "theme-22",
+   "themeNo": 22,
+   "nameZh": "深空探索",
+   "words": [
+    "太空船",
+    "火箭",
+    "外星人",
+    "飛碟"
+   ],
+   "vo": "探索太空需要好多想像同科技。火箭可以將太空船送上太空；至於外星人同飛碟，就係故事同科幻作品經常出現嘅想像。科學會幫我哋分清楚已知事實同有趣幻想。",
+   "question": "你最想了解邊一樣？",
+   "answerPattern": "我最想了解{answer}。"
+  },
+  {
+   "themeId": "theme-23",
+   "themeNo": 23,
+   "nameZh": "時間的足跡",
+   "words": [
+    "日頭",
+    "夜晚",
+    "時鐘",
+    "長大"
+   ],
+   "vo": "時間一直向前行。日頭之後會到夜晚，時鐘幫我哋知道而家係幾點，而我哋亦會一日一日長大。好多平常嘅小事，過一段時間之後就會變成珍貴回憶。",
+   "question": "你最想記住今日邊一刻？",
+   "answerPattern": "我最想記住{answer}。"
+  },
+  {
+   "themeId": "theme-24",
+   "themeNo": 24,
+   "nameZh": "地球守護隊",
+   "words": [
+    "執垃圾",
+    "垃圾分類",
+    "慳水",
+    "慳電"
+   ],
+   "vo": "保護地球可以由每日小事開始。見到自己嘅垃圾要處理好，識得垃圾分類，刷牙沖涼時唔浪費水，離開房間亦記得熄燈慳電。每一個小習慣加埋，都會有作用。",
+   "question": "你今日做到邊一件環保小事？",
+   "answerPattern": "我今日做到{answer}。"
+  },
+  {
+   "themeId": "theme-25",
+   "themeNo": 25,
+   "nameZh": "日常職人",
+   "words": [
+    "老師",
+    "廚師",
+    "司機",
+    "畫家"
+   ],
+   "vo": "每一份工作都有自己嘅本領。老師幫人學習，廚師準備食物，司機安全咁載人去目的地，畫家就用圖像表達想法。認識唔同工作，可以發現自己將來想試啲咩。",
+   "question": "你最想試做邊一種工作？",
+   "answerPattern": "我最想試做{answer}。"
+  },
+  {
+   "themeId": "theme-26",
+   "themeNo": 26,
+   "nameZh": "運動英雄",
+   "words": [
+    "跑步",
+    "踢波",
+    "游水",
+    "跳舞"
+   ],
+   "vo": "身體郁動有好多方法。跑步訓練速度同耐力，踢波要同隊友合作，游水要學識控制呼吸同動作，跳舞就會跟住節奏活動身體。最重要係搵到自己鍾意嘅運動。",
+   "question": "你最鍾意邊一種活動？",
+   "answerPattern": "我最鍾意{answer}。"
+  },
+  {
+   "themeId": "theme-27",
+   "themeNo": 27,
+   "nameZh": "音樂與藝術",
+   "words": [
+    "唱歌",
+    "彈琴",
+    "畫畫",
+    "跳舞"
+   ],
+   "vo": "藝術可以用唔同方法表達自己。唱歌用聲音，彈琴用樂器，畫畫用線條同顏色，跳舞就用身體同節奏。冇一種方法一定最好，最重要係你願意創作。",
+   "question": "你最想用邊一種方式表達自己？",
+   "answerPattern": "我最想用{answer}表達自己。"
+  },
+  {
+   "themeId": "theme-28",
+   "themeNo": 28,
+   "nameZh": "AI與機器人",
+   "words": [
+    "機器人",
+    "機械狗",
+    "機械手",
+    "智能音箱"
+   ],
+   "vo": "科技可以做成好多唔同工具。機器人可以完成指定工作，機械狗模仿動物移動，機械手可以精準咁拿取物件，智能音箱就可以聽指令播放資訊。工具點樣用，仍然要由人去決定。",
+   "question": "你最想試邊一種智能工具？",
+   "answerPattern": "我最想試{answer}。"
+  },
+  {
+   "themeId": "theme-29",
+   "themeNo": 29,
+   "nameZh": "虛擬世界",
+   "words": [
+    "電腦",
+    "遊戲",
+    "螢幕",
+    "滑鼠"
+   ],
+   "vo": "打開電腦，就可以進入數碼世界。螢幕顯示畫面，滑鼠幫我哋控制位置，遊戲就係其中一種互動內容。玩得投入之餘，都要記得休息眼睛同返到真實世界活動。",
+   "question": "你用電腦時最常用邊一樣？",
+   "answerPattern": "我最常用{answer}。"
+  },
+  {
+   "themeId": "theme-30",
+   "themeNo": 30,
+   "nameZh": "超能力覺醒",
+   "words": [
+    "飛天",
+    "隱形",
+    "大力士",
+    "變身"
+   ],
+   "vo": "故事入面嘅英雄成日有特別能力：有人可以飛天，有人可以隱形，有人力氣好大，亦有人可以變身。雖然呢啲係幻想，但我哋每個人喺現實都有自己慢慢練出嚟嘅長處。",
+   "question": "如果可以揀，你最想有邊一種超能力？",
+   "answerPattern": "我最想有{answer}嘅能力。"
+  },
+  {
+   "themeId": "theme-31",
+   "themeNo": 31,
+   "nameZh": "探險家裝備",
+   "words": [
+    "背包",
+    "電筒",
+    "指南針",
+    "地圖"
+   ],
+   "vo": "出發探險之前要先準備好工具。背包用嚟收好物品，天黑可以用電筒，指南針幫手分方向，地圖就幫我哋了解路線。準備得好，探索先可以更安全。",
+   "question": "探險時你最想帶邊一件裝備？",
+   "answerPattern": "探險時我最想帶{answer}。"
+  },
+  {
+   "themeId": "theme-32",
+   "themeNo": 32,
+   "nameZh": "動物訓練師",
+   "words": [
+    "牽繩",
+    "口哨",
+    "狗零食",
+    "梳子"
+   ],
+   "vo": "照顧動物唔只係同佢玩。外出時可以用牽繩保障安全，口哨可以配合訓練，做得好可以用狗零食作獎勵，梳子就幫佢整理毛髮。最重要係耐心同尊重動物。",
+   "question": "你覺得照顧小狗最需要邊一樣？",
+   "answerPattern": "我覺得最需要{answer}。"
+  },
+  {
+   "themeId": "theme-33",
+   "themeNo": 33,
+   "nameZh": "綠色未來能源",
+   "words": [
+    "風力",
+    "太陽能",
+    "水力",
+    "節能"
+   ],
+   "vo": "未來需要更有效咁使用能源。風力可以推動風機發電，陽光可以轉成太陽能，流動嘅水亦可以產生水力；除咗搵新能源，日常節能同樣重要。",
+   "question": "你最想了解邊一種綠色能源概念？",
+   "answerPattern": "我最想了解{answer}。"
+  },
+  {
+   "themeId": "theme-34",
+   "themeNo": 34,
+   "nameZh": "星際移居",
+   "words": [
+    "玻璃罩",
+    "太空船",
+    "太空衣",
+    "新屋企"
+   ],
+   "vo": "如果有一日人類要喺另一個星球生活，就要解決好多問題。太空船負責旅程，太空衣保護身體，基地可能需要玻璃罩或者其他保護結構，最後先可以建立一個適合生活嘅新屋企。",
+   "question": "如果去另一個星球，你最想先準備邊一樣？",
+   "answerPattern": "我最想先準備{answer}。"
+  },
+  {
+   "themeId": "theme-35",
+   "themeNo": 35,
+   "nameZh": "思維魔法",
+   "words": [
+    "開心",
+    "嬲",
+    "勇敢",
+    "驚"
+   ],
+   "vo": "每個人每日都會有唔同感受。有時開心，有時會嬲，遇到陌生或者困難嘅事亦可能會驚。勇敢唔係完全唔驚，而係知道自己有感受之後，仍然一步一步去面對。",
+   "question": "你今日最接近邊一種感受？",
+   "answerPattern": "我今日覺得{answer}。"
+  },
+  {
+   "themeId": "theme-36",
+   "themeNo": 36,
+   "nameZh": "夢想發射台",
+   "words": [
+    "夢想",
+    "願望",
+    "努力",
+    "成功"
+   ],
+   "vo": "夢想可以由一個小小念頭開始。願望話畀我哋知自己想要乜，而努力就係每日向前行一步；成功未必一次就到，但每次嘗試都會令我哋更接近目標。",
+   "question": "你而家最想為邊一樣努力？",
+   "answerPattern": "我想為{answer}努力。"
+  }
+ ],
+ "cards": [
+  {
+   "code": "MEE-001",
+   "cardNumber": 1,
+   "bookNo": 1,
+   "slotNo": 1,
+   "position": "上排第1格",
+   "normalAsset": "✅_1_NORMAL.webp",
+   "flashAsset": "✅_1_FLASH.webp",
+   "art": "夜間花園／橋景，兔仔＋刺蝟",
+   "suggestedTheme": "夜幕低垂",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-002",
+   "cardNumber": 2,
+   "bookNo": 1,
+   "slotNo": 2,
+   "position": "上排第2格",
+   "normalAsset": "✅_2_NORMAL.webp",
+   "flashAsset": "✅_2_FLASH.webp",
+   "art": "霓虹未來城市，主角群",
+   "suggestedTheme": "未來智慧城",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-003",
+   "cardNumber": 3,
+   "bookNo": 1,
+   "slotNo": 3,
+   "position": "上排第3格",
+   "normalAsset": "✅_3_NORMAL.webp",
+   "flashAsset": "✅_3_FLASH.webp",
+   "art": "日間市集／商店，金幣與攤檔",
+   "suggestedTheme": "金錢與商店",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-004",
+   "cardNumber": 4,
+   "bookNo": 1,
+   "slotNo": 4,
+   "position": "下排第1格",
+   "normalAsset": "✅_4_NORMAL.webp",
+   "flashAsset": "✅_4_FLASH.webp",
+   "art": "綠色公園，花草與小徑",
+   "suggestedTheme": "綠色公園",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-005",
+   "cardNumber": 5,
+   "bookNo": 1,
+   "slotNo": 5,
+   "position": "下排第2格",
+   "normalAsset": "✅_5_NORMAL.webp",
+   "flashAsset": "✅_5_FLASH.webp",
+   "art": "黃昏海港／燈塔",
+   "suggestedTheme": "藍天與海洋",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-006",
+   "cardNumber": 6,
+   "bookNo": 1,
+   "slotNo": 6,
+   "position": "下排第3格",
+   "normalAsset": "✅_6_NORMAL.webp",
+   "flashAsset": "✅_6_FLASH.webp",
+   "art": "夜間海港／碼頭",
+   "suggestedTheme": "夜幕低垂",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-007",
+   "cardNumber": 7,
+   "bookNo": 2,
+   "slotNo": 1,
+   "position": "上排第1格",
+   "normalAsset": "✅_7_NORMAL.webp",
+   "flashAsset": "✅_7_FLASH.webp",
+   "art": "日間海邊小鎮／燈塔",
+   "suggestedTheme": "藍天與海洋",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-008",
+   "cardNumber": 8,
+   "bookNo": 2,
+   "slotNo": 2,
+   "position": "上排第2格",
+   "normalAsset": "✅_8_NORMAL.webp",
+   "flashAsset": "✅_8_FLASH.webp",
+   "art": "海底世界／潛水艇",
+   "suggestedTheme": "神秘深海",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-009",
+   "cardNumber": 9,
+   "bookNo": 2,
+   "slotNo": 3,
+   "position": "上排第3格",
+   "normalAsset": "✅_9_NORMAL.webp",
+   "flashAsset": "✅_9_FLASH.webp",
+   "art": "沙灘／度假小屋",
+   "suggestedTheme": "沙灘探索",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-010",
+   "cardNumber": 10,
+   "bookNo": 2,
+   "slotNo": 4,
+   "position": "下排第1格",
+   "normalAsset": "✅_10_NORMAL.webp",
+   "flashAsset": "✅_10_FLASH.webp",
+   "art": "夜間港口／帆船",
+   "suggestedTheme": "探險家裝備",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-011",
+   "cardNumber": 11,
+   "bookNo": 2,
+   "slotNo": 5,
+   "position": "下排第2格",
+   "normalAsset": "✅_11_NORMAL.webp",
+   "flashAsset": "✅_11_FLASH.webp",
+   "art": "日間小鎮街道",
+   "suggestedTheme": "道路英雄",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-012",
+   "cardNumber": 12,
+   "bookNo": 2,
+   "slotNo": 6,
+   "position": "下排第3格",
+   "normalAsset": "✅_12_NORMAL.webp",
+   "flashAsset": "✅_12_FLASH.webp",
+   "art": "日間海港／燈塔",
+   "suggestedTheme": "藍天與海洋",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-013",
+   "cardNumber": 13,
+   "bookNo": 3,
+   "slotNo": 1,
+   "position": "上排第1格",
+   "normalAsset": "✅_13_NORMAL.webp",
+   "flashAsset": "✅_13_FLASH.webp",
+   "art": "日間市集／金幣",
+   "suggestedTheme": "街頭美食",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-014",
+   "cardNumber": 14,
+   "bookNo": 3,
+   "slotNo": 2,
+   "position": "上排第2格",
+   "normalAsset": "✅_14_NORMAL.webp",
+   "flashAsset": "✅_14_FLASH.webp",
+   "art": "黃昏海港街道",
+   "suggestedTheme": "藍天與海洋",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-015",
+   "cardNumber": 15,
+   "bookNo": 3,
+   "slotNo": 3,
+   "position": "上排第3格",
+   "normalAsset": "✅_15_NORMAL.webp",
+   "flashAsset": "✅_15_FLASH.webp",
+   "art": "鄉郊／風車／綠地",
+   "suggestedTheme": "綠色未來能源",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-016",
+   "cardNumber": 16,
+   "bookNo": 3,
+   "slotNo": 4,
+   "position": "下排第1格",
+   "normalAsset": "✅_16_NORMAL.webp",
+   "flashAsset": "✅_16_FLASH.webp",
+   "art": "地下晶石洞穴",
+   "suggestedTheme": "地底秘密",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-017",
+   "cardNumber": 17,
+   "bookNo": 3,
+   "slotNo": 5,
+   "position": "下排第2格",
+   "normalAsset": "✅_17_NORMAL.webp",
+   "flashAsset": "✅_17_FLASH.webp",
+   "art": "日間市集／食物攤檔",
+   "suggestedTheme": "街頭美食",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-018",
+   "cardNumber": 18,
+   "bookNo": 3,
+   "slotNo": 6,
+   "position": "下排第3格",
+   "normalAsset": "✅_18_NORMAL.webp",
+   "flashAsset": "✅_18_FLASH.webp",
+   "art": "日間市集／金幣",
+   "suggestedTheme": "金錢與商店",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-019",
+   "cardNumber": 19,
+   "bookNo": 4,
+   "slotNo": 1,
+   "position": "上排第1格",
+   "normalAsset": "✅_19_NORMAL.webp",
+   "flashAsset": "✅_19_FLASH.webp",
+   "art": "HERO STATION／軌道車站",
+   "suggestedTheme": "軌道交通",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-020",
+   "cardNumber": 20,
+   "bookNo": 4,
+   "slotNo": 2,
+   "position": "上排第2格",
+   "normalAsset": "✅_20_NORMAL.webp",
+   "flashAsset": "✅_20_FLASH.webp",
+   "art": "海邊住宅／小港口",
+   "suggestedTheme": "城市建築物",
+   "confidence": "中"
+  },
+  {
+   "code": "MEE-021",
+   "cardNumber": 21,
+   "bookNo": 4,
+   "slotNo": 3,
+   "position": "上排第3格",
+   "normalAsset": "✅_21_NORMAL.webp",
+   "flashAsset": "✅_21_FLASH.webp",
+   "art": "公園／遊樂場",
+   "suggestedTheme": "綠色公園",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-022",
+   "cardNumber": 22,
+   "bookNo": 4,
+   "slotNo": 4,
+   "position": "下排第1格",
+   "normalAsset": "✅_22_NORMAL.webp",
+   "flashAsset": "✅_22_FLASH.webp",
+   "art": "夜間小鎮街道",
+   "suggestedTheme": "夜幕低垂",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-023",
+   "cardNumber": 23,
+   "bookNo": 4,
+   "slotNo": 5,
+   "position": "下排第2格",
+   "normalAsset": "✅_23_NORMAL.webp",
+   "flashAsset": "✅_23_FLASH.webp",
+   "art": "嘉年華／摩天輪／燈光",
+   "suggestedTheme": "城市聲音",
+   "confidence": "高"
+  },
+  {
+   "code": "MEE-024",
+   "cardNumber": 24,
+   "bookNo": 4,
+   "slotNo": 6,
+   "position": "下排第3格",
+   "normalAsset": "✅_24_NORMAL.webp",
+   "flashAsset": "✅_24_FLASH.webp",
+   "art": "紫色夢幻夜城",
+   "suggestedTheme": "夢想發射台",
+   "confidence": "高"
+  }
+ ],
+ "releases": [
+  {
+   "releaseId": "release-v1-01",
+   "traySlot": 1,
+   "themeId": "theme-01",
+   "nameZh": "軌道交通",
+   "words": [
+    "港鐵",
+    "電車",
+    "火車",
+    "輕鐵"
+   ],
+   "status": "current",
+   "displayOrder": 1,
+   "targetCard": "MEE-019",
+   "bookNo": 4,
+   "slotNo": 1,
+   "activeFrom": null,
+   "activeTo": null
+  },
+  {
+   "releaseId": "release-v1-02",
+   "traySlot": 2,
+   "themeId": "theme-09",
+   "nameZh": "金錢與商店",
+   "words": [
+    "超市",
+    "玩具店",
+    "麵包店",
+    "書店"
+   ],
+   "status": "current",
+   "displayOrder": 2,
+   "targetCard": "MEE-003",
+   "bookNo": 1,
+   "slotNo": 3,
+   "activeFrom": null,
+   "activeTo": null
+  },
+  {
+   "releaseId": "release-v1-03",
+   "traySlot": 3,
+   "themeId": "theme-08",
+   "nameZh": "綠色公園",
+   "words": [
+    "大樹",
+    "小草",
+    "花朵",
+    "長椅"
+   ],
+   "status": "current",
+   "displayOrder": 3,
+   "targetCard": "MEE-004",
+   "bookNo": 1,
+   "slotNo": 4,
+   "activeFrom": null,
+   "activeTo": null
+  },
+  {
+   "releaseId": "release-v1-04",
+   "traySlot": 4,
+   "themeId": "theme-03",
+   "nameZh": "藍天與海洋",
+   "words": [
+    "飛機",
+    "直升機",
+    "輪船",
+    "帆船"
+   ],
+   "status": "carryover",
+   "displayOrder": 4,
+   "targetCard": "MEE-007",
+   "bookNo": 2,
+   "slotNo": 1,
+   "activeFrom": null,
+   "activeTo": null
+  },
+  {
+   "releaseId": "release-v1-05",
+   "traySlot": 5,
+   "themeId": "theme-14",
+   "nameZh": "神秘深海",
+   "words": [
+    "小魚",
+    "章魚",
+    "鯊魚",
+    "海龜"
+   ],
+   "status": "carryover",
+   "displayOrder": 5,
+   "targetCard": "MEE-008",
+   "bookNo": 2,
+   "slotNo": 2,
+   "activeFrom": null,
+   "activeTo": null
+  },
+  {
+   "releaseId": "release-v1-06",
+   "traySlot": 6,
+   "themeId": "theme-19",
+   "nameZh": "沙灘探索",
+   "words": [
+    "沙",
+    "貝殼",
+    "水桶",
+    "太陽帽"
+   ],
+   "status": "carryover",
+   "displayOrder": 6,
+   "targetCard": "MEE-009",
+   "bookNo": 2,
+   "slotNo": 3,
+   "activeFrom": null,
+   "activeTo": null
+  }
+ ]
+}

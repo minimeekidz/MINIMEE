@@ -36,16 +36,25 @@ export interface CollectedCard {
   earnedAt: string | null;
   /** Which theme's fragments made it, when it came from a theme. */
   theme: string | null;
-  /** Which of the four books it belongs in (card_catalog.book_no). */
+  /** Where it lives in the album — fixed metadata, not unlock order. */
   bookNo: number | null;
+  slotNo: number | null;
 }
 
 export interface ThemeTray {
+  traySlot: number;
+  themeId: string;
   theme: string;
-  /** Fragments earned toward the next card in this theme, 0..FRAGMENTS_PER_CARD. */
+  words: string[];
+  status: "current" | "carryover";
+  /** Fragments earned toward this theme's configured card. */
   earned: number;
-  /** Cards already completed in this theme. */
-  cards: CollectedCard[];
+  /** The card this theme pays out — configured, never chosen at run time. */
+  targetCode: string;
+  bookNo: number;
+  slotNo: number;
+  /** True once that card has been forged. */
+  owned: boolean;
 }
 
 export interface Collection {
@@ -63,21 +72,18 @@ export function useCollection(kidCardId: string | null): Collection {
   const refresh = useCallback(async () => {
     if (!supabase || !kidCardId) { setLoading(false); return; }
 
-    const [cardRows, fragmentRows] = await Promise.all([
+    const [cardRows, trayRows] = await Promise.all([
       supabase.from("mee_cards")
-        .select("id, code, name, rarity, art, earned_for, earned_at, theme, book_no")
-        .eq("kid_card_id", kidCardId)
-        .order("earned_at", { ascending: false }),
-      // Fragments carry the lesson they came from, and a lesson carries its
-      // theme — so the tray a fragment belongs in is the lesson's theme
-      // rather than anything stored twice.
-      supabase.from("lesson_fragments")
-        .select("id, lesson_id, spent, room_lessons(theme)")
-        .eq("kid_card_id", kidCardId)
-        .eq("spent", false),
+        .select("id, code, name, rarity, art, earned_for, earned_at, theme, book_no, slot_no")
+        .eq("kid_card_id", kidCardId),
+      // The trays come from the configured releases, in their configured
+      // order. Deriving them from whatever themes the child has fragments
+      // for — and sorting those alphabetically — meant a tray moved position
+      // the moment a new theme arrived.
+      supabase.rpc("active_trays", { p_kid_card_id: kidCardId }),
     ]);
 
-    const collected: CollectedCard[] = (cardRows.data ?? []).map(row => ({
+    setCards((cardRows.data ?? []).map(row => ({
       id: row.id as string,
       code: row.code as string,
       name: row.name as string,
@@ -87,28 +93,21 @@ export function useCollection(kidCardId: string | null): Collection {
       earnedAt: (row.earned_at as string) ?? null,
       theme: (row.theme as string) ?? null,
       bookNo: (row.book_no as number) ?? null,
-    }));
+      slotNo: (row.slot_no as number) ?? null,
+    })));
 
-    const perTheme = new Map<string, number>();
-    for (const row of fragmentRows.data ?? []) {
-      const lesson = (row as { room_lessons?: { theme?: string } | Array<{ theme?: string }> }).room_lessons;
-      const theme = Array.isArray(lesson) ? lesson[0]?.theme : lesson?.theme;
-      if (!theme) continue;
-      perTheme.set(theme, (perTheme.get(theme) ?? 0) + 1);
-    }
-
-    const themes = new Set<string>([...perTheme.keys()]);
-    for (const card of collected) if (card.theme) themes.add(card.theme);
-
-    setCards(collected);
-    setTrays([...themes].sort().map(theme => {
-      const cardsHere = collected.filter(card => card.theme === theme);
-      const fragments = perTheme.get(theme) ?? 0;
-      // `spent` is set by forge_theme_card when it mints a card, so a tray
-      // empties itself and starts filling again rather than looking
-      // permanently full once a theme is finished.
-      return { theme, earned: fragments, cards: cardsHere };
-    }));
+    setTrays(((trayRows.data ?? []) as Record<string, unknown>[]).map(row => ({
+      traySlot: (row.tray_slot as number) ?? 0,
+      themeId: (row.theme_id as string) ?? "",
+      theme: (row.theme_name as string) ?? "",
+      words: Array.isArray(row.words) ? (row.words as string[]) : [],
+      status: (row.status as ThemeTray["status"]) ?? "current",
+      earned: (row.earned as number) ?? 0,
+      targetCode: (row.target_code as string) ?? "",
+      bookNo: (row.book_no as number) ?? 0,
+      slotNo: (row.slot_no as number) ?? 0,
+      owned: Boolean(row.owned),
+    })));
     setLoading(false);
   }, [kidCardId]);
 
@@ -123,8 +122,11 @@ export function useCollection(kidCardId: string | null): Collection {
 export const BOOKS: Array<{ no: number; name: string }> = [
   { no: 1, name: "城市出發" },
   { no: 2, name: "海洋與夜行" },
-  { no: 3, name: "森林與天空" },
-  { no: 4, name: "節日與慶典" },
+  // Books 3 and 4 have no name yet. The product has always said 尚待正式底圖
+  // for them, and inventing one here would put a made-up name on a shelf
+  // that a child reads as real.
+  { no: 3, name: "BOOK 3" },
+  { no: 4, name: "BOOK 4" },
 ];
 
 export interface Book {
@@ -138,27 +140,35 @@ export interface Book {
  * is the point, it is what tells a child there is another card to find.
  */
 export function booksFrom(cards: CollectedCard[]): Book[] {
-  const byCode = new Map(cards.map(card => [card.code, card]));
+  // Keyed by the card's own book and slot, which are fixed product metadata
+  // (Em: 卡號／Book／Slot 為固定). Never by unlock time, and never by
+  // re-deriving the position from the card number — when the numbering is
+  // re-sequenced, only the catalog changes.
+  const at = new Map<string, CollectedCard>();
+  for (const card of cards) {
+    if (card.bookNo && card.slotNo) at.set(`${card.bookNo}:${card.slotNo}`, card);
+  }
   return BOOKS.map(book => ({
     no: book.no,
     name: book.name,
-    slots: Array.from({ length: CARDS_PER_BOOK }, (_, index) => {
-      const number = (book.no - 1) * CARDS_PER_BOOK + index + 1;
-      return byCode.get(`MEE-${String(number).padStart(3, "0")}`) ?? null;
-    }),
+    slots: Array.from({ length: CARDS_PER_BOOK },
+      (_, index) => at.get(`${book.no}:${index + 1}`) ?? null),
   }));
 }
 
-/** Cards outside the printed set — a pet's gift, a task reward. */
+/** Cards with no album position — a pet's gift, a task reward. */
 export function looseCards(cards: CollectedCard[]): CollectedCard[] {
-  return cards.filter(card => !/^MEE-0(0[1-9]|1[0-9]|2[0-4])$/.test(card.code));
+  return cards.filter(card => !card.bookNo || !card.slotNo);
 }
 
-/** Ask the database to turn four fragments into the next card in the set. */
-export async function forgeCard(kidCardId: string, theme: string) {
+/**
+ * Turn four fragments into the card this theme is configured to pay. The
+ * database decides which card that is; nothing here may substitute one.
+ */
+export async function forgeCard(kidCardId: string, themeId: string) {
   if (!supabase) return null;
   const { data } = await supabase.rpc("forge_theme_card", {
-    p_kid_card_id: kidCardId, p_theme: theme,
+    p_kid_card_id: kidCardId, p_theme_id: themeId,
   });
   const row = (Array.isArray(data) ? data[0] : data) as
     { code: string; name: string; rarity: string; art: string } | undefined;

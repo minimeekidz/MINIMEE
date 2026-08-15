@@ -15,7 +15,9 @@ import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
 import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
-import { booksFrom, BOOKS, CARDS_PER_BOOK, looseCards, type CollectedCard } from "./lib/collection";
+import { booksFrom, BOOKS, CARDS_PER_BOOK, looseCards, TRAY_SLOTS, type CollectedCard } from "./lib/collection";
+import themeSeed from "./data/activeTheme.seed.v1.json";
+import themeBook from "./data/themeBook.json";
 import { checkParentPin, closeParentGate, openParentGate, parentGateOpen } from "./lib/parentGate";
 import { classifyWeather, festivalFor, lunarDayNumber, parseLunar } from "./lib/almanac";
 import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
@@ -1082,6 +1084,72 @@ describe("MINIMEE route shells", () => {
     expect(festivalFor(null, null)).toBeNull();
   });
 
+  it("maps every active theme to exactly one configured card", () => {
+    // The seed Em supplied, read back. A theme does not work out which card
+    // it pays — a release row says so — and 軌道交通 paying MEE-019 (BOOK 4,
+    // slot 1) is the case that proves it: the first theme's card is at the
+    // back of the album, so anything that fills the album in order is wrong.
+    const seed = themeSeed as Array<{
+      traySlot: number; themeId: string; themeNameZh: string; words: string[];
+      status: string; displayOrder: number;
+      targetMeeCard: { cardId: string; bookNumber: number; slotNumber: number };
+    }>;
+
+    expect(seed).toHaveLength(TRAY_SLOTS);
+
+    // One theme per tray, one tray per theme, and the display order is the
+    // configured one rather than anything sorted.
+    expect(seed.map(row => row.traySlot)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(seed.map(row => row.displayOrder)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(new Set(seed.map(row => row.themeId)).size).toBe(TRAY_SLOTS);
+    // Alphabetical order is NOT the product order: sorting the names would
+    // move 軌道交通 away from tray 1.
+    const alphabetical = [...seed.map(row => row.themeNameZh)].sort();
+    expect(alphabetical).not.toEqual(seed.map(row => row.themeNameZh));
+
+    // Every theme has exactly four words, because a tray has four pieces.
+    for (const row of seed) expect(row.words, row.themeId).toHaveLength(4);
+
+    // Each theme's card is distinct, and sits where the catalog puts it.
+    expect(new Set(seed.map(row => row.targetMeeCard.cardId)).size).toBe(TRAY_SLOTS);
+    const first = seed.find(row => row.themeId === "theme-01")!;
+    expect(first.themeNameZh).toBe("軌道交通");
+    expect(first.targetMeeCard.cardId).toBe("MEE-019");
+    expect(first.targetMeeCard.bookNumber).toBe(4);
+    expect(first.targetMeeCard.slotNumber).toBe(1);
+
+    // book/slot must agree with the card number, or the album and the
+    // release configuration are telling two different stories.
+    for (const row of seed) {
+      const number = Number(row.targetMeeCard.cardId.slice(4));
+      expect(Math.floor((number - 1) / CARDS_PER_BOOK) + 1, row.targetMeeCard.cardId)
+        .toBe(row.targetMeeCard.bookNumber);
+      expect(((number - 1) % CARDS_PER_BOOK) + 1, row.targetMeeCard.cardId)
+        .toBe(row.targetMeeCard.slotNumber);
+    }
+  });
+
+  it("carries all 36 themes with their unified 3–12 vocabulary", () => {
+    const book = themeBook as {
+      themes: Array<{ themeId: string; themeNo: number; nameZh: string; words: string[]; question: string }>;
+      cards: Array<{ code: string; bookNo: number; slotNo: number }>;
+    };
+
+    expect(book.themes).toHaveLength(36);
+    expect(book.cards).toHaveLength(24);
+
+    for (const theme of book.themes) {
+      // 規則: 每主題詞彙固定 4 個，方便碎片與 quiz.
+      expect(theme.words, theme.themeId).toHaveLength(4);
+      expect(theme.question, theme.themeId).not.toBe("");
+      expect(theme.themeId).toBe(`theme-${String(theme.themeNo).padStart(2, "0")}`);
+    }
+
+    // Every album position is used once — no two cards share a slot.
+    const seats = book.cards.map(card => `${card.bookNo}:${card.slotNo}`);
+    expect(new Set(seats).size).toBe(book.cards.length);
+  });
+
   it("keeps every 碼頭市集 counter pointing at a page that exists", () => {
     // A counter that opens nothing is worse than a counter that is not there:
     // the child walks up, taps, and the world reads as broken.
@@ -1111,24 +1179,41 @@ describe("MINIMEE route shells", () => {
     closeParentGate();
   });
 
-  it("binds the collection into four books of six and leaves the gaps showing", () => {
-    const card = (code: string): CollectedCard => ({
+  it("puts a card in the album slot it was configured for, not where it was earned", () => {
+    // 卡號／Book／Slot 為固定. The album must not reorder itself by unlock
+    // time, and must not re-derive a position from the card number — Em is
+    // re-sequencing the numbering to follow theme order, and when she does,
+    // only the catalog changes.
+    const card = (code: string, bookNo: number | null, slotNo: number | null): CollectedCard => ({
       id: code, code, name: code, rarity: "normal", art: "", earnedFor: "",
-      earnedAt: null, theme: null, bookNo: null,
+      earnedAt: null, theme: null, bookNo, slotNo,
     });
-    const books = booksFrom([card("MEE-001"), card("MEE-008"), card("MEE-999")]);
+
+    // MEE-019 lives in BOOK 4 slot 1 — the theme that pays it out is
+    // 軌道交通, the first theme, and its card is nowhere near the front of
+    // the album. Earning it first must not put it in book 1.
+    const books = booksFrom([
+      card("MEE-019", 4, 1),
+      card("MEE-003", 1, 3),
+      card("gift-01", null, null),
+    ]);
 
     expect(books).toHaveLength(BOOKS.length);
     for (const book of books) expect(book.slots).toHaveLength(CARDS_PER_BOOK);
-    // A card lands in the book its number belongs to, in its own slot.
-    expect(books[0].slots[0]?.code).toBe("MEE-001");
-    expect(books[1].slots[1]?.code).toBe("MEE-008");
-    // An empty slot stays empty rather than closing up: the gap is what tells
-    // a child there is another card to find.
-    expect(books[0].slots[1]).toBeNull();
+    expect(books[3].slots[0]?.code).toBe("MEE-019");
+    expect(books[0].slots[2]?.code).toBe("MEE-003");
+    // Everything else stays an empty slot: the gap is what tells a child
+    // there is another card to find.
+    expect(books[0].slots[0]).toBeNull();
     expect(books[0].slots.filter(Boolean)).toHaveLength(1);
-    // A card from outside the printed set is still theirs, and still shown.
-    expect(looseCards([card("MEE-001"), card("MEE-999")]).map(item => item.code)).toEqual(["MEE-999"]);
+    // A card with no album position is still theirs, and still shown.
+    expect(looseCards([card("MEE-019", 4, 1), card("gift-01", null, null)])
+      .map(item => item.code)).toEqual(["gift-01"]);
+
+    // Books 3 and 4 carry no invented name: the product has always said
+    // 尚待正式底圖 for them.
+    expect(BOOKS[2].name).toBe("BOOK 3");
+    expect(BOOKS[3].name).toBe("BOOK 4");
   });
 
   it("opens every building and marks what is inside it", async () => {
@@ -1150,7 +1235,8 @@ describe("MINIMEE route shells", () => {
   it("shows the fragment trays, the four books and the whole shelf", () => {
     const card = (code: string, rarity: "normal" | "flash" = "normal"): CollectedCard => ({
       id: code, code, name: `卡 ${code}`, rarity, art: "", earnedFor: "",
-      earnedAt: null, theme: "海洋", bookNo: null,
+      earnedAt: null, theme: "海洋",
+      bookNo: 1, slotNo: Number(code.slice(-1)),
     });
 
     const shelf = render(<AllCardsPanel cards={[card("MEE-001"), card("MEE-002", "flash")]} />);
@@ -1163,15 +1249,31 @@ describe("MINIMEE route shells", () => {
     expect(screen.getAllByText("仲未解鎖")).toHaveLength(5);
     books.unmount();
 
-    // A tray with four pieces offers to forge; a half-full one just counts.
+    // A tray with four pieces offers to forge; a half-full one just counts;
+    // one whose card is already made says where it went.
+    const tray = (earned: number, owned = false) => ({
+      traySlot: 1, themeId: "theme-14", theme: "神秘深海",
+      words: ["小魚", "章魚", "鯊魚", "海龜"], status: "current" as const,
+      earned, targetCode: "MEE-008", bookNo: 2, slotNo: 2, owned,
+    });
+
     const ready = render(
-      <TraysPanel trays={[{ theme: "海洋", earned: 4, cards: [] }]} kidCardId="card-1" onForged={() => {}} />);
+      <TraysPanel trays={[tray(4)]} kidCardId="card-1" onForged={() => {}} />);
     expect(screen.getByRole("button", { name: "砌成一張卡" })).toBeInTheDocument();
+    // The four words are on the tray, so a child can see what they are for.
+    expect(screen.getByText("小魚・章魚・鯊魚・海龜")).toBeInTheDocument();
     ready.unmount();
 
-    render(<TraysPanel trays={[{ theme: "海洋", earned: 2, cards: [] }]} kidCardId="card-1" onForged={() => {}} />);
+    const half = render(<TraysPanel trays={[tray(2)]} kidCardId="card-1" onForged={() => {}} />);
     expect(screen.queryByRole("button", { name: "砌成一張卡" })).toBeNull();
     expect(screen.getByText("2 / 4")).toBeInTheDocument();
+    half.unmount();
+
+    // Already forged: no second button, and it names the album slot rather
+    // than counting fragments that have been spent.
+    render(<TraysPanel trays={[tray(0, true)]} kidCardId="card-1" onForged={() => {}} />);
+    expect(screen.queryByRole("button", { name: "砌成一張卡" })).toBeNull();
+    expect(screen.getByText("已砌成 · BOOK 2 第 2 格")).toBeInTheDocument();
   });
 
   it("keeps 小鎮趣聞 and 最新消息 apart on the notice board", () => {

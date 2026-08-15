@@ -2,6 +2,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { organizationSchema, useRouteSeo, useStructuredData } from "./lib/seo";
 import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
 import { AdminLessonsPage } from "./pages/AdminLessonsPage";
+import { AdminThemesPage } from "./pages/AdminThemesPage";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
 import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ThemesPage } from "./pages/ParentPages";
 import { AuthPage } from "./pages/AuthPages";
@@ -82,6 +83,8 @@ export default function App() {
       {/* Room content is the only thing that changes weekly, so it gets a real
           editor rather than one of the generic admin module placeholders. */}
       <Route path="/admin/lessons" element={<ProtectedRoute requireAdmin><AdminLessonsPage /></ProtectedRoute>} />
+      {/* The monthly switch: six rows decide the 碎片拼合室 for every child. */}
+      <Route path="/admin/themes" element={<ProtectedRoute requireAdmin><AdminThemesPage /></ProtectedRoute>} />
       {adminKinds.map(kind => <Route key={kind} path={`/admin/${kind}`} element={<ProtectedRoute requireAdmin><AdminModulePage kind={kind} /></ProtectedRoute>} />)}
       <Route path="*" element={<NotFound />} />
     </Routes>

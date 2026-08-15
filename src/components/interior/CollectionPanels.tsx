@@ -117,10 +117,10 @@ export function TraysPanel({ trays, kidCardId, onForged }: {
   const [busy, setBusy] = useState<string | null>(null);
   const [won, setWon] = useState<{ name: string; art: string; rarity: string } | null>(null);
 
-  async function forge(theme: string) {
+  async function forge(themeId: string) {
     if (!kidCardId) return;
-    setBusy(theme);
-    const card = await forgeCard(kidCardId, theme);
+    setBusy(themeId);
+    const card = await forgeCard(kidCardId, themeId);
     setBusy(null);
     if (card) { setWon(card); onForged(); }
   }
@@ -139,8 +139,12 @@ export function TraysPanel({ trays, kidCardId, onForged }: {
       )}
       <div className="tray-wall">
         {slots.map((tray, index) => (
-          <div className={tray ? "tray" : "tray empty"} key={tray?.theme ?? `slot-${index}`}>
+          <div
+            className={tray ? (tray.owned ? "tray done" : "tray") : "tray empty"}
+            key={tray?.themeId ?? `slot-${index}`}
+          >
             <strong>{tray?.theme ?? "仲未開放"}</strong>
+            {tray && <em className="tray-words">{tray.words.join("・")}</em>}
             <div className="tray-pieces">
               {Array.from({ length: FRAGMENTS_PER_CARD }, (_, piece) => (
                 <span
@@ -150,17 +154,18 @@ export function TraysPanel({ trays, kidCardId, onForged }: {
                 />
               ))}
             </div>
-            {tray && tray.earned >= FRAGMENTS_PER_CARD ? (
+            {tray && !tray.owned && tray.earned >= FRAGMENTS_PER_CARD ? (
               <button
                 type="button"
                 className="tape-button"
-                disabled={busy === tray.theme}
-                onClick={() => void forge(tray.theme)}
-              >{busy === tray.theme ? "砌緊…" : "砌成一張卡"}</button>
+                disabled={busy === tray.themeId}
+                onClick={() => void forge(tray.themeId)}
+              >{busy === tray.themeId ? "砌緊…" : "砌成一張卡"}</button>
             ) : (
               <small>
                 {!tray ? "－"
-                  : `${tray.earned} / ${FRAGMENTS_PER_CARD}${tray.cards.length ? ` · 已砌成 ${tray.cards.length} 張` : ""}`}
+                  : tray.owned ? `已砌成 · BOOK ${tray.bookNo} 第 ${tray.slotNo} 格`
+                  : `${tray.earned} / ${FRAGMENTS_PER_CARD}`}
               </small>
             )}
           </div>
