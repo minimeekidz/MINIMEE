@@ -123,20 +123,31 @@ function RoundBody({ round, onDone }: { round: Round; onDone: () => void }) {
         </p>
       )}
 
-      {/* Tap: pick one. */}
+      {/* Tap: pick one.
+          The option is the sticker Em drew for that word where one exists —
+          「小圖片連文字嘅 Sticker，可以用來選擇答案嘅時候用」. The word stays
+          under it rather than only on it, so the button still reads as a
+          label for a child using a screen reader, and options with no art
+          (numbers, borrowed words) sit in the same row without looking
+          broken. */}
       {round.input === "tap" && (
-        <div className="word-options">
-          {round.options.map(option => (
-            <button
-              key={option}
-              type="button"
-              className={wrong === option ? "word-option wrong" : "word-option"}
-              onClick={() => settle(option, option)}
-            >
-              {option}
-              {wrong === option && <X size={15} />}
-            </button>
-          ))}
+        <div className={round.options.some(option => stickerFor(option))
+          ? "word-options picture" : "word-options"}>
+          {round.options.map(option => {
+            const face = stickerFor(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                className={wrong === option ? "word-option wrong" : "word-option"}
+                onClick={() => settle(option, option)}
+              >
+                {face && <img src={face.src} alt="" />}
+                <span>{option}</span>
+                {wrong === option && <X size={15} />}
+              </button>
+            );
+          })}
         </div>
       )}
 

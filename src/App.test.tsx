@@ -1555,6 +1555,17 @@ describe("MINIMEE route shells", () => {
     expect(clauses.join("")).toBe(rail.vo);
   });
 
+  it("uses Em's word stickers as the answer buttons", () => {
+    // 「我已經生成咗一啲小圖片連文字嘅 Sticker，可以用來選擇答案嘅時候用」.
+    // The picture is the button; the word stays under it so the option is
+    // still labelled for a screen reader and still readable if a word has
+    // no art yet.
+    render(<ThemeGame source={rail} earned={0} age={7} onComplete={() => {}} />);
+    const option = screen.getByRole("button", { name: /港鐵/ });
+    expect(option.querySelector("img")).not.toBeNull();
+    expect(option).toHaveTextContent("港鐵");
+  });
+
   it("earns the fragment on a right answer and costs nothing on a wrong one", () => {
     const earned: number[] = [];
     render(
