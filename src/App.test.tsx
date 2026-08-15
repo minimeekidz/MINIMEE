@@ -15,7 +15,10 @@ import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
 import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
-import { booksFrom, BOOKS, CARDS_PER_BOOK, looseCards, TRAY_SLOTS, type CollectedCard } from "./lib/collection";
+import {
+  booksFrom, BOOKS, CARDS_PER_BOOK, specialCards, themeProgress, THEME_BOOKS,
+  THEME_SLOTS, TRAY_SLOTS, type CollectedCard,
+} from "./lib/collection";
 import themeSeed from "./data/activeTheme.seed.v1.json";
 import themeBook from "./data/themeBook.json";
 import { checkParentPin, closeParentGate, openParentGate, parentGateOpen } from "./lib/parentGate";
@@ -1197,31 +1200,62 @@ describe("MINIMEE route shells", () => {
       earnedAt: null, theme: null, bookNo, slotNo,
     });
 
-    // MEE-019 lives in BOOK 4 slot 1 — the theme that pays it out is
-    // 軌道交通, the first theme, and its card is nowhere near the front of
-    // the album. Earning it first must not put it in book 1.
+    // T10-N is 第 10 主題's normal card, which sits in book 4 — the binder
+    // is three themes a book, so theme 10 opens book 4. Earning it first
+    // must not move it to the front.
     const books = booksFrom([
-      card("MEE-019", 4, 1),
-      card("MEE-003", 1, 3),
-      card("gift-01", null, null),
+      card("T10-N", 4, 1),
+      card("T02-N", 1, 3),
+      card("SP-001", null, null),
     ]);
 
     expect(books).toHaveLength(BOOKS.length);
     for (const book of books) expect(book.slots).toHaveLength(CARDS_PER_BOOK);
-    expect(books[3].slots[0]?.code).toBe("MEE-019");
-    expect(books[0].slots[2]?.code).toBe("MEE-003");
+    expect(books[3].slots[0]?.code).toBe("T10-N");
+    expect(books[0].slots[2]?.code).toBe("T02-N");
     // Everything else stays an empty slot: the gap is what tells a child
     // there is another card to find.
     expect(books[0].slots[0]).toBeNull();
     expect(books[0].slots.filter(Boolean)).toHaveLength(1);
     // A card with no album position is still theirs, and still shown.
-    expect(looseCards([card("MEE-019", 4, 1), card("gift-01", null, null)])
-      .map(item => item.code)).toEqual(["gift-01"]);
+    expect(specialCards([card("T10-N", 4, 1), card("SP-001", null, null)])
+      .map(item => item.code)).toEqual(["SP-001"]);
+  });
 
-    // Books 3 and 4 carry no invented name: the product has always said
-    // 尚待正式底圖 for them.
-    expect(BOOKS[2].name).toBe("BOOK 3");
-    expect(BOOKS[3].name).toBe("BOOK 4");
+  it("keeps 特別回憶 out of the 72 and counts them instead of dividing them", () => {
+    // Em: 「完成率唔應該顯示 0/全部，因為日後會不停新增限定卡，否則小朋友
+    // 會永遠見到未完成」. A denominator that grows every festival is a child
+    // who is permanently behind, so the specials have no denominator at all
+    // and never touch the theme total.
+    const card = (code: string, bookNo: number | null, slotNo: number | null): CollectedCard => ({
+      id: code, code, name: code, rarity: bookNo ? "normal" : "special", art: "",
+      earnedFor: "", earnedAt: null, theme: null, bookNo, slotNo,
+    });
+
+    const held = [
+      card("T01-N", 1, 1), card("T01-F", 1, 2),
+      card("SP-001", null, null), card("SP-005", null, null), card("SP-008", null, null),
+    ];
+
+    // 12 books of six: 36 normal plus 36 flash, and one book a month.
+    expect(BOOKS).toHaveLength(THEME_BOOKS);
+    expect(THEME_SLOTS).toBe(72);
+    expect(BOOKS).toHaveLength(12);
+
+    // Three specials held, and the theme total is untouched by them.
+    expect(specialCards(held)).toHaveLength(3);
+    expect(themeProgress(held)).toEqual({ owned: 2, total: 72 });
+
+    // Adding a whole new page of specials still cannot move the total.
+    const more = [...held, card("SP-009", null, null), card("SP-010", null, null)];
+    expect(themeProgress(more).total).toBe(72);
+    expect(themeProgress(more).owned).toBe(2);
+
+    // A theme's normal and its flash are two cards in two adjacent pockets,
+    // not one card wearing a finish.
+    const books = booksFrom(held);
+    expect(books[0].slots[0]?.code).toBe("T01-N");
+    expect(books[0].slots[1]?.code).toBe("T01-F");
   });
 
   it("opens every building and marks what is inside it", async () => {

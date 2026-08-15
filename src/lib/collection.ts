@@ -31,7 +31,7 @@ export interface CollectedCard {
   id: string;
   code: string;
   name: string;
-  rarity: "normal" | "flash";
+  rarity: "normal" | "flash" | "special";
   art: string;
   earnedFor: string;
   earnedAt: string | null;
@@ -129,19 +129,25 @@ export function useCollection(kidCardId: string | null): Collection {
   return { cards, trays, loading, refresh };
 }
 
+/** Themes to a book. Three themes, each as a 普/閃 pair. */
+export const THEMES_PER_BOOK = 3;
+/** Books in the theme binder. 12 x 6 = 72, and one book per month. */
+export const THEME_BOOKS = 12;
+/** The 72 pockets a child can actually fill by learning. */
+export const THEME_SLOTS = THEME_BOOKS * CARDS_PER_BOOK;
+
 /**
- * The four books in 卡冊珍藏館, six cards each — the structure the album art
- * is drawn for and the one the ops doc's BOOK 1–4 already names.
+ * The theme binder: 12 books of six, each book holding three themes as a
+ * normal/flash pair side by side.
+ *
+ * Books have no names yet. 「第 N 本」 is deliberately plain rather than an
+ * invented title — a made-up name on a shelf is one a child reads as real.
  */
-export const BOOKS: Array<{ no: number; name: string }> = [
-  { no: 1, name: "城市出發" },
-  { no: 2, name: "海洋與夜行" },
-  // Books 3 and 4 have no name yet. The product has always said 尚待正式底圖
-  // for them, and inventing one here would put a made-up name on a shelf
-  // that a child reads as real.
-  { no: 3, name: "BOOK 3" },
-  { no: 4, name: "BOOK 4" },
-];
+export const BOOKS: Array<{ no: number; name: string }> =
+  Array.from({ length: THEME_BOOKS }, (_, index) => ({
+    no: index + 1,
+    name: `第 ${index + 1} 本`,
+  }));
 
 export interface Book {
   no: number;
@@ -154,10 +160,9 @@ export interface Book {
  * is the point, it is what tells a child there is another card to find.
  */
 export function booksFrom(cards: CollectedCard[]): Book[] {
-  // Keyed by the card's own book and slot, which are fixed product metadata
-  // (Em: 卡號／Book／Slot 為固定). Never by unlock time, and never by
-  // re-deriving the position from the card number — when the numbering is
-  // re-sequenced, only the catalog changes.
+  // Keyed by the card's own book and slot, which are fixed product metadata.
+  // Never by unlock time — a normal and its flash are two different cards in
+  // two adjacent pockets, and which one arrives first is not the shelf order.
   const at = new Map<string, CollectedCard>();
   for (const card of cards) {
     if (card.bookNo && card.slotNo) at.set(`${card.bookNo}:${card.slotNo}`, card);
@@ -170,21 +175,60 @@ export function booksFrom(cards: CollectedCard[]): Book[] {
   }));
 }
 
-/** Cards with no album position — a pet's gift, a task reward. */
-export function looseCards(cards: CollectedCard[]): CollectedCard[] {
+/**
+ * 特別回憶 — the specials, and anything else with no pocket in the theme
+ * binder.
+ *
+ * Em's rule: 「唔影響 72 張完成率」. These are counted, never divided:
+ * new limited cards keep being added, so a denominator would grow forever
+ * and a child would see themselves permanently incomplete. The UI says
+ * 「已收藏 7 張特別回憶」, never 7 / 28.
+ */
+export function specialCards(cards: CollectedCard[]): CollectedCard[] {
   return cards.filter(card => !card.bookNo || !card.slotNo);
 }
 
+/** Kept as the old name for callers that have not moved yet. */
+export const looseCards = specialCards;
+
+/** Completion, counting only what a child can finish: the 72 theme pockets. */
+export function themeProgress(cards: CollectedCard[]): { owned: number; total: number } {
+  return {
+    owned: cards.filter(card => card.bookNo && card.slotNo).length,
+    total: THEME_SLOTS,
+  };
+}
+
+export interface ForgedCard { code: string; name: string; rarity: string; art: string }
+
 /**
- * Turn four fragments into the card this theme is configured to pay. The
- * database decides which card that is; nothing here may substitute one.
+ * Finish a theme.
+ *
+ * Returns every card it paid out, which is one or two: the normal always,
+ * and the flash alongside it for an annual member — 「年繳會員：每個完成主題，
+ * 保證獲得 Normal + Flash 雙版本」. The plural matters to the UI: two pockets
+ * lighting together is the moment being sold, and showing one card and then
+ * quietly adding another would throw it away.
+ *
+ * Which cards those are is the database's decision, never this file's.
  */
-export async function forgeCard(kidCardId: string, themeId: string) {
-  if (!supabase) return null;
+export async function forgeCard(kidCardId: string, themeId: string): Promise<ForgedCard[]> {
+  if (!supabase) return [];
   const { data } = await supabase.rpc("forge_theme_card", {
     p_kid_card_id: kidCardId, p_theme_id: themeId,
   });
-  const row = (Array.isArray(data) ? data[0] : data) as
-    { code: string; name: string; rarity: string; art: string } | undefined;
-  return row ?? null;
+  return (Array.isArray(data) ? data : data ? [data] : []) as ForgedCard[];
+}
+
+/**
+ * 「升級年費，即時點亮你已完成主題嘅閃耀收藏」.
+ *
+ * Call after an upgrade lands. Returns how many flash cards lit up, so the
+ * screen can name a number instead of saying a vague well done. Safe to call
+ * twice — every grant underneath is idempotent, and a second call returns 0.
+ */
+export async function backfillFlash(kidCardId: string): Promise<number> {
+  if (!supabase) return 0;
+  const { data } = await supabase.rpc("backfill_flash", { p_kid_card_id: kidCardId });
+  return typeof data === "number" ? data : 0;
 }

@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { FRAGMENTS_PER_CARD } from "../../lib/rooms";
-import { booksFrom, forgeCard, looseCards, TRAY_SLOTS, type CollectedCard, type ThemeTray } from "../../lib/collection";
+import {
+  booksFrom, forgeCard, specialCards, themeProgress, TRAY_SLOTS,
+  type CollectedCard, type ForgedCard, type ThemeTray,
+} from "../../lib/collection";
 
 // The three ways the 珍藏館 shows a collection.
 
@@ -42,7 +45,8 @@ export function AllCardsPanel({ cards }: { cards: CollectedCard[] }) {
  */
 export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
   const books = useMemo(() => booksFrom(cards), [cards]);
-  const loose = useMemo(() => looseCards(cards), [cards]);
+  const specials = useMemo(() => specialCards(cards), [cards]);
+  const progress = useMemo(() => themeProgress(cards), [cards]);
   const [open, setOpen] = useState(1);
 
   const book = books.find(candidate => candidate.no === open) ?? books[0];
@@ -50,6 +54,10 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
 
   return (
     <>
+      <p className="collection-count">
+        主題收藏 <strong>{progress.owned}</strong> / {progress.total}
+      </p>
+
       <div className="book-spines">
         {books.map(candidate => (
           <button
@@ -58,7 +66,7 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
             className={candidate.no === book.no ? "book-spine on" : "book-spine"}
             onClick={() => setOpen(candidate.no)}
           >
-            <span>BOOK {candidate.no} · {candidate.name}</span>
+            <span>{candidate.name}</span>
             <small>{candidate.slots.filter(Boolean).length} / {candidate.slots.length}</small>
           </button>
         ))}
@@ -81,21 +89,34 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
         </div>
       </div>
 
-      {loose.length > 0 && (
-        <div className="book-spread">
-          {/* A card a pet gave you is still yours, and hiding it because it is
-              not in the printed set would be the wrong lesson entirely. */}
-          <h3>其他收藏<em>{loose.length}</em></h3>
-          <div className="book-grid">
-            {loose.map(card => (
-              <figure className={card.rarity === "flash" ? "book-slot flash" : "book-slot"} key={card.id}>
-                <img src={card.art} alt="" />
-                <figcaption><strong>{card.name}</strong><small>{card.code}</small></figcaption>
-              </figure>
-            ))}
-          </div>
+      {/* 特別回憶.
+          Counted, never divided. Em: 「完成率唔應該顯示 0/全部，因為日後會
+          不停新增限定卡，否則小朋友會永遠見到未完成」— a denominator that
+          keeps growing is a child who is permanently behind, so there is no
+          denominator. The two empty pockets are there to say more exist, not
+          to measure anything. */}
+      <div className="book-spread specials">
+        <h3>特別回憶<em>已收藏 {specials.length} 張</em></h3>
+        <p className="panel-note">
+          特別回憶係喺特別時刻先攞到嘅，唔計入主題收藏。
+        </p>
+        <div className="book-grid">
+          {specials.map(card => (
+            <figure className="book-slot special" key={card.id}>
+              <img src={card.art} alt="" />
+              <figcaption><strong>{card.name}</strong><small>{card.code}</small></figcaption>
+            </figure>
+          ))}
+          {/* Two hints of what is out there. Deliberately not a full grid of
+              everything unearned: a wall of locks reads as failure. */}
+          {[0, 1].map(index => (
+            <div className="book-slot locked" key={`locked-${index}`}>
+              <span aria-hidden>🔒</span>
+              <small>仲有特別回憶等緊你</small>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </>
   );
 }
@@ -115,25 +136,33 @@ export function TraysPanel({ trays, kidCardId, onForged }: {
 }) {
   const slots = Array.from({ length: TRAY_SLOTS }, (_, index) => trays[index] ?? null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [won, setWon] = useState<{ name: string; art: string; rarity: string } | null>(null);
+  // Plural on purpose. An annual member gets the normal and the flash from
+  // one completion, and the two pockets lighting together is the moment
+  // being sold — showing one and quietly adding the other throws it away.
+  const [won, setWon] = useState<ForgedCard[]>([]);
 
   async function forge(themeId: string) {
     if (!kidCardId) return;
     setBusy(themeId);
-    const card = await forgeCard(kidCardId, themeId);
+    const cards = await forgeCard(kidCardId, themeId);
     setBusy(null);
-    if (card) { setWon(card); onForged(); }
+    if (cards.length > 0) { setWon(cards); onForged(); }
   }
 
   return (
     <>
       <p className="collection-count">四塊碎片砌成一張 MEE 卡。</p>
-      {won && (
+      {won.length > 0 && (
         <div className="forged-card">
-          <img src={won.art} alt="" />
+          {won.map(card => (
+            <img className={card.rarity === "flash" ? "flash" : undefined}
+              src={card.art} alt="" key={card.code} />
+          ))}
           <div>
             <strong>砌好喇！</strong>
-            <p>{won.name}{won.rarity === "flash" && <em> · 閃卡！</em>}</p>
+            {won.length > 1
+              ? <p>{won[0].name} —— <em>年繳雙版本，普通版同閃耀版一齊到手 ✨</em></p>
+              : <p>{won[0].name}{won[0].rarity === "flash" && <em> · 閃卡！</em>}</p>}
           </div>
         </div>
       )}

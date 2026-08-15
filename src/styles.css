@@ -1348,3 +1348,12 @@ footer div { display: flex; gap: 20px; }
 .admin-new-release { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
 .admin-new-release label { display: grid; gap: 4px; font-size: 11px; font-weight: 800; }
 .admin-new-release select { min-width: 190px; padding: 9px 11px; border: 2px solid var(--line); border-radius: 10px; font: inherit; }
+
+/* 特別回憶 — counted, not divided. The locked slot is a hint that more
+   exist, not a measure of how far behind you are, so there are two of them
+   rather than a full grid: a wall of padlocks reads as failure. */
+.book-spread.specials h3 em { color: var(--violet-dark); font-weight: 900; }
+.book-slot.special { border-color: var(--violet-dark); background: #f6f1ff; }
+.book-slot.locked { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 3px dashed #bdb3d4; border-radius: 8px; background: #efeaf8; color: #8a7fa8; text-align: center; }
+.book-slot.locked span { font-size: 26px; filter: blur(0.4px); opacity: .65; }
+.book-slot.locked small { font-size: 10px; font-weight: 800; }
