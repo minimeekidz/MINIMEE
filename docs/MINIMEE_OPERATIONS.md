@@ -1030,6 +1030,31 @@ arrive, `extract-grid.mjs` produces them and only the lookup in
 Original PNGs are never committed — git keeps every version of a binary
 forever, and the uploads ran 25-27 MB a batch against ~3 MB converted.
 
+### 2026-08-16 status
+
+- **Deployed.** `main` carries everything (PRs #30, #31) and the Cloudflare
+  deploy job reports success on `70149ca`. The sandbox cannot reach
+  `minimee.me`, so that is the job's word rather than a page I loaded —
+  worth one look before believing it.
+- `/` is the game's title screen now; the old marketing page is unrouted,
+  and `/pricing` and `/faq` remain for a parent who is sent there.
+- 144 theme-vocabulary stickers are in `src/assets/stickers/theme/`.
+- Demo affection was addable on every tap and is now once a day per pet,
+  matching what the server has always enforced for real cards.
+
+### Still open for Em
+
+- **Backgrounds with large pets painted in.** The child is drawn at 18% of
+  the screen instead of 12.5%, which closes most of the gap, but a pet
+  painted into a scene cannot be out-scaled. Cleanly erasing them needs an
+  image model rather than a crop, so the honest fix is regenerating those
+  scenes without the animals.
+- Flash is **not** taken back when a subscription lapses. Recommended and
+  implemented that way; say so if it should change.
+- Special cards SP-001…SP-008 are wired to 18 themes / 36 themes / 一周年 /
+  first friend / 新年 / 中秋 / pet Lv12 / birthday. Her longer list has more
+  occasions than there are pockets on the two pages.
+
 ### Known open items
 
 - Supabase advisor: **leaked-password protection is disabled**. Turn it on
