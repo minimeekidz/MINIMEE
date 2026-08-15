@@ -13,6 +13,7 @@ import { ChildProfileLanding } from "./pages/ChildProfileLanding";
 import { KidCardEditorPage } from "./pages/KidCardEditorPage";
 import { KidPlayPage } from "./pages/KidPlayPage";
 import { RoomPage } from "./pages/RoomPage";
+import { InteriorPage } from "./pages/InteriorPage";
 import { PixelWorldPage } from "./pages/PixelWorldPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -54,6 +55,9 @@ export default function App() {
       <Route path="/parent/children/:id/card" element={<ProtectedRoute><KidCardEditorPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/play" element={<ProtectedRoute><KidPlayPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/room/:roomId" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
+      {/* The buildings in MEE 世界. A lesson room is /room/:id; a place you
+          walk into — the 珍藏館, Hero Studio, the café, 我的小屋 — is here. */}
+      <Route path="/parent/children/:id/inside/:roomId" element={<ProtectedRoute><InteriorPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/themes" element={<ProtectedRoute><ThemesPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/subscription" element={<ProtectedRoute><SubscriptionStatesPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />

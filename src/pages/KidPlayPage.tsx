@@ -5,6 +5,10 @@ import { GameWorld } from "../components/GameWorld";
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
 import { useRooms } from "../lib/rooms";
+import { INTERIORS, stallRoute, WHARF_STALLS } from "../lib/interiors";
+import { InteriorPanel } from "../components/InteriorScene";
+import { NoticeBoardPanel } from "../components/interior/HomePanels";
+import { useTownNews } from "../lib/townNews";
 
 // MEE 世界. Children never have their own login (ops doc section 2), so this
 // lives behind the parent's session: the parent opens it and hands over the
@@ -21,6 +25,11 @@ export function KidPlayPage() {
   // room's door rather than at the middle of town.
   const [params] = useSearchParams();
   const returningFrom = params.get("from");
+  // Coming back out of a building: the zone to open in, so the child steps
+  // out where they went in rather than in the middle of town.
+  const startZone = params.get("zone");
+  const [board, setBoard] = useState(false);
+  const { news } = useTownNews();
   const child = children.find(candidate => candidate.id === childId);
 
   const [card, setCard] = useState<EditableCard | null>(null);
@@ -59,12 +68,29 @@ export function KidPlayPage() {
     </Shell>;
   }
 
-  return <GameWorld
-    heroId={card.heroId}
-    cardId={card.id}
-    returningFrom={returningFrom}
-    doneRooms={rooms.filter(room => room.earned).map(room => room.id)}
-    onEnterRoom={roomId => navigate(`/parent/children/${child.id}/room/${roomId}`)}
-    onExit={() => navigate(`/parent/children/${child.id}`)}
-  />;
+  return <>
+    <GameWorld
+      heroId={card.heroId}
+      cardId={card.id}
+      returningFrom={returningFrom}
+      startZone={startZone}
+      doneRooms={rooms.filter(room => room.earned).map(room => room.id)}
+      // A door in the world leads to that building's own page; the lesson
+      // rooms are reached from inside Hero Studio, not off the street.
+      onEnterRoom={roomId => navigate(INTERIORS[roomId]
+        ? `/parent/children/${child.id}/inside/${roomId}`
+        : `/parent/children/${child.id}/room/${roomId}`)}
+      onEnterStall={stallId => {
+        const stall = WHARF_STALLS.find(candidate => candidate.id === stallId);
+        if (stall) navigate(stallRoute(stall, child.id));
+      }}
+      onReadBoard={() => setBoard(true)}
+      onExit={() => navigate(`/parent/children/${child.id}`)}
+    />
+    {board && (
+      <InteriorPanel title="公告板" onClose={() => setBoard(false)}>
+        <NoticeBoardPanel news={news} />
+      </InteriorPanel>
+    )}
+  </>;
 }

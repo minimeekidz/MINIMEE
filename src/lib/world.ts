@@ -27,7 +27,7 @@ import { WALK_MASKS, type WalkMask } from "./walkmask";
 // and 最新消息 live behind one, and they are kept apart there: a parent who
 // cannot tell a made-up pet story from a real announcement stops trusting
 // both.
-export type HotspotKind = "door" | "gate" | "board";
+export type HotspotKind = "door" | "gate" | "board" | "stall";
 
 export interface Hotspot {
   id: string;
@@ -142,28 +142,20 @@ export const ZONES: Record<string, Zone> = {
     spawn: { x: 0.470, y: 0.850 },
     hotspots: [
       { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.470, y: 0.980, target: "town-centre" },
+      // The five counters Em labelled on the annotated map. Each opens a page
+      // that already exists — the market is a way in, not a new set of
+      // screens for the same jobs.
+      { id: "s-card-desk", kind: "stall", label: "管理自我介紹卡", x: 0.260, y: 0.600, target: "card-desk" },
+      { id: "s-new-child", kind: "stall", label: "新增孩子檔案", x: 0.470, y: 0.500, target: "new-child" },
+      { id: "s-harbour", kind: "stall", label: "付款訂閱", x: 0.680, y: 0.600, target: "harbour" },
+      { id: "s-lost", kind: "stall", label: "認領失物區", x: 0.720, y: 0.630, target: "lost" },
+      { id: "s-security", kind: "stall", label: "保安", x: 0.470, y: 0.720, target: "security" },
     ],
   },
 };
 
 export const START_ZONE = "town-centre";
 
-/**
- * The four counters in 碼頭市集, measured off the art and verified to stand on
- * walkable ground.
- *
- * They are not hotspots yet, deliberately. Em marked which stall carries
- * which parent service on an annotated copy of the map that is not in the
- * repository, and a counter that opens nothing is worse than a counter that
- * is not there — the child (or parent) walks up, taps, and the world feels
- * broken. Give each one a `route` and move them into the zone's hotspots.
- */
-export const WHARF_STALLS: Array<{ id: string; label: string; x: number; y: number; route?: string }> = [
-  { id: "s-left", label: "左邊攤檔（畫桌）", x: 0.260, y: 0.600 },
-  { id: "s-mid", label: "中間攤檔", x: 0.470, y: 0.500 },
-  { id: "s-right", label: "港務台（船長櫃檯）", x: 0.680, y: 0.600 },
-  { id: "s-corner", label: "角落座位（報紙）", x: 0.720, y: 0.630 },
-];
 
 /** Interior art, used by the page a door leads into. */
 export const ROOM_ART: Record<string, string> = {
@@ -219,7 +211,18 @@ export function isDaytime(now: Date = new Date()): boolean {
   return hour >= 6 && hour < 18;
 }
 
+/**
+ * Dawn, for the one zone that has art for it. A narrow window on purpose:
+ * 小屋區入口 is where the child's own house is, so catching it at first light
+ * should feel like catching it, not like a third of the day.
+ */
+export function isDawn(now: Date = new Date()): boolean {
+  const hour = now.getHours();
+  return hour >= 5 && hour < 7;
+}
+
 export function zoneBackground(zone: Zone, now?: Date): string {
+  if (zone.dawn && isDawn(now)) return zone.dawn;
   return isDaytime(now) ? zone.day : zone.night;
 }
 

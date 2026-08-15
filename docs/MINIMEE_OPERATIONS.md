@@ -579,6 +579,62 @@ everything else — see 7e-i. Until the packs are filled, a sticker renders as
 a paper chip with the word on it; nothing is broken and no placeholder
 artwork is invented.
 
+### 7d-0. The buildings and what is inside them
+
+Five outdoor zones you walk around, nine interiors you step into. The routing
+is Em's, traced off the annotated maps in `public/assets/uploads/場景/`:
+
+| 由 | 去 | 點樣 |
+|---|---|---|
+| 小鎮中心 | Buddy Café / Hero Studio / MEE 珍藏館 | 門 |
+| 小鎮中心 | 碼頭市集（要船飛）/ 小鎮廣場 | 閘 |
+| 小鎮廣場 | 公告板 | 睇板 |
+| 小鎮廣場 | 散步公園（左）/ 小屋區入口（右拱門）| 閘 |
+| 散步公園 | 小屋區入口（上閘）| 閘 |
+| 小屋區入口 | 我的小屋（左邊屋）| 門 |
+| MEE 珍藏館主廳 | 卡冊珍藏館（右）/ 碎片拼合室（左）| 通道 |
+| Hero Studio | MEE 圖書館（右）/ 戲院大堂（左）| 通道 |
+| 戲院大堂 | 戲院廳 | 入場 |
+
+**Interiors are not walked around.** Em's rule is 原位入口原位出口: one
+picture, the things you came for marked on it, and a door back to exactly
+where you came in. Only outdoor zones carry a walk mask. A room's exit is
+part of its definition (`src/lib/interiors.ts`), not browser history —
+history sends a child who deep-linked into the 戲院 back to wherever they
+were before, which may be nowhere in the world.
+
+**What each building does**, from the labels Em wrote on the maps:
+
+- **MEE 珍藏館主廳** — every card the child owns, one tap, no filters.
+- **卡冊珍藏館** — the printed set: four books of six, gaps left visible.
+  The empty slot is the point; it is what says there is another card to find.
+- **碎片拼合室** — nine trays, four fragments to a card. Nine because three
+  themes rotate monthly and a half-finished tray has to keep sitting there.
+- **Hero Studio** — 今期詞語. **圖書館** — 過往詞語重溫, review only, no
+  second fragment. **戲院大堂** — the posters are the real lesson themes and
+  the 買飛 counter picks one; **戲院廳** plays it.
+- **Buddy Café** — 好友掃 code, and nothing else. No walking inside.
+- **我的小屋** — 關於我（卡片）, 更新我的卡片, 我的好友冊.
+- **碼頭市集** — the parents' entrance, behind the 船飛 (the existing parent
+  PIN). Five counters: 管理自我介紹卡／上載影片與相片, 新增孩子檔案,
+  付款訂閱, 認領失物區／開啟遺失模式, 保安／條例規則.
+
+**公告板 keeps 小鎮趣聞 and 最新消息 apart, and this is not cosmetic.**
+趣聞 are invented pet stories and are labelled as such; 最新消息 is MINIMEE
+speaking. A parent who cannot tell one from the other stops believing both,
+so `town_news.kind` is `not null` and the two render in separate sections
+with different colours and different words.
+
+**神秘獎勵 (MR01)** rolls once a day, on the day's first interaction that
+actually pays a point — the workbook's anti-farm rule. It is enforced by a
+primary key on `(kid_card_id, rolled_on)` rather than by a check, so a repeat
+tap loses the insert and gets nothing. 10%, with a guaranteed win on the 8th
+consecutive dry day. The pool is Em's 雙人 pose cards, 31 of them.
+
+**Fragments become cards in the database** (`forge_theme_card`), not in the
+browser: the four fragments are marked spent inside the same statement that
+reads them, so two taps cannot mint two cards off the same four.
+
 ### 7d. MEE 世界 — a town you walk around
 
 The world is **four full-screen maps joined by gates**, and the map is drawn

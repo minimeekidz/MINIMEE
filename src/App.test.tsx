@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground } from "./lib/world";
+import { arrivalPoint, hotspotNear, isDaytime, isDawn, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground } from "./lib/world";
 import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
 import { actionVo } from "./data/petActionVo";
@@ -14,6 +14,11 @@ import { ageFrom, ageLabel } from "./lib/age";
 import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
 import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
+import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
+import { booksFrom, BOOKS, CARDS_PER_BOOK, looseCards, type CollectedCard } from "./lib/collection";
+import { checkParentPin, closeParentGate, openParentGate, parentGateOpen } from "./lib/parentGate";
+import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
+import { NoticeBoardPanel } from "./components/interior/HomePanels";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -871,6 +876,23 @@ describe("MINIMEE route shells", () => {
     expect(isDaytime(new Date("2026-08-14T21:00:00"))).toBe(false);
     expect(zoneBackground(town, new Date("2026-08-14T09:00:00"))).toBe(town.day);
     expect(zoneBackground(town, new Date("2026-08-14T21:00:00"))).toBe(town.night);
+
+    // 小屋區入口 is the only zone Em drew at dawn, and the window is narrow so
+    // catching it feels like catching it.
+    const gate = ZONES["village-gate"];
+    expect(gate.dawn).toBeDefined();
+    expect(isDawn(new Date("2026-08-14T05:30:00"))).toBe(true);
+    expect(isDawn(new Date("2026-08-14T09:00:00"))).toBe(false);
+    expect(zoneBackground(gate, new Date("2026-08-14T05:30:00"))).toBe(gate.dawn);
+    expect(zoneBackground(gate, new Date("2026-08-14T09:00:00"))).toBe(gate.day);
+    // Everywhere else goes straight from night to day at the same hour.
+    expect(zoneBackground(town, new Date("2026-08-14T05:30:00"))).toBe(town.night);
+
+    // Every interior in the map has art, and every art file has a room.
+    for (const interior of Object.values(INTERIORS)) {
+      expect(ROOM_ART[interior.id], `${interior.id} missing from ROOM_ART`).toBe(interior.art);
+    }
+    expect(Object.keys(ROOM_ART).sort()).toEqual(Object.keys(INTERIORS).sort());
   });
 
   it("only offers a door when the child is standing at it", () => {
@@ -931,6 +953,151 @@ describe("MINIMEE route shells", () => {
     // 碼頭市集 is the parents' entrance and must stay flagged as one.
     expect(ZONES["wharf-market"].parentsOnly).toBe(true);
     expect(ZONES["town-centre"].parentsOnly).toBeUndefined();
+  });
+
+  it("puts every building's exit back where the child came in", () => {
+    // 原位入口原位出口. A room's way out is part of its definition rather than
+    // browser history, because history sends a child who deep-linked into the
+    // 戲院 back to whatever page they were on before — possibly nowhere in
+    // the world at all.
+    for (const interior of Object.values(INTERIORS)) {
+      const back = interior.back;
+      if (back.kind === "zone") {
+        expect(ZONES[back.target], `${interior.id} exits to a missing zone`).toBeDefined();
+        // The zone it exits into must actually have a door back in, or the
+        // child steps outside and cannot get back.
+        expect(
+          ZONES[back.target].hotspots.some(spot => spot.kind === "door" && spot.target === interior.id),
+          `${back.target} has no door to ${interior.id}`,
+        ).toBe(true);
+      } else {
+        expect(INTERIORS[back.target], `${interior.id} exits to a missing room`).toBeDefined();
+        expect(
+          INTERIORS[back.target].spots.some(spot => spot.kind === "room" && spot.target === interior.id),
+          `${back.target} has no way into ${interior.id}`,
+        ).toBe(true);
+      }
+    }
+
+    // The wings hang off their halls exactly as Em drew them.
+    expect(INTERIORS["album-books"].back.target).toBe("album-hall");
+    expect(INTERIORS["fragment-room"].back.target).toBe("album-hall");
+    expect(INTERIORS["library"].back.target).toBe("studio");
+    expect(INTERIORS["cinema-lobby"].back.target).toBe("studio");
+    expect(INTERIORS["cinema-hall"].back.target).toBe("cinema-lobby");
+    // 我的小屋 is off 小屋區入口, not off the town.
+    expect(INTERIORS["my-home"].back.target).toBe("village-gate");
+  });
+
+  it("keeps every 碼頭市集 counter pointing at a page that exists", () => {
+    // A counter that opens nothing is worse than a counter that is not there:
+    // the child walks up, taps, and the world reads as broken.
+    const routes = new Set([
+      "/parent/children/:id/card", "/parent/dashboard",
+      "/parent/children/:id/subscription", "/parent/children/:id/lost-items",
+      "/parent/privacy",
+    ]);
+    for (const stall of WHARF_STALLS) {
+      expect(routes.has(stall.route), `${stall.id} → ${stall.route}`).toBe(true);
+      expect(stallRoute(stall, "child-1")).not.toContain(":id");
+    }
+    // Every counter on the map has a definition behind it.
+    for (const spot of ZONES["wharf-market"].hotspots) {
+      if (spot.kind !== "stall") continue;
+      expect(WHARF_STALLS.some(stall => stall.id === spot.target), spot.id).toBe(true);
+    }
+  });
+
+  it("asks for the 船飛 before letting anyone into 碼頭市集", () => {
+    closeParentGate();
+    expect(parentGateOpen()).toBe(false);
+    expect(checkParentPin("0000")).toBe(false);
+    expect(checkParentPin("2468")).toBe(true);
+    openParentGate();
+    expect(parentGateOpen()).toBe(true);
+    closeParentGate();
+  });
+
+  it("binds the collection into four books of six and leaves the gaps showing", () => {
+    const card = (code: string): CollectedCard => ({
+      id: code, code, name: code, rarity: "normal", art: "", earnedFor: "",
+      earnedAt: null, theme: null, bookNo: null,
+    });
+    const books = booksFrom([card("MEE-001"), card("MEE-008"), card("MEE-999")]);
+
+    expect(books).toHaveLength(BOOKS.length);
+    for (const book of books) expect(book.slots).toHaveLength(CARDS_PER_BOOK);
+    // A card lands in the book its number belongs to, in its own slot.
+    expect(books[0].slots[0]?.code).toBe("MEE-001");
+    expect(books[1].slots[1]?.code).toBe("MEE-008");
+    // An empty slot stays empty rather than closing up: the gap is what tells
+    // a child there is another card to find.
+    expect(books[0].slots[1]).toBeNull();
+    expect(books[0].slots.filter(Boolean)).toHaveLength(1);
+    // A card from outside the printed set is still theirs, and still shown.
+    expect(looseCards([card("MEE-001"), card("MEE-999")]).map(item => item.code)).toEqual(["MEE-999"]);
+  });
+
+  it("opens every building and marks what is inside it", async () => {
+    // Each room is one picture with its functions marked on it. If a marker
+    // stops rendering the room becomes a dead end that still looks fine.
+    for (const interior of Object.values(INTERIORS)) {
+      const view = render(
+        <MemoryRouter initialEntries={[`/parent/children/demo-child-01/inside/${interior.id}`]}>
+          <App />
+        </MemoryRouter>,
+      );
+      // The scene waits on its art; jsdom never fires load, so the loading
+      // screen is what a real child sees first and is worth asserting on.
+      expect(await screen.findByRole("status")).toHaveTextContent(interior.name);
+      view.unmount();
+    }
+  });
+
+  it("shows the fragment trays, the four books and the whole shelf", () => {
+    const card = (code: string, rarity: "normal" | "flash" = "normal"): CollectedCard => ({
+      id: code, code, name: `卡 ${code}`, rarity, art: "", earnedFor: "",
+      earnedAt: null, theme: "海洋", bookNo: null,
+    });
+
+    const shelf = render(<AllCardsPanel cards={[card("MEE-001"), card("MEE-002", "flash")]} />);
+    expect(screen.getByText("MEE-001")).toBeInTheDocument();
+    expect(screen.getByText(/其中 1 張閃卡/)).toBeInTheDocument();
+    shelf.unmount();
+
+    const books = render(<BooksPanel cards={[card("MEE-001")]} />);
+    // Five of the six slots in the first book are still empty, and they say so.
+    expect(screen.getAllByText("仲未解鎖")).toHaveLength(5);
+    books.unmount();
+
+    // A tray with four pieces offers to forge; a half-full one just counts.
+    const ready = render(
+      <TraysPanel trays={[{ theme: "海洋", earned: 4, cards: [] }]} kidCardId="card-1" onForged={() => {}} />);
+    expect(screen.getByRole("button", { name: "砌成一張卡" })).toBeInTheDocument();
+    ready.unmount();
+
+    render(<TraysPanel trays={[{ theme: "海洋", earned: 2, cards: [] }]} kidCardId="card-1" onForged={() => {}} />);
+    expect(screen.queryByRole("button", { name: "砌成一張卡" })).toBeNull();
+    expect(screen.getByText("2 / 4")).toBeInTheDocument();
+  });
+
+  it("keeps 小鎮趣聞 and 最新消息 apart on the notice board", () => {
+    // A parent who cannot tell an invented pet story from a real product
+    // announcement stops believing either of them.
+    render(<NoticeBoardPanel news={[
+      { id: "a", kind: "announcement", title: "新主題開放", body: "海洋主題今日開始。", publishedAt: "2026-08-14T00:00:00Z" },
+      { id: "f", kind: "fun", title: "企鵝跌咗雪糕", body: "海浪企鵝今朝喺廣場跌咗個雪糕。", publishedAt: "2026-08-14T00:00:00Z" },
+    ]} />);
+
+    expect(screen.getByText("最新消息")).toBeInTheDocument();
+    expect(screen.getByText("MINIMEE 官方")).toBeInTheDocument();
+    // The 趣聞 section says in as many words that it is made up.
+    expect(screen.getByText(/唔係真事/)).toBeInTheDocument();
+    // And the two never share a container.
+    const fun = screen.getByText("企鵝跌咗雪糕").closest(".notice-section");
+    const real = screen.getByText("新主題開放").closest(".notice-section");
+    expect(fun).not.toBe(real);
+    expect(fun).toHaveClass("fun");
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {

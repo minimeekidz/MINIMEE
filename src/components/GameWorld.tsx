@@ -4,6 +4,7 @@ import { PET_WISHES, WISH_MS } from "../lib/petFriends";
 import { petsForZone } from "../lib/petSpawn";
 import { usePetFriends } from "../lib/petStore";
 import { useFullscreen } from "../lib/fullscreen";
+import { checkParentPin, openParentGate, parentGateOpen } from "../lib/parentGate";
 import { PetEncounter } from "./PetEncounter";
 import {
   arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ZONE, START_ZONE,
@@ -70,18 +71,32 @@ export interface GameWorldProps {
    *  public demo, where the pets still talk but nothing is kept. */
   cardId?: string | null;
   onEnterRoom: (roomId: string) => void;
+  /** A market counter, which opens one of the parent pages. */
+  onEnterStall?: (stallId: string) => void;
+  /** The 公告板, which opens in place rather than leading anywhere. */
+  onReadBoard?: () => void;
+  /** Zone to open in, when coming back out of a building. */
+  startZone?: string | null;
   onExit?: () => void;
 }
 
-export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null, onEnterRoom, onExit }: GameWorldProps) {
+export function GameWorld({
+  heroId, doneRooms = [], returningFrom, cardId = null, startZone = null,
+  onEnterRoom, onEnterStall, onReadBoard, onExit,
+}: GameWorldProps) {
   const hero = findHero(heroId);
 
   // Coming out of a room starts in that room's own zone, standing at its door.
   const openedAt = useRef<{ zone: string; from: { room?: string; zone?: string } }>({
-    zone: (returningFrom && ROOM_ZONE[returningFrom]) || "town",
+    zone: (startZone && ZONES[startZone] ? startZone : null)
+      ?? (returningFrom && ROOM_ZONE[returningFrom]) ?? START_ZONE,
     from: returningFrom ? { room: returningFrom } : {},
   });
   const [zoneId, setZoneId] = useState(openedAt.current.zone);
+  /** The zone the 船飛 is being asked for, if any. */
+  const [askingPin, setAskingPin] = useState<string | null>(null);
+  const [pin, setPin] = useState("");
+  const [pinWrong, setPinWrong] = useState(false);
   const zone: Zone = ZONES[zoneId] ?? ZONES[START_ZONE];
 
   // Where the child should appear in whichever zone loads next. Set by travel
@@ -354,12 +369,20 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
 
   const travel = useCallback((spot: Hotspot) => {
     if (spot.kind === "door") { onEnterRoom(spot.target); return; }
+    if (spot.kind === "board") { onReadBoard?.(); return; }
+    if (spot.kind === "stall") { onEnterStall?.(spot.target); return; }
+    // 碼頭市集 asks for the 船飛 first. A child holding the phone must not be
+    // able to walk into the account, the money or the privacy switches.
+    if (ZONES[spot.target]?.parentsOnly && !parentGateOpen()) {
+      setAskingPin(spot.target);
+      return;
+    }
     // Remember which zone we left, so the next zone puts us at the gate that
     // leads back here rather than at its own starting point.
     arriveFrom.current = { zone: zone.id };
     setFading(true);
     window.setTimeout(() => { setZoneId(spot.target); setFading(false); }, 420);
-  }, [onEnterRoom, zone.id]);
+  }, [onEnterRoom, onEnterStall, onReadBoard, zone.id]);
 
   useEffect(() => { travelRef.current = travel; }, [travel]);
   useEffect(() => { petRef.current = nearPet; }, [nearPet]);
@@ -412,7 +435,12 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
           className={`world-marker ${spot.kind}${doneRooms.includes(spot.target) ? " done" : ""}`}
           style={place(spot.x, spot.y)}
         >
-          <span>{spot.kind === "gate" ? "➜" : doneRooms.includes(spot.target) ? "✓" : "▲"}</span>
+          <span>{
+            spot.kind === "gate" ? "➜"
+              : spot.kind === "board" ? "🗞"
+              : spot.kind === "stall" ? "🛎"
+              : doneRooms.includes(spot.target) ? "✓" : "▲"
+          }</span>
           <small>{spot.label}</small>
         </div>
       ))}
@@ -467,13 +495,54 @@ export function GameWorld({ heroId, doneRooms = [], returningFrom, cardId = null
         and will still be there, whereas a covered doorway is a dead end. */}
     {near
       ? <button className="world-action" onClick={() => travel(near)}>
-          {near.kind === "door" ? `入去 ${near.label}` : near.label}
+          {near.kind === "door" ? `入去 ${near.label}`
+            : near.kind === "board" ? `睇 ${near.label}`
+            : near.kind === "stall" ? `去 ${near.label}`
+            : near.label}
           <small>空白鍵</small>
         </button>
       : nearPet && <button className="world-action pet" onClick={() => meetPet(nearPet)}>
           同 {nearPet.pet.nameZh} 傾計
           <small>空白鍵</small>
         </button>}
+
+    {askingPin && (
+      <div className="picker-scrim" role="dialog" aria-label="船飛" onClick={() => setAskingPin(null)}>
+        <form
+          className="pin-sheet"
+          onClick={event => event.stopPropagation()}
+          onSubmit={event => {
+            event.preventDefault();
+            if (!checkParentPin(pin)) { setPinWrong(true); return; }
+            openParentGate();
+            const target = askingPin;
+            setAskingPin(null); setPin(""); setPinWrong(false);
+            arriveFrom.current = { zone: zone.id };
+            setFading(true);
+            window.setTimeout(() => { setZoneId(target); setFading(false); }, 420);
+          }}
+        >
+          <h2>要出示船飛</h2>
+          <p>碼頭市集係大人做嘢嘅地方 —— 帳戶、付款同私隱設定都喺度。</p>
+          <label>
+            四位數家長 PIN
+            <input
+              aria-label="四位數家長 PIN"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={event => { setPin(event.target.value.replace(/\D/g, "")); setPinWrong(false); }}
+              autoFocus
+            />
+          </label>
+          {pinWrong && <p className="form-error" role="alert">PIN 唔啱，再試一次。</p>}
+          <div className="pin-sheet-actions">
+            <button type="button" className="tape-button ghost" onClick={() => setAskingPin(null)}>返轉頭</button>
+            <button type="submit" className="tape-button" disabled={pin.length !== 4}>入去</button>
+          </div>
+        </form>
+      </div>
+    )}
 
     {/* Keyed by pet: without it React reuses the panel across pets, and every
         bit of its local state — the running total, the bubble, today's

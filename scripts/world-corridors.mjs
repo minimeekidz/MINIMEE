@@ -106,17 +106,17 @@ export const CORRIDORS = {
       { x: 0.40, y: 0.72, r: 0.15 }, { x: 0.40, y: 0.66, r: 0.13 },
       { x: 0.41, y: 0.61, r: 0.10 },
     ],
-    // The archway is reached up the right-hand road, not over the bridge —
-    // an earlier pass ran the corridor straight up the middle and put the
-    // river inside the mask. The bridge crosses to the left bank, which is
-    // houses, and is not on the route anywhere.
+    // Traced off Em's drawn route (uploads/場景/19 and 21): out of the
+    // forecourt, up its right shoulder, across the stone bridge, then along
+    // the far bank to the archway. Two earlier guesses had it climbing the
+    // middle or hugging the far right — both put the river inside the mask.
     [
-      { x: 0.52, y: 0.75, r: 0.08 }, { x: 0.58, y: 0.72, r: 0.07 },
-      { x: 0.64, y: 0.69, r: 0.06 }, { x: 0.70, y: 0.66, r: 0.055 },
-      { x: 0.76, y: 0.64, r: 0.05 }, { x: 0.81, y: 0.61, r: 0.05 },
-      { x: 0.85, y: 0.57, r: 0.05 }, { x: 0.87, y: 0.52, r: 0.05 },
-      { x: 0.87, y: 0.47, r: 0.05 }, { x: 0.86, y: 0.43, r: 0.05 },
-      { x: 0.855, y: 0.39, r: 0.045 }, { x: 0.845, y: 0.355, r: 0.045 },
+      { x: 0.46, y: 0.62, r: 0.075 }, { x: 0.45, y: 0.57, r: 0.065 },
+      { x: 0.45, y: 0.53, r: 0.055 }, { x: 0.49, y: 0.50, r: 0.05 },
+      { x: 0.54, y: 0.483, r: 0.045 }, { x: 0.59, y: 0.470, r: 0.045 },
+      { x: 0.64, y: 0.460, r: 0.045 }, { x: 0.69, y: 0.450, r: 0.045 },
+      { x: 0.74, y: 0.437, r: 0.045 }, { x: 0.78, y: 0.420, r: 0.042 },
+      { x: 0.815, y: 0.395, r: 0.04 }, { x: 0.845, y: 0.360, r: 0.04 },
     ],
     [ // left, to 我的小屋's steps
       { x: 0.30, y: 0.69, r: 0.09 }, { x: 0.25, y: 0.67, r: 0.07 },

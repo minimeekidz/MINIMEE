@@ -8,7 +8,7 @@ import { profileFor, quizLine } from "../lib/petBible";
 import { actionVo } from "../data/petActionVo";
 import { eventLines, headlineEvent } from "../lib/petEvents";
 import {
-  givePetCard, petQuizFor, recordQuiz, visitPet,
+  givePetCard, petQuizFor, recordQuiz, rollMystery, visitPet,
   type PetGiftCard, type PetQuiz,
 } from "../lib/petStore";
 
@@ -44,6 +44,8 @@ export function PetEncounter({
   const [total, setTotal] = useState(points);
   const [bubble, setBubble] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** A 神秘獎勵, when today's roll came up. */
+  const [prize, setPrize] = useState<{ label: string; asset: string } | null>(null);
   const [quiz, setQuiz] = useState<PetQuiz | null>(null);
   const [phase, setPhase] = useState<QuizPhase>("asking");
   const [tries, setTries] = useState(0);
@@ -122,8 +124,16 @@ export function PetEncounter({
     if (visited) return;
     setBusy(true);
     const next = await visitPet(cardId, pet.id);
-    setBusy(false);
     if (next !== null) applyTotal(next);
+    // MR01: 「隨機 roll 只可以喺當日第一次真正產生 +1 嘅互動發生一次」. The
+    // point landing is that interaction, so the roll goes here — and only
+    // here. The database refuses a second roll the same day, so tapping
+    // another pet cannot buy another go.
+    if (next !== null) {
+      const won = await rollMystery(cardId);
+      if (won) setPrize(won);
+    }
+    setBusy(false);
   }
 
   async function answer(choice: string) {
@@ -195,6 +205,16 @@ export function PetEncounter({
       🎉 好感度升咗！而家係「{levelUp}」
       {upcoming && <small>Lv.{upcoming.level} 解鎖：{upcoming.icon} {upcoming.label}</small>}
       <button className="button small secondary" onClick={() => setLevelUp(null)}>知道喇</button>
+    </div>}
+
+    {prize && <div className="pet-gift mystery" role="status">
+      <img src={prize.asset} alt="" />
+      <div>
+        <strong>神秘獎勵！</strong>
+        <span>{prize.label}</span>
+        <small>今日淨係得一次，第一次同小寵物玩嗰陣先會抽。</small>
+        <button className="button small secondary" onClick={() => setPrize(null)}>好嘢</button>
+      </div>
     </div>}
 
     {gift && <div className="pet-gift" role="status">

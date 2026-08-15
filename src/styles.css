@@ -1099,3 +1099,210 @@ footer div { display: flex; gap: 20px; }
 .privacy-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 12px; }
 .example-flag { margin: 0; padding: 7px 14px; border-radius: 999px; background: var(--brand-gold); color: #3a2a12; font-size: 10px; font-weight: 900; text-align: center; }
 .video-pending { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 120px; border: 2px dashed var(--paper-edge); border-radius: 12px; background: rgba(255,255,255,.55); color: var(--ink-soft); font-size: 12px; font-weight: 900; }
+
+/* =====================================================================
+   室內場景 — a building is one picture with the things you came for
+   marked on it. No walking: Em's 原位入口原位出口 rule.
+   ===================================================================== */
+.interior-scene { position: relative; min-height: 100vh; background: #17110c; color: #f6e8cd; }
+.interior-art { position: relative; width: 100%; }
+.interior-art img { display: block; width: 100%; height: auto; }
+
+.interior-bar {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-top));
+  background: linear-gradient(180deg, rgba(23,17,12,.92), rgba(23,17,12,0));
+}
+.interior-bar h1 { margin: 0; font-size: 15px; font-weight: 900; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+
+/* A marker sits on the thing it names, not in a list down the side — the
+   room is the menu. */
+.interior-spot {
+  position: absolute; transform: translate(-50%, -50%);
+  display: grid; justify-items: center; gap: 5px;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  animation: spot-in .4s ease both;
+}
+@keyframes spot-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); } }
+.spot-pin {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--brand-gold); border: 3px solid #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.5);
+  animation: spot-pulse 2.2s ease-in-out infinite;
+}
+@keyframes spot-pulse { 50% { transform: scale(1.18); } }
+.spot-label {
+  display: grid; justify-items: center; gap: 1px;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(24,16,10,.86); border: 2px solid rgba(255,255,255,.35);
+  color: #fff; white-space: nowrap;
+}
+.spot-label strong { font-size: 12px; font-weight: 900; }
+.spot-label small { font-size: 9px; opacity: .82; }
+.interior-note { position: fixed; bottom: 14px; left: 14px; }
+
+/* ---- the sheet a marker opens ---- */
+.interior-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: end center;
+  background: rgba(18,12,8,.62);
+}
+.interior-panel {
+  width: min(680px, 100%); max-height: 86vh; display: flex; flex-direction: column;
+  border-radius: 22px 22px 0 0; background: var(--paper-cream, #fdf6e6);
+  color: var(--ink-warm, #4a3826);
+  animation: sheet-up .22s ease both;
+}
+@keyframes sheet-up { from { transform: translateY(14px); opacity: 0; } }
+.interior-panel > header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px 10px;
+}
+.interior-panel > header h2 { margin: 0; font-size: 16px; font-weight: 900; }
+.interior-panel-body { overflow-y: auto; padding: 0 18px 26px; }
+
+/* ---- collection ---- */
+.collection-count { margin: 0 0 12px; font-size: 12px; font-weight: 800; }
+.collection-count strong { font-size: 18px; }
+.card-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.shelf-card { margin: 0; display: grid; gap: 4px; padding: 6px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.shelf-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; }
+.shelf-card figcaption { display: grid; text-align: center; }
+.shelf-card strong { font-size: 10px; font-weight: 900; }
+.shelf-card small { font-size: 8px; color: var(--ink-soft, #8a7458); }
+.shelf-card.flash { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(217,164,65,.32); }
+
+.book-spines { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+.book-spine {
+  flex: none; display: grid; gap: 2px; padding: 9px 14px; cursor: pointer;
+  border: 2px solid var(--paper-edge, #e2cfa8); border-radius: 10px; background: #fff;
+  font: inherit; color: inherit; text-align: left;
+}
+.book-spine.on { background: var(--brand-gold); border-color: #b98c30; }
+.book-spine span { font-size: 12px; font-weight: 900; }
+.book-spine small { font-size: 9px; opacity: .75; }
+.book-spread h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 14px; }
+.book-spread h3 em { font-size: 11px; font-style: normal; color: var(--ink-soft, #8a7458); }
+.book-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.book-slot { margin: 0; display: grid; gap: 4px; padding: 6px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.book-slot img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; }
+.book-slot strong { font-size: 10px; font-weight: 900; }
+.book-slot small { font-size: 8px; color: var(--ink-soft, #8a7458); }
+.book-slot.flash { border-color: var(--brand-gold); }
+/* An empty slot is deliberately legible: the gap is what says "keep going". */
+.book-slot.empty {
+  display: grid; place-items: center; gap: 4px; aspect-ratio: 3/4;
+  border-style: dashed; background: rgba(160,130,90,.10); color: var(--ink-soft, #8a7458);
+}
+.book-slot.empty span { font-size: 26px; font-weight: 900; opacity: .45; }
+
+.tray-wall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tray { display: grid; gap: 6px; padding: 10px 8px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); text-align: center; }
+.tray strong { font-size: 11px; font-weight: 900; }
+.tray small { font-size: 9px; color: var(--ink-soft, #8a7458); }
+.tray.empty { background: rgba(160,130,90,.10); border-style: dashed; opacity: .7; }
+.tray-pieces { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.piece { display: block; aspect-ratio: 1; border-radius: 4px; background: rgba(160,130,90,.22); }
+.piece.lit { background: var(--brand-gold); box-shadow: 0 0 8px rgba(217,164,65,.7); }
+
+/* ---- studio / cinema / library ---- */
+.studio-list { display: grid; gap: 14px; }
+.studio-lesson { padding: 12px; border-radius: 14px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.studio-lesson header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.studio-lesson h3 { margin: 0; font-size: 14px; }
+.lesson-flag { padding: 4px 10px; border-radius: 999px; background: rgba(160,130,90,.22); font-size: 9px; font-weight: 900; }
+.lesson-flag.done { background: var(--brand-gold); }
+.lesson-theme { margin: 4px 0 10px; font-size: 11px; color: var(--ink-soft, #8a7458); }
+.word-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.word-chip { display: grid; justify-items: center; gap: 2px; width: 74px; }
+.word-chip img { width: 56px; height: 56px; object-fit: contain; }
+.word-chip-text { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 12px; background: var(--paper-warm, #f6e8cd); font-size: 12px; font-weight: 900; }
+.word-chip strong { font-size: 11px; }
+.word-chip small { font-size: 9px; color: var(--ink-soft, #8a7458); text-align: center; }
+
+.poster-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.poster {
+  display: grid; gap: 4px; padding: 8px; cursor: pointer; text-align: center;
+  border: 3px solid #6b4a2c; border-radius: 10px; background: #2b1d12; color: #ffeccd;
+  font: inherit;
+}
+.poster img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 6px; }
+.poster-title { font-size: 12px; font-weight: 900; }
+.poster small { font-size: 9px; opacity: .8; }
+.poster-ticket { margin-top: 4px; padding: 4px 8px; border-radius: 999px; background: var(--brand-gold); color: #3a2a12; font-size: 10px; font-weight: 900; font-style: normal; }
+
+/* ---- café / home / board ---- */
+.cafe-scan { display: grid; gap: 14px; }
+.scan-frame {
+  display: grid; justify-items: center; gap: 8px; padding: 26px;
+  border: 3px dashed var(--paper-edge, #e2cfa8); border-radius: 16px;
+  background: rgba(255,255,255,.6); font-size: 12px; font-weight: 800;
+}
+.scan-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 12px; line-height: 1.7; }
+.scan-mine { display: flex; align-items: center; gap: 10px; padding: 11px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.scan-mine strong { display: block; font-size: 11px; }
+.scan-mine code { font-size: 12px; font-weight: 800; }
+
+.home-panel { display: grid; gap: 10px; justify-items: start; font-size: 12px; line-height: 1.7; }
+.home-panel p { margin: 0; }
+.tape-button.ghost { background: rgba(160,130,90,.22); }
+
+.notice-board { display: grid; gap: 18px; }
+.notice-section { padding: 12px; border-radius: 14px; border: 2px solid var(--paper-edge, #e2cfa8); background: #fff; }
+.notice-section header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.notice-section h3 { margin: 0; font-size: 14px; }
+.notice-section article { padding: 8px 0; border-top: 1px dashed var(--paper-edge, #e2cfa8); }
+.notice-section article strong { font-size: 12px; }
+.notice-section article p { margin: 4px 0 0; font-size: 12px; line-height: 1.7; }
+.notice-section article small { font-size: 9px; color: var(--ink-soft, #8a7458); }
+.notice-flag { padding: 4px 10px; border-radius: 999px; font-size: 9px; font-weight: 900; }
+/* The two are never the same colour and never the same words: a parent who
+   cannot tell an invented pet story from a real announcement stops trusting
+   both of them. */
+.notice-flag.real { background: #2f6b4f; color: #fff; }
+.notice-flag.fun { background: #e6d5b8; color: #6b4e18; }
+.notice-section.fun { background: #fffaf0; border-style: dashed; }
+
+/* ---- 船飛 ---- */
+.pin-sheet {
+  width: min(420px, 100%); display: grid; gap: 12px; padding: 22px 20px 26px;
+  border-radius: 22px 22px 0 0; background: var(--paper-cream, #fdf6e6); color: var(--ink-warm, #4a3826);
+}
+.pin-sheet h2 { margin: 0; font-size: 17px; }
+.pin-sheet p { margin: 0; font-size: 12px; line-height: 1.7; }
+.pin-sheet label { display: grid; gap: 6px; font-size: 11px; font-weight: 900; }
+.pin-sheet input {
+  padding: 12px 14px; border: 2px solid var(--paper-edge, #e2cfa8); border-radius: 12px;
+  background: #fff; font: inherit; font-size: 22px; letter-spacing: .5em; text-align: center;
+}
+.pin-sheet-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ---- loading, with a pet walking the bar ---- */
+.world-loading {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-content: center; justify-items: center; gap: 18px;
+  background: #17110c; color: #ffeccd;
+}
+.world-loading h2 { margin: 0; font-size: 15px; font-weight: 900; }
+.loading-track {
+  position: relative; width: min(280px, 72vw); height: 10px;
+  border-radius: 999px; background: rgba(255,236,205,.18); overflow: visible;
+}
+.loading-fill { display: block; height: 100%; border-radius: 999px; background: var(--brand-gold); transition: width .25s linear; }
+.loading-walker {
+  position: absolute; bottom: 6px; width: 42px; image-rendering: pixelated;
+  transform: translateX(-50%); transition: left .25s linear;
+  animation: walker-bob .5s steps(2, end) infinite;
+}
+@keyframes walker-bob { 50% { transform: translate(-50%, -3px); } }
+.loading-hint { margin: 0; font-size: 11px; opacity: .75; }
+.forged-card {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  padding: 10px; border-radius: 14px; background: var(--brand-gold); color: #3a2a12;
+}
+.forged-card img { width: 64px; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; }
+.forged-card strong { display: block; font-size: 13px; }
+.forged-card p { margin: 2px 0 0; font-size: 12px; font-weight: 800; }
+.forged-card em { font-style: normal; }
+.pet-gift.mystery { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(217,164,65,.35); }
