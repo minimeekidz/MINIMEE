@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { FRAGMENTS_PER_CARD } from "./rooms";
+import type { GameMode } from "./games";
 
 // The collection, as the 珍藏館 shows it.
 //
@@ -55,6 +56,15 @@ export interface ThemeTray {
   slotNo: number;
   /** True once that card has been forged. */
   owned: boolean;
+  /**
+   * The game this release is played with. It rides on the tray because the
+   * words and the game that uses them must never disagree for a render —
+   * one row, one source.
+   */
+  mode: GameMode;
+  vo: string;
+  question: string;
+  answerPattern: string;
 }
 
 export interface Collection {
@@ -107,6 +117,10 @@ export function useCollection(kidCardId: string | null): Collection {
       bookNo: (row.book_no as number) ?? 0,
       slotNo: (row.slot_no as number) ?? 0,
       owned: Boolean(row.owned),
+      mode: (row.game_mode as GameMode) ?? "sentence",
+      vo: (row.vo as string) ?? "",
+      question: (row.question as string) ?? "",
+      answerPattern: (row.answer_pattern as string) ?? "",
     })));
     setLoading(false);
   }, [kidCardId]);

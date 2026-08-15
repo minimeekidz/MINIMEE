@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { DashboardHeader, Shell, StatusPill } from "../components/UI";
 import {
-  addRelease, setTraySlot, setTrayStatus, useThemeCatalogue, type Release,
+  addRelease, setGameMode, setTraySlot, setTrayStatus, useThemeCatalogue, type Release,
 } from "../lib/themeStore";
 import { TRAY_SLOTS } from "../lib/collection";
+import { FAMILIES, GAME_MODES, type GameMode } from "../lib/games";
 
 // 主題後台 — the switch Em asked for.
 //
@@ -21,7 +22,9 @@ export function AdminThemesPage() {
   const { themes, cards, releases, loading, refresh } = useThemeCatalogue();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ themeId: "", cardCode: "", traySlot: "" });
+  const [draft, setDraft] = useState({
+    themeId: "", cardCode: "", traySlot: "", gameMode: "sentence" as GameMode,
+  });
 
   const onWall = useMemo(
     () => releases.filter(release => release.status !== "retired" && release.traySlot !== null)
@@ -32,6 +35,9 @@ export function AdminThemesPage() {
     [releases]);
 
   const takenSlots = new Set(onWall.map(release => release.traySlot));
+  // A game already in use on the wall cannot be picked again. The database
+  // enforces this too; greying it out here is so Em sees why before clicking.
+  const takenGames = new Set(onWall.map(release => release.gameMode));
   const themeName = (id: string) => themes.find(theme => theme.id === id)?.nameZh ?? id;
   const cardAt = (code: string) => cards.find(card => card.code === code);
 
@@ -53,10 +59,11 @@ export function AdminThemesPage() {
       id, themeId: draft.themeId, targetCardCode: draft.cardCode,
       traySlot: slot,
       displayOrder: (releases.at(-1)?.displayOrder ?? 0) + 1,
+      gameMode: draft.gameMode,
     });
     setBusy(null);
     if (!result.ok) { setError(result.error ?? "開唔到新一期"); return; }
-    setDraft({ themeId: "", cardCode: "", traySlot: "" });
+    setDraft({ themeId: "", cardCode: "", traySlot: "", gameMode: "sentence" });
     await refresh();
   }
 
@@ -75,13 +82,14 @@ export function AdminThemesPage() {
         <h2>而家喺牆上面嘅主題（{onWall.length} / {TRAY_SLOTS}）</h2>
         <p className="editor-help">
           碎片拼合室固定有 {TRAY_SLOTS} 格。每個主題四個詞、四塊碎片，儲齊就砌成佢配定嗰張卡
-          —— 邊張卡係喺呢度配死嘅，唔會臨時揀。
+          —— 邊張卡係喺呢度配死嘅，唔會臨時揀。每個主題玩法都唔可以撞，因為戲院一次過
+          放三個主題嘅影片，三個一樣就好悶。
         </p>
 
         <table className="admin-table">
           <thead>
             <tr>
-              <th>格</th><th>主題</th><th>四個詞</th><th>配定嘅卡</th><th>狀態</th><th></th>
+              <th>格</th><th>主題</th><th>四個詞</th><th>玩法</th><th>配定嘅卡</th><th>狀態</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -106,6 +114,32 @@ export function AdminThemesPage() {
                   </td>
                   <td><strong>{themeName(release.themeId)}</strong><br /><small>{release.themeId}</small></td>
                   <td>{theme?.words.join("・")}</td>
+                  <td>
+                    <select
+                      value={release.gameMode}
+                      disabled={busy === release.id}
+                      onChange={event => {
+                        const mode = event.target.value as GameMode;
+                        setBusy(release.id);
+                        setError(null);
+                        void (async () => {
+                          const result = await setGameMode(release.id, mode);
+                          setBusy(null);
+                          if (!result.ok) { setError(result.error ?? "改唔到玩法"); return; }
+                          await refresh();
+                        })();
+                      }}
+                    >
+                      {GAME_MODES.map(mode => (
+                        <option
+                          key={mode}
+                          value={mode}
+                          disabled={takenGames.has(mode) && mode !== release.gameMode}
+                        >{FAMILIES[mode].nameZh}</option>
+                      ))}
+                    </select>
+                    <br /><small>{FAMILIES[release.gameMode].domain}</small>
+                  </td>
                   <td>
                     {release.targetCardCode}
                     {card && <><br /><small>BOOK {card.bookNo} · 第 {card.slotNo} 格</small></>}
@@ -172,6 +206,19 @@ export function AdminThemesPage() {
             </select>
           </label>
           <label>
+            <span>玩法</span>
+            <select
+              value={draft.gameMode}
+              onChange={event => setDraft({ ...draft, gameMode: event.target.value as GameMode })}
+            >
+              {GAME_MODES.map(mode => (
+                <option key={mode} value={mode} disabled={takenGames.has(mode)}>
+                  {FAMILIES[mode].nameZh}（{FAMILIES[mode].domain}）
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             <span>放邊格（可以留空）</span>
             <select value={draft.traySlot} onChange={event => setDraft({ ...draft, traySlot: event.target.value })}>
               <option value="">唔上牆</option>
@@ -221,6 +268,34 @@ export function AdminThemesPage() {
           )}
         </section>
       )}
+
+      <section className="admin-block">
+        <h2>七種玩法</h2>
+        <p className="editor-help">
+          每個玩法都要玩四次先砌到一張卡，一次難過一次。難度會按小朋友年齡自動調
+          —— 3–5 歲兩個選項、全程有提示、冇計時；9–12 歲四個選項、最後一round要打字。
+          計時器只影響有冇星星，任何情況下都唔會攞走碎片。
+        </p>
+        <table className="admin-table">
+          <thead>
+            <tr><th>玩法</th><th>學習範疇</th><th>玩啲乜</th><th>四個 round</th></tr>
+          </thead>
+          <tbody>
+            {GAME_MODES.map(mode => (
+              <tr key={mode}>
+                <td><strong>{FAMILIES[mode].nameZh}</strong><br /><small>{mode}</small></td>
+                <td>{FAMILIES[mode].domain}</td>
+                <td><small>{FAMILIES[mode].doing}</small></td>
+                <td>
+                  <ol className="game-ladder">
+                    {FAMILIES[mode].ladder.map(step => <li key={step}><small>{step}</small></li>)}
+                  </ol>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
       <section className="admin-block">
         <h2>全部 {themes.length} 個主題</h2>

@@ -23,6 +23,11 @@ import { classifyWeather, festivalFor, lunarDayNumber, parseLunar } from "./lib/
 import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
 import { NoticeBoardPanel } from "./components/interior/HomePanels";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
+import {
+  bandFor, buildRounds, clausesOf, difficultyFor, FAMILIES, GAME_MODES,
+  isCorrect, roundAt, ROUNDS_PER_THEME, type ThemeGameSource,
+} from "./lib/games";
+import { ThemeGame } from "./components/ThemeGame";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -1020,7 +1025,10 @@ describe("MINIMEE route shells", () => {
     // otherwise finishing a film drops them on the town map.
     const room = {
       id: "r1", nameZh: "海洋", blurb: "", art: "/a.webp", sortOrder: 1,
-      lesson: { id: "l1", roomId: "r1", theme: "海洋", title: "海底世界", words: [{ word: "海龜" }] },
+      lesson: {
+        id: "l1", roomId: "r1", theme: "海洋", themeId: "theme-14",
+        title: "海底世界", videoPath: null, words: [{ word: "海龜" }],
+      },
       earned: false,
     };
 
@@ -1255,6 +1263,7 @@ describe("MINIMEE route shells", () => {
       traySlot: 1, themeId: "theme-14", theme: "神秘深海",
       words: ["小魚", "章魚", "鯊魚", "海龜"], status: "current" as const,
       earned, targetCode: "MEE-008", bookNo: 2, slotNo: 2, owned,
+      mode: "make" as const, vo: "", question: "", answerPattern: "",
     });
 
     const ready = render(
@@ -1308,5 +1317,248 @@ describe("MINIMEE route shells", () => {
     expect(faqData["@type"]).toBe("FAQPage");
     expect(faqData.mainEntity.length).toBeGreaterThan(0);
     faq.unmount();
+  });
+  // -------------------------------------------------------------------------
+  // 主題小遊戲
+  // -------------------------------------------------------------------------
+
+  const rail: ThemeGameSource = {
+    themeId: "theme-01", nameZh: "軌道交通",
+    words: ["港鐵", "電車", "火車", "輕鐵"],
+    vo: "城市入面有好多沿住路軌行嘅交通工具。港鐵帶我哋去唔同地區，電車慢慢穿過街道，火車可以去更遠地方，新界仲有輕鐵。",
+    question: "你最鍾意搭邊一種有路軌嘅交通工具？",
+    answerPattern: "我最鍾意搭{answer}。",
+    mode: "sentence",
+  };
+
+  it("scales a round to the child's age, and never asks a five-year-old to type", () => {
+    // Em: 「推算嗰個年齡調校難度選項數、有冇提示、要唔要打字」.
+    for (let round = 1; round <= ROUNDS_PER_THEME; round += 1) {
+      expect(difficultyFor(4, round).typing).toBe(false);
+      expect(difficultyFor(4, round).options).toBeLessThanOrEqual(3);
+      // A timer on a four-year-old is a way to make them cry, not to teach.
+      expect(difficultyFor(4, round).seconds).toBeNull();
+      expect(difficultyFor(4, round).hints).toBe(true);
+    }
+    // Typing is the oldest band's last round and nowhere else.
+    expect(difficultyFor(11, 3).typing).toBe(false);
+    expect(difficultyFor(11, 4).typing).toBe(true);
+    expect(difficultyFor(7, 4).typing).toBe(false);
+
+    // An unknown age lands in the middle, never the band that types.
+    expect(bandFor(null)).toBe("6-8");
+    expect(difficultyFor(null, 4).typing).toBe(false);
+    // A family that only ever picked a band gets that band, not a guess.
+    expect(bandFor("3-5")).toBe("3-5");
+    expect(bandFor("13+")).toBe("9-12");
+  });
+
+  it("gives every mode four rounds that escalate and cover all four words", () => {
+    // 「呢個遊戲是要玩四次的」— four rounds, one per fragment, and between
+    // them a child has to have met all four of the theme's words.
+    for (const mode of GAME_MODES) {
+      const rounds = buildRounds({ ...rail, mode }, { age: 8 });
+      expect(rounds).toHaveLength(ROUNDS_PER_THEME);
+      expect(rounds.map(round => round.round)).toEqual([1, 2, 3, 4]);
+
+      // Every round asks something, and asks it in words rather than a code.
+      for (const round of rounds) {
+        expect(round.prompt.length).toBeGreaterThan(4);
+        expect(round.mode).toBe(mode);
+      }
+
+      // 搵一搵 round 3 is the odd-one-out, which is about a foreign word on
+      // purpose — every other mode walks the theme's own four.
+      const covered = new Set(rounds.map(round => round.word));
+      expect(covered.size).toBeGreaterThanOrEqual(mode === "spot" ? 3 : 4);
+
+      // The rounds get harder: options never shrink as the round goes up.
+      const scored = rounds.filter(round => round.input === "tap");
+      for (let index = 1; index < scored.length; index += 1) {
+        expect(scored[index].difficulty.options)
+          .toBeGreaterThanOrEqual(scored[index - 1].difficulty.options);
+      }
+    }
+  });
+
+  it("never marks a child's own preference wrong", () => {
+    // 你會點揀 has no right answer. Marking one would be the single worst
+    // thing that mode could do, so the contract is `answer: ""` and the
+    // checker accepts anything the child actually said.
+    const rounds = buildRounds({ ...rail, mode: "choice" }, { age: 7 });
+    for (const round of rounds) {
+      expect(round.answer).toBe("");
+      expect(isCorrect(round, "電車")).toBe(true);
+      expect(isCorrect(round, "隨便乜都得")).toBe(true);
+      // Still not a way to skip: saying nothing is not answering.
+      expect(isCorrect(round, "   ")).toBe(false);
+    }
+    expect(FAMILIES.choice.openEnded).toBe(true);
+  });
+
+  it("builds 講句子 out of the theme's own narration", () => {
+    const [first] = buildRounds(rail, { age: 7 });
+    // The blank is cut from the VO clause that introduces the word, so the
+    // question is about something the child has just heard.
+    expect(first.prompt).toContain("＿＿");
+    expect(first.prompt).not.toContain("港鐵");
+    expect(first.options).toContain("港鐵");
+    expect(first.answer).toBe("港鐵");
+    expect(isCorrect(first, "港鐵")).toBe(true);
+    expect(isCorrect(first, "電車")).toBe(false);
+
+    // A typed sentence is accepted without its full stop.
+    const typed = buildRounds(rail, { age: 11 })[3];
+    expect(typed.input).toBe("type");
+    expect(isCorrect(typed, "我最鍾意搭輕鐵")).toBe(true);
+    expect(isCorrect(typed, "我最鍾意搭巴士。")).toBe(false);
+  });
+
+  it("stops the narration earlier every round in 估下會點", () => {
+    // Held to one word on purpose. Across the real four words the prompt
+    // lengths are not comparable — each word sits at a different point in
+    // the paragraph — and what escalates is how far back the cut is made.
+    const late = { ...rail, mode: "predict" as const, words: ["輕鐵"] };
+    const heard = buildRounds(late, { age: 8 }).map(round => round.prompt.length);
+    expect(heard[0]).toBeGreaterThan(heard[1]);
+    expect(heard[1]).toBeGreaterThan(heard[2]);
+    expect(heard[2]).toBeGreaterThan(heard[3]);
+
+    // Whatever is played, the answer is never given away in the text — round
+    // one hears the word's own clause, so it has to be bleeped out.
+    for (const round of buildRounds({ ...rail, mode: "predict" }, { age: 8 })) {
+      expect(round.prompt).not.toContain(round.word);
+      expect(round.options).toContain(round.answer);
+    }
+  });
+
+  it("counts within what the band can hold", () => {
+    // A three-year-old counting to fourteen is a bug, not a challenge.
+    for (const round of buildRounds({ ...rail, mode: "number" }, { age: 4 })) {
+      const numbers = (round.prompt.match(/[零一二三四五六七八九十]/g) ?? []).length;
+      expect(numbers).toBeGreaterThan(0);
+      expect(round.prompt).not.toMatch(/\d\d/);
+    }
+  });
+
+  it("borrows the odd one out from another theme, because it has to", () => {
+    const foreign = ["雞蛋仔", "奶茶"];
+    const [, , third] = buildRounds({ ...rail, mode: "spot" }, { age: 8, foreignWords: foreign });
+    expect(third.prompt).toContain("唔屬於");
+    expect(foreign).toContain(third.answer);
+    expect(third.options).toContain(third.answer);
+
+    // With nothing to borrow there is no odd one out, so it falls back to a
+    // find rather than shipping a round with no correct answer.
+    const [, , alone] = buildRounds({ ...rail, mode: "spot" }, { age: 8 });
+    expect(rail.words).toContain(alone.answer);
+  });
+
+  it("redraws on a replay but keeps the same shape", () => {
+    // 「甚至可能有啲小朋友都會想重複玩」— a second run has to feel like
+    // playing again, not like re-reading. Same modes and inputs, new draw.
+    const first = buildRounds({ ...rail, mode: "number" }, { age: 8, salt: 0 });
+    const again = buildRounds({ ...rail, mode: "number" }, { age: 8, salt: 1 });
+    expect(again.map(round => round.input)).toEqual(first.map(round => round.input));
+    expect(again.map(round => round.prompt)).not.toEqual(first.map(round => round.prompt));
+
+    // And the same salt is the same game, or nothing could be tested at all.
+    expect(buildRounds({ ...rail, mode: "number" }, { age: 8, salt: 0 })).toEqual(first);
+  });
+
+  it("resumes at the round the child stopped on", () => {
+    // Fragments already held decide the round, so coming back tomorrow picks
+    // up where they left rather than starting the four again.
+    expect(roundAt(rail, 0, { age: 7 })?.round).toBe(1);
+    expect(roundAt(rail, 2, { age: 7 })?.round).toBe(3);
+    expect(roundAt(rail, ROUNDS_PER_THEME, { age: 7 })).toBeNull();
+  });
+
+  it("splits the VO into clauses that keep their punctuation", () => {
+    const clauses = clausesOf(rail.vo);
+    expect(clauses.length).toBeGreaterThan(3);
+    expect(clauses[0]).toBe("城市入面有好多沿住路軌行嘅交通工具。");
+    expect(clauses.join("")).toBe(rail.vo);
+  });
+
+  it("earns the fragment on a right answer and costs nothing on a wrong one", () => {
+    const earned: number[] = [];
+    render(
+      <ThemeGame source={rail} earned={0} age={7} onComplete={() => earned.push(1)} />);
+
+    // Wrong: says so, does not award, and the round is still there to try.
+    const wrong = rail.words.find(word => word !== "港鐵")!;
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(wrong) }));
+    expect(earned).toHaveLength(0);
+    expect(screen.getByText(/再試一次/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /港鐵/ }));
+    expect(earned).toEqual([1]);
+    expect(screen.getByText(/攞到一塊碎片/)).toBeInTheDocument();
+  });
+
+  it("finishes an open-ended round on the child saying they are done", () => {
+    // 跟住做 and 砌一砌 have nothing to mark. The child decides.
+    const earned: number[] = [];
+    render(
+      <ThemeGame
+        source={{ ...rail, mode: "move" }} earned={0} age={7}
+        onComplete={() => earned.push(1)}
+      />);
+    fireEvent.click(screen.getByRole("button", { name: "做完喇" }));
+    expect(earned).toEqual([1]);
+  });
+
+  it("never shows the same option twice, in any mode or round", () => {
+    // The subtraction round could draw a distractor equal to another one,
+    // which put two identical buttons on screen — and one of them silently
+    // wrong for looking exactly like the right answer.
+    for (const mode of GAME_MODES) {
+      for (const age of [4, 7, 11]) {
+        for (const round of buildRounds({ ...rail, mode }, { age, foreignWords: ["奶茶", "雪糕"] })) {
+          expect(new Set(round.options).size).toBe(round.options.length);
+          // A tap round always has its answer among the options, or the
+          // child is being asked something they cannot answer.
+          if (round.input === "tap" && round.answer) {
+            expect(round.options).toContain(round.answer);
+          }
+        }
+      }
+    }
+  });
+
+  it("can be assembled past the decoy chunk in the last 講句子 round", () => {
+    // Round four puts a chunk on screen that does not belong. Checking only
+    // once every chunk is placed would make the round unwinnable, so the
+    // sentence itself is what is checked.
+    const earned: number[] = [];
+    render(
+      <ThemeGame
+        source={rail} earned={3} age={7} foreignWords={["奶茶"]}
+        onComplete={() => earned.push(1)}
+      />);
+
+    const round = buildRounds(rail, { age: 7, foreignWords: ["奶茶"] })[3];
+    expect(round.input).toBe("order");
+    expect(round.options.length).toBeGreaterThan(2);
+
+    // The decoy is on screen and is not part of the sentence.
+    const decoy = round.options.find(chunk => !round.answer.includes(chunk))!;
+    expect(decoy).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: decoy }));
+    expect(earned).toHaveLength(0);
+    expect(screen.getByText(/再試一次/)).toBeInTheDocument();
+
+    // The real chunks, in order, still finish it.
+    for (const chunk of round.options.filter(candidate => candidate !== decoy)
+      .sort((a, b) => round.answer.indexOf(a) - round.answer.indexOf(b))) {
+      fireEvent.click(screen.getByRole("button", { name: chunk }));
+    }
+    expect(earned).toEqual([1]);
+  });
+
+  it("tells the child the four are done rather than offering a fifth round", () => {
+    render(<ThemeGame source={rail} earned={ROUNDS_PER_THEME} age={7} onComplete={() => {}} />);
+    expect(screen.getByText(/四塊碎片已經儲齊/)).toBeInTheDocument();
   });
 });

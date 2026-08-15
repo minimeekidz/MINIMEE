@@ -870,9 +870,11 @@ fragment — the child has to visit a different room, or wait for new content.
 Cards come with the subscription. There is deliberately no per-card
 purchase: a paid card draw is the thing parents most object to.
 
-**One game type, not one per room.** A room's identity comes from its
-subject and its art, not from a novel interaction the child has to relearn.
-One game can be made good where five would each be mediocre.
+**The game belongs to the theme, not the room.** A room's identity comes
+from its subject and its art; what a child *does* there is set by whichever
+theme is screening. See 7e-ii. A lesson with no `theme_id` still plays — it
+falls back to the plain pick-a-word game, which is what keeps the
+pre-theme content working.
 
 **`room_lessons.video_path` is not readable by `anon`.** Note that a
 column-level `REVOKE` does nothing while a table-level `GRANT` stands —
@@ -895,6 +897,65 @@ one per room.
 A lesson with no `video_path` is legitimate — the word game still works, so
 rooms can open with content before the video is shot. Two words is the
 minimum, since the game needs something to choose between.
+
+### 7e-ii. 主題小遊戲 — seven games, four rounds, one card
+
+The full table (game ↔ theme ↔ vocabulary ↔ VO, the age ladder, the
+12-month rotation and the asset list) is generated into
+**`docs/design-reference/theme-game-plan.md`** by
+`npx vite-node scripts/build-game-plan.mts`. Regenerate it after touching
+`src/lib/games.ts` or the theme workbook — it prints the prompts the code
+actually produces, so a stale copy is a copy Em would prepare the wrong
+material from.
+
+Em's two rules:
+
+- 「每個月轉換更新嘅時候，就順便換埋個遊戲玩法」 — so `game_mode` lives on
+  `theme_releases`, not on `themes`. The same theme can come back next year
+  as a different game without rewriting the theme or detaching the card the
+  old release already paid out.
+- 「如果三個主題嘅學習影片都係同一個遊戲玩法，咁就好沉悶」 — the cinema
+  screens three themes at once and six sit on the wall, so **no two themes
+  on the wall may share a mode.** That is a partial unique index on
+  `theme_releases (game_mode) where status <> 'retired' and tray_slot is not
+  null`, not a check in the back office: a UI check is advisory and this is
+  not. `/admin/themes` greys out taken modes so the refusal is visible
+  before the click, and reports the constraint's error if it fires anyway.
+
+**Seven modes, not six**, because six sit on the wall at once and any six
+consecutive entries of a seven-cycle are distinct — six modes would have
+worked only until the first theme was held back for a month.
+
+`sentence` 講句子 (中文) · `number` 數一數 (數學) · `spot` 搵一搵 (觀察) ·
+`predict` 估下會點 (科學推理) · `choice` 你會點揀 (品德情緒) ·
+`move` 跟住做 (體能) · `make` 砌一砌 (美藝).
+
+**Four rounds, one per fragment.** The round a child gets is decided by how
+many fragments they already hold for that theme, so leaving half way and
+coming back resumes rather than restarts. Round 1 recognises; round 4
+produces. Replaying a finished theme redraws the specifics from a new seed —
+same shape, new questions — which is what Em asked for with 「重複玩都會感
+覺會良好」.
+
+**Difficulty is derived, never stored.** Age from `children.dob`, or the
+band the family picked at sign-up, or 6–8 when neither exists — the middle
+band, because the worst outcome is asking a five-year-old to type. Options
+2/3/4 by band, hints fade with the round, typing only in 9–12's last round.
+
+Two things the games may never do, both enforced in code and covered by
+tests:
+
+- **A timer never costs the fragment**, only the star. A clock that could
+  delete the reward turns the one thing the child came for into a threat.
+- **`choice` never marks an answer wrong.** Its `answer` is `""`, which is
+  the contract with the UI: no tick, no cross, and the fragment is earned by
+  answering at all. Marking a child's own preference wrong is the single
+  worst thing that mode could do.
+
+Nothing here waits on artwork. Every mode runs on the words, the VO
+paragraph, the question and the answer pattern already in the database;
+art improves `spot`, `move` and `make` and is listed as A-level in the plan,
+but its absence degrades those modes rather than breaking them.
 
 ### 7e-i. 貼紙包 Sticker packs
 
@@ -982,6 +1043,15 @@ forever, and the uploads ran 25-27 MB a batch against ~3 MB converted.
 - `dist/assets/index-*.js` is ~514 kB (≈151 kB gzipped), over Vite's
   500 kB warning. Not a blocker; worth code-splitting the admin routes if
   first paint on mobile disappoints.
+- The games' A-level assets are not in yet: no VO recordings, no clause
+  timestamps, no action poses, no draggable props. Every mode runs without
+  them (see 7e-ii), but `spot`/`move`/`make` are text-only until they
+  land. Listed for Em in `docs/design-reference/theme-game-plan.md`.
+- `room_lessons.theme_id` is still null on the nine placeholder lessons, so
+  they play the fallback word game rather than a theme's configured one.
+  Republish each room from `/admin/lessons` picking a theme from the
+  dropdown and they pick up that theme's game; the picker fills the four
+  words in from the theme itself.
 
 ## 16. Restart instructions for any future assistant/developer
 

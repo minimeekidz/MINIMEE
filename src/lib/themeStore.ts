@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
+import type { GameMode } from "./games";
 
 // The month's content, and the one switch that changes it for everybody.
 //
@@ -42,6 +43,12 @@ export interface Release {
   status: "current" | "carryover" | "retired";
   activeFrom: string | null;
   activeTo: string | null;
+  /**
+   * Which game this theme is played with this time round. It lives on the
+   * release, not the theme, so bringing a theme back next year with a new
+   * game is a new row rather than a rewrite of the old one.
+   */
+  gameMode: GameMode;
 }
 
 export function useThemeCatalogue() {
@@ -55,7 +62,7 @@ export function useThemeCatalogue() {
     const [themeRows, cardRows, releaseRows] = await Promise.all([
       supabase.from("themes").select("id, theme_no, name_zh, words, question, answer_pattern").order("theme_no"),
       supabase.from("card_catalog").select("code, card_number, book_no, slot_no, position_zh, normal_asset, flash_asset").order("card_number"),
-      supabase.from("theme_releases").select("id, theme_id, target_card_code, tray_slot, display_order, status, active_from, active_to, themes(name_zh)").order("display_order"),
+      supabase.from("theme_releases").select("id, theme_id, target_card_code, tray_slot, display_order, status, active_from, active_to, game_mode, themes(name_zh)").order("display_order"),
     ]);
 
     setThemes((themeRows.data ?? []).map(row => ({
@@ -89,6 +96,7 @@ export function useThemeCatalogue() {
         status: (row.status as Release["status"]) ?? "current",
         activeFrom: (row.active_from as string) ?? null,
         activeTo: (row.active_to as string) ?? null,
+        gameMode: (row.game_mode as GameMode) ?? "sentence",
       };
     }));
     setLoading(false);
@@ -126,6 +134,30 @@ export async function setTraySlot(releaseId: string, traySlot: number | null): P
   return !error;
 }
 
+/**
+ * Change the game a theme is played with.
+ *
+ * The database will refuse this when another theme on the wall already uses
+ * that game, and refusing is the point — the cinema screens three at once and
+ * three of the same game is the exact thing Em said made it boring. The error
+ * is passed back so the back office can say which, rather than silently
+ * doing nothing.
+ */
+export async function setGameMode(
+  releaseId: string, mode: GameMode,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "冇連到資料庫" };
+  const { error } = await supabase.from("theme_releases")
+    .update({ game_mode: mode }).eq("id", releaseId);
+  if (!error) return { ok: true };
+  return {
+    ok: false,
+    error: error.code === "23505"
+      ? "呢個玩法已經俾牆上面另一個主題用咗。同一時間唔可以有兩個主題玩法一樣。"
+      : error.message,
+  };
+}
+
 /** Add next month's theme: a new release row, never an edit to an old one. */
 export async function addRelease(params: {
   id: string;
@@ -133,6 +165,7 @@ export async function addRelease(params: {
   targetCardCode: string;
   traySlot: number | null;
   displayOrder: number;
+  gameMode: GameMode;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "冇連到資料庫" };
   const { error } = await supabase.from("theme_releases").insert({
@@ -141,6 +174,7 @@ export async function addRelease(params: {
     target_card_code: params.targetCardCode,
     tray_slot: params.traySlot,
     display_order: params.displayOrder,
+    game_mode: params.gameMode,
     status: "current",
   });
   return error ? { ok: false, error: error.message } : { ok: true };
