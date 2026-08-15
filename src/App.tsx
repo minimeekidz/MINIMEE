@@ -6,7 +6,8 @@ import { AdminThemesPage } from "./pages/AdminThemesPage";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
 import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ThemesPage } from "./pages/ParentPages";
 import { AuthPage } from "./pages/AuthPages";
-import { FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
+import { FaqPage, HowItWorksPage, LegalPage, PricingPage } from "./pages/PublicPages";
+import { GameHome } from "./pages/GameHome";
 import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
 import { LostItemsPage, NotificationsPage, PrivacyCenterPage, PublicLostItemPage, SupportCasePage } from "./pages/ParentServicePages";
 import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
@@ -31,7 +32,7 @@ export default function App() {
   useStructuredData("minimee-organization", organizationSchema);
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<GameHome />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/faq" element={<FaqPage />} />

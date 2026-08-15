@@ -199,11 +199,38 @@ beforeEach(() => {
 });
 
 describe("MINIMEE route shells", () => {
-  it("renders the public home page around the kid e-name card idea", () => {
+  it("opens on the game rather than on a marketing page", () => {
+    // Em: 「一入到 Landing page 就已經係首頁主頁，然後開始遊戲之後透過城鎮去
+    // 操作任何嘅功能」「全個網站唔會再見到有嗰啲普通網頁 page」. So the first
+    // thing on the page is the way in, not a pitch.
     render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
-    expect(screen.getByRole("heading", { name: /自我介紹卡/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "睇一張示範卡" })).toHaveAttribute("href", "/kid/mimi");
-    expect(screen.getByRole("link", { name: /試玩儲卡小遊戲/ })).toHaveAttribute("href", "/play");
+    expect(screen.getByRole("heading", { name: "MINIMEE" })).toBeInTheDocument();
+
+    // One real button, and it walks into the world.
+    const start = screen.getByRole("link", { name: /開始遊戲|返入小鎮/ });
+    expect(start).toHaveAttribute("href", expect.stringMatching(/^\/(play|parent\/dashboard)$/));
+
+    // A demo card is still reachable, and pricing is still findable by a
+    // parent who wants it — just not in anybody's way.
+    expect(screen.getByRole("link", { name: /Mimi/ })).toHaveAttribute("href", "/kid/mimi");
+    expect(screen.getByRole("link", { name: "方案同收費" })).toHaveAttribute("href", "/pricing");
+  });
+
+  it("offers the shortcut bar in game pages and never on the world itself", async () => {
+    // Em: 「可以加條 nav bar…方便快捷進入唔使一定要行到過去」. A shortcut,
+    // not a substitute — every stop is somewhere the child could also walk to,
+    // and the world itself is left alone because it already fills the screen
+    // and navigates itself.
+    const inside = render(
+      <MemoryRouter initialEntries={["/parent/children/c1/themes"]}><App /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole("navigation", { name: "快捷列" })).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: /我的小屋/ }))
+      .toHaveAttribute("href", "/parent/children/c1/inside/my-home");
+    inside.unmount();
+
+    // The landing page is the way in; a menu over it would be a second one.
+    render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
+    expect(screen.queryByRole("navigation", { name: "快捷列" })).toBeNull();
   });
 
   it("renders the parent dashboard with the connected child profile", () => {
