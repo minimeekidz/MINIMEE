@@ -3,6 +3,8 @@ import { Check, Save, Upload } from "lucide-react";
 import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI";
 import { supabase } from "../lib/supabase";
 import type { LessonWord } from "../lib/rooms";
+import { FAMILIES } from "../lib/games";
+import { useThemeCatalogue } from "../lib/themeStore";
 
 // Lets the operator publish a new lesson into a room without a developer.
 //
@@ -14,10 +16,16 @@ import type { LessonWord } from "../lib/rooms";
 // Publishing is insert-then-flip, never an edit in place: the previous
 // lesson stays in the table, so a bad swap is undone by flipping back
 // rather than by retyping the content.
+//
+// The theme is picked from the catalogue rather than typed. A typed name
+// looked the same on screen but left `theme_id` null, and a lesson with no
+// theme id falls back to the plain word game — so the month's configured
+// game silently never ran. Picking also fills the four words in, because
+// the theme already owns them and retyping them is how they drift.
 
 interface RoomRow { id: string; nameZh: string; blurb: string }
 interface LessonRow {
-  id: string; roomId: string; theme: string; title: string;
+  id: string; roomId: string; theme: string; themeId: string | null; title: string;
   words: LessonWord[]; current: boolean; videoPath: string | null;
 }
 
@@ -28,8 +36,11 @@ export function AdminLessonsPage() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
 
+  const { themes, releases } = useThemeCatalogue();
+
   const [roomId, setRoomId] = useState("");
-  const [theme, setTheme] = useState("");
+  // "" means no theme: a standalone lesson that plays the plain word game.
+  const [themeId, setThemeId] = useState("");
   const [title, setTitle] = useState("");
   const [videoPath, setVideoPath] = useState("");
   const [wordText, setWordText] = useState("");
@@ -40,7 +51,7 @@ export function AdminLessonsPage() {
     const [roomResult, lessonResult] = await Promise.all([
       supabase.from("rooms").select("id, name_zh, blurb").order("sort_order"),
       supabase.from("room_lessons")
-        .select("id, room_id, theme, title, words, current, video_path")
+        .select("id, room_id, theme, theme_id, title, words, current, video_path")
         .order("created_at", { ascending: false }),
     ]);
     setRooms((roomResult.data ?? []).map(r => ({
@@ -48,6 +59,7 @@ export function AdminLessonsPage() {
     })));
     setLessons((lessonResult.data ?? []).map(l => ({
       id: l.id as string, roomId: l.room_id as string, theme: (l.theme as string) ?? "",
+      themeId: (l.theme_id as string) ?? null,
       title: (l.title as string) ?? "", words: (l.words as LessonWord[]) ?? [],
       current: Boolean(l.current), videoPath: (l.video_path as string) ?? null,
     })));
@@ -82,9 +94,14 @@ export function AdminLessonsPage() {
     await supabase.from("room_lessons").update({ current: false })
       .eq("room_id", roomId).eq("current", true);
 
+    const picked = themes.find(candidate => candidate.id === themeId);
     const { error } = await supabase.from("room_lessons").insert({
-      room_id: roomId, theme: theme || "未命名主題", title,
-      words, video_path: videoPath || null, current: true,
+      room_id: roomId,
+      // `theme` stays the display name so the studio panels keep working;
+      // `theme_id` is what decides which game runs.
+      theme: picked?.nameZh ?? "未命名主題",
+      theme_id: picked?.id ?? null,
+      title, words, video_path: videoPath || null, current: true,
     });
 
     setBusy(false);
@@ -125,8 +142,40 @@ export function AdminLessonsPage() {
       </label>
 
       <label>
-        <span>主題（例如：海洋）</span>
-        <input value={theme} onChange={event => setTheme(event.target.value)} placeholder="海洋" />
+        <span>主題</span>
+        <select
+          value={themeId}
+          onChange={event => {
+            const next = event.target.value;
+            setThemeId(next);
+            const picked = themes.find(candidate => candidate.id === next);
+            // Fill the words in from the theme itself. Retyping them is how
+            // the lesson and the tray end up disagreeing about what the
+            // four words are.
+            if (picked) {
+              setWordText(picked.words.join("\n"));
+              setTitle(current => current || picked.nameZh);
+            }
+          }}
+        >
+          <option value="">唔接主題（玩返普通詞語遊戲）</option>
+          {themes.map(candidate => (
+            <option key={candidate.id} value={candidate.id}>
+              {String(candidate.themeNo).padStart(2, "0")} · {candidate.nameZh}
+            </option>
+          ))}
+        </select>
+        <small>
+          {themeId
+            ? (() => {
+                const release = releases.find(
+                  row => row.themeId === themeId && row.status !== "retired");
+                return release
+                  ? `呢個主題而家玩「${FAMILIES[release.gameMode].nameZh}」（${FAMILIES[release.gameMode].domain}）。`
+                  : "呢個主題仲未上牆 —— 要喺「主題與卡冊」度開一期先玩到佢嘅遊戲。";
+              })()
+            : "唔揀主題就用返舊嗰個揀詞語遊戲，唔會用當月玩法。"}
+        </small>
       </label>
 
       <label className="editor-wide">
@@ -170,7 +219,11 @@ export function AdminLessonsPage() {
             {roomLessons.length === 0
               ? <p className="theme-slot-note">仲未有課程。</p>
               : <ul className="theme-slot-jobs">{roomLessons.map(lesson => <li key={lesson.id}>
-                  <span>{lesson.theme} · {lesson.title}（{lesson.words.length} 個詞{lesson.videoPath ? "、有片" : ""}）</span>
+                  <span>
+                    {lesson.theme} · {lesson.title}
+                    （{lesson.words.length} 個詞{lesson.videoPath ? "、有片" : ""}
+                    {lesson.themeId ? "" : "、冇接主題"}）
+                  </span>
                   {lesson.current
                     ? <small>現行</small>
                     : <button className="button small secondary" onClick={() => void makeCurrent(lesson)} disabled={busy}>

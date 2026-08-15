@@ -34,7 +34,15 @@ export interface Lesson {
   id: string;
   roomId: string;
   theme: string;
+  /**
+   * Which of the 36 themes this lesson belongs to, when it belongs to one.
+   * Null on the placeholder lessons that predate the theme catalogue — those
+   * still play, they just play the plain word game rather than the theme's
+   * configured one.
+   */
+  themeId: string | null;
   title: string;
+  videoPath: string | null;
   words: LessonWord[];
 }
 
@@ -63,7 +71,9 @@ function toLesson(row: Record<string, unknown>): Lesson {
     id: row.id as string,
     roomId: row.room_id as string,
     theme: (row.theme as string) ?? "",
+    themeId: (row.theme_id as string) ?? null,
     title: (row.title as string) ?? "",
+    videoPath: (row.video_path as string) ?? null,
     words,
   };
 }
@@ -85,7 +95,7 @@ export function useRooms(kidCardId: string | null): {
     const [roomResult, lessonResult, fragmentResult] = await Promise.all([
       supabase.from("rooms").select("id, name_zh, blurb, art, sort_order")
         .eq("active", true).order("sort_order", { ascending: true }),
-      supabase.from("room_lessons").select("id, room_id, theme, title, words")
+      supabase.from("room_lessons").select("id, room_id, theme, theme_id, title, video_path, words")
         .eq("current", true),
       kidCardId
         ? supabase.from("lesson_fragments").select("room_id, lesson_id, spent")

@@ -1,16 +1,36 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ART, ZONES, zoneBackground } from "./lib/world";
+import { arrivalPoint, hotspotNear, isDaytime, isDawn, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground } from "./lib/world";
 import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
 import { actionVo } from "./data/petActionVo";
 import { learningRecord } from "./lib/petStore";
 import { livesIn, petsForZone, spawnWeight } from "./lib/petSpawn";
+import { ageFrom, ageLabel } from "./lib/age";
+import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
+import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
+import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
+import {
+  booksFrom, BOOKS, CARDS_PER_BOOK, specialCards, themeProgress, THEME_BOOKS,
+  THEME_SLOTS, TRAY_SLOTS, type CollectedCard,
+} from "./lib/collection";
+import themeSeed from "./data/activeTheme.seed.v1.json";
+import themeBook from "./data/themeBook.json";
+import { checkParentPin, closeParentGate, openParentGate, parentGateOpen } from "./lib/parentGate";
+import { classifyWeather, festivalFor, lunarDayNumber, parseLunar } from "./lib/almanac";
+import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
+import { NoticeBoardPanel } from "./components/interior/HomePanels";
+import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
+import {
+  bandFor, buildRounds, clausesOf, difficultyFor, FAMILIES, GAME_MODES,
+  isCorrect, roundAt, ROUNDS_PER_THEME, type ThemeGameSource,
+} from "./lib/games";
+import { ThemeGame } from "./components/ThemeGame";
 
 vi.mock("./contexts/AuthContext", () => ({
   useAuth: () => ({
@@ -70,6 +90,9 @@ const billing = vi.hoisted(() => ({
   lessons: [] as Record<string, unknown>[],
   fragments: [] as Record<string, unknown>[],
   quizAttempts: [] as Record<string, unknown>[],
+  publicProfile: null as Record<string, unknown> | null,
+  /** Every table write, so a test can assert a save happened exactly once. */
+  writes: [] as Array<{ table: string; patch: unknown }>,
 }));
 
 vi.mock("./lib/supabase", () => {
@@ -98,7 +121,7 @@ vi.mock("./lib/supabase", () => {
       single: () => Promise.resolve({ data: singleFor(table), error: null }),
       insert: () => builder,
       upsert: () => Promise.resolve({ data: null, error: null }),
-      update: () => builder,
+      update: (patch: unknown) => { billing.writes.push({ table, patch }); return builder; },
       then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
         Promise.resolve({ data: rowsFor(table), error: null }).then(resolve, reject),
     };
@@ -108,8 +131,15 @@ vi.mock("./lib/supabase", () => {
   return {
     supabase: {
       auth: { resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }) },
-      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
-      storage: { from: () => ({ createSignedUrl: () => Promise.resolve({ data: null, error: null }) }) },
+      rpc: vi.fn((name: string) => Promise.resolve(
+        name === "kid_card_public"
+          ? { data: billing.publicProfile ? [billing.publicProfile] : [], error: null }
+          : { data: [], error: null })),
+      storage: { from: () => ({
+        createSignedUrl: () => Promise.resolve({ data: null, error: null }),
+        upload: () => Promise.resolve({ data: null, error: null }),
+        remove: () => Promise.resolve({ data: null, error: null }),
+      }) },
       from: (table: string) => makeBuilder(table),
     },
   };
@@ -162,6 +192,7 @@ beforeEach(() => {
   billing.quizAttempts = [];
   billing.entitlements = [];
   billing.jobs = [];
+  billing.writes = [];
   createBillingOrder.mockReset().mockResolvedValue({ ok: false, error: "Not authenticated" });
   cancelSubscription.mockReset().mockResolvedValue({ ok: true, data: { currentPeriodEnd: null } });
   createAiVideoJobs.mockReset().mockResolvedValue({ ok: true, data: {} });
@@ -415,11 +446,15 @@ describe("MINIMEE route shells", () => {
     // A published card from the database never carries its token — the
     // finder reaches the parent through the QR sticker instead. Probing a
     // card page must not hand out a working contact link.
-    billing.kidCard = {
-      id: "card-1", slug: "real-kid", display_name: "小明", age_group: "6-8",
-      tagline: "我係小明", about: "", likes: [], dream_job: "",
-      scene: null, avatar_url: null, intro_video_url: null, intro_video_poster: null,
-      published: true, lost_mode_enabled: true, lost_mode_message: "唔該聯絡我媽咪",
+    billing.publicProfile = {
+      id: "card-1", slug: "real-kid", display_name: "小明",
+      tagline: "我係小明", about: null, dream_job: null,
+      age: null, age_is_approximate: false, school: null,
+      scene: null, avatar_url: null, hero_id: null,
+      favourite_animal: null, favourite_food: null, favourite_colour: null,
+      favourite_place: null, quote: null,
+      intro_video_url: null, intro_video_poster: null,
+      lost_mode_enabled: true, lost_mode_message: "唔該聯絡我媽咪",
     };
     render(<MemoryRouter initialEntries={["/kid/real-kid"]}><App /></MemoryRouter>);
     expect(await screen.findByRole("heading", { level: 1, name: "小明" })).toBeInTheDocument();
@@ -537,17 +572,21 @@ describe("MINIMEE route shells", () => {
       expect(zone.hotspots.length, `${zone.id} needs somewhere to go`).toBeGreaterThan(0);
       for (const spot of zone.hotspots) {
         if (spot.kind === "gate") expect(ZONES[spot.target], `${zone.id} → ${spot.target}`).toBeDefined();
-        else expect(ROOM_ART[spot.target], `${zone.id} door → ${spot.target}`).toBeDefined();
+        else if (spot.kind === "door") expect(ROOM_ART[spot.target], `${zone.id} door → ${spot.target}`).toBeDefined();
         // Every door and gate has to stand on ground the walk mask actually
         // allows, or the child can see the marker and never reach it.
         expect(isWalkable(zone, spot.x, spot.y), `${zone.id}/${spot.id} off the path`).toBe(true);
       }
-      // Every room with art must have a door leading to it. A room nobody can
-      // walk into is content that has been paid for and never seen.
+      // Every room with art must be reachable — from a zone's door, or from
+      // inside another room (卡冊珍藏館 and 碎片拼合室 hang off 珍藏館主廳,
+      // 戲院廳 off its lobby). A room nobody can walk into is content that has
+      // been paid for and never seen.
       for (const room of Object.keys(ROOM_ART)) {
-        const hasDoor = Object.values(ZONES).some(other =>
+        const fromZone = Object.values(ZONES).some(other =>
           other.hotspots.some(s => s.kind === "door" && s.target === room));
-        expect(hasDoor, `no door leads to ${room}`).toBe(true);
+        const fromRoom = Object.values(ROOM_DOORS).some(doors =>
+          doors.some(door => door.target === room));
+        expect(fromZone || fromRoom, `no door leads to ${room}`).toBe(true);
       }
       // Arriving has to leave the child standing somewhere they can walk from,
       // and never on a gate: spawning on the return gate put 返小鎮 under their
@@ -564,9 +603,9 @@ describe("MINIMEE route shells", () => {
   });
 
   it("walks to the nearest path when the child taps somewhere unreachable", () => {
-    const town = ZONES.town;
-    // The top of the town map is open sea. A child who taps it should end up
-    // on the nearest shore path rather than nothing happening at all.
+    const town = ZONES["town-centre"];
+    // The top of the town map is sky and open water. A child who taps it
+    // should end up on the nearest path rather than nothing happening at all.
     expect(isWalkable(town, 0.5, 0.04)).toBe(false);
     const landed = nearestWalkable(town, 0.5, 0.04);
     expect(landed).not.toBeNull();
@@ -576,11 +615,11 @@ describe("MINIMEE route shells", () => {
   });
 
   it("puts the child back at the entrance they came through", () => {
-    // Walking 小鎮 → 碼頭 → 小鎮 has to land next to the 碼頭 gate, not at the
-    // town's own starting point on the far side of the map.
-    const town = ZONES.town;
-    const gate = town.hotspots.find(spot => spot.target === "dock")!;
-    const back = arrivalPoint(town, { zone: "dock" });
+    // Walking 小鎮中心 → 碼頭市集 → 小鎮中心 has to land next to the 碼頭
+    // gate, not at the town's own starting point on the far side of the map.
+    const town = ZONES["town-centre"];
+    const gate = town.hotspots.find(spot => spot.target === "wharf-market")!;
+    const back = arrivalPoint(town, { zone: "wharf-market" });
     expect(isWalkable(town, back.x, back.y)).toBe(true);
     expect(Math.hypot(back.x - gate.x, back.y - gate.y)).toBeLessThan(0.2);
     expect(Math.hypot(back.x - town.spawn.x, back.y - town.spawn.y)).toBeGreaterThan(0.2);
@@ -589,8 +628,8 @@ describe("MINIMEE route shells", () => {
     expect(hotspotNear(town, back.x, back.y)?.id).not.toBe(gate.id);
 
     // Coming out of a room lands at that room's door.
-    const door = town.hotspots.find(spot => spot.target === "cinema")!;
-    const outside = arrivalPoint(town, { room: "cinema" });
+    const door = town.hotspots.find(spot => spot.target === "studio")!;
+    const outside = arrivalPoint(town, { room: "studio" });
     expect(Math.hypot(outside.x - door.x, outside.y - door.y)).toBeLessThan(0.2);
 
     // Somewhere with no known entrance still has to be a legal place to stand.
@@ -748,20 +787,555 @@ describe("MINIMEE route shells", () => {
     expect(petsForZone({ zoneId: "town", now: new Date("2026-08-14T09:40:00") })).toEqual(here);
   });
 
+  it("derives age from DOB and never stores it", () => {
+    // A stored age is wrong the day after the birthday and nothing would fix
+    // it, so the number is computed on read.
+    const before = ageFrom("2018-03-14", null, new Date("2026-03-13"));
+    const onTheDay = ageFrom("2018-03-14", null, new Date("2026-03-14"));
+    expect(before!.years).toBe(7);
+    expect(onTheDay!.years).toBe(8);
+    expect(onTheDay!.approximate).toBe(false);
+
+    // Families who signed up before children.dob existed have only a year,
+    // which can be one out — so it says 約 rather than claiming to know.
+    const legacy = ageFrom(null, 2018, new Date("2026-03-13"));
+    expect(legacy!.approximate).toBe(true);
+    expect(ageLabel(legacy)).toBe("約 8 歲");
+    expect(ageLabel(onTheDay)).toBe("8 歲");
+
+    // Nothing at all rather than a zero.
+    expect(ageFrom(null, null)).toBeNull();
+    expect(ageLabel(null)).toBe("");
+  });
+
+  it("hides a private profile behind the public read, not behind the UI", async () => {
+    // The visitor path goes through kid_card_public, which applies the
+    // per-field switches server-side. A visitor is never handed private data
+    // and asked not to render it.
+    billing.publicProfile = null;
+    render(<MemoryRouter initialEntries={["/kid/nobody"]}><App /></MemoryRouter>);
+    expect(await screen.findByText("搵唔到呢個檔案")).toBeInTheDocument();
+  });
+
+  it("shows the photo warning only while editing", () => {
+    const sticker = {
+      id: "s1", category: "interest" as const, label: "畫畫", size: "m" as const,
+      sortOrder: 0, note: null, photoPath: null, photoPublic: false, art: null,
+    };
+    // A visitor must never be shown the upload warning — it is a decision for
+    // whoever is uploading, not a notice to the reader.
+    const visitor = render(
+      <StickerDetailPanel sticker={sticker} cardId={null} onClose={() => {}} />);
+    expect(screen.queryByText(/呢張相會俾所有睇到/)).toBeNull();
+    visitor.unmount();
+
+    render(<StickerDetailPanel sticker={sticker} cardId="card-1" editing onClose={() => {}} />);
+    expect(screen.getByText(/呢張相會俾所有睇到/)).toBeInTheDocument();
+  });
+
+  it("reorders stickers by drag and saves the move exactly once", async () => {
+    // Two ways of saying "the drag finished" reach the wall: the sticker's own
+    // pointer-up, and the same event bubbling to the grid. Both used to fire a
+    // write, so every reorder was sent to the database twice.
+    const wall = ["畫畫", "游水", "跳舞"].map((label, index) => ({
+      id: `s${index}`, category: "interest" as const, label, size: "m" as const,
+      sortOrder: index, note: null, photoPath: null, photoPublic: false, art: null,
+    }));
+    const onOpen = vi.fn();
+    render(<StickerWall title="我的興趣" stickers={wall} editing onOpen={onOpen} />);
+
+    const faces = screen.getAllByRole("button", { name: /^(畫畫|游水|跳舞)$/ });
+    // A mouse drags immediately; a finger has to hold first, which is what
+    // stops a scroll gesture from picking a sticker up.
+    fireEvent.pointerDown(faces[2], { pointerType: "mouse" });
+    fireEvent.pointerEnter(faces[0], { pointerType: "mouse" });
+
+    // The list reorders under the finger, before anything is written — a drag
+    // must never wait on the network to show where the sticker landed.
+    expect(screen.getAllByRole("button", { name: /^(畫畫|游水|跳舞)$/ })[0])
+      .toHaveAccessibleName("跳舞");
+
+    fireEvent.pointerUp(faces[0], { pointerType: "mouse" });
+    await waitFor(() => expect(billing.writes.length).toBeGreaterThan(0));
+
+    // 跳舞 moves to the front, so all three rows change index — and each is
+    // written once, not once per handler that saw the pointer-up.
+    expect(billing.writes.filter(write => write.table === "kid_card_stickers"))
+      .toEqual([0, 1, 2].map(sort_order => ({ table: "kid_card_stickers", patch: { sort_order } })));
+
+    // Landing a drag on a sticker is not a tap on it: the child moved 跳舞,
+    // they did not ask to open 畫畫.
+    expect(onOpen).not.toHaveBeenCalled();
+
+    // A plain tap, with no drag in flight, still opens the detail panel.
+    fireEvent.pointerUp(screen.getByRole("button", { name: "游水" }), { pointerType: "mouse" });
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ label: "游水" }));
+
+    // A drag that ends on the sticker it started from is the case where the
+    // pointer-up really is seen twice — by the sticker and by the grid.
+    billing.writes = [];
+    const dancing = screen.getByRole("button", { name: "跳舞" });
+    fireEvent.pointerDown(dancing, { pointerType: "mouse" });
+    fireEvent.pointerEnter(screen.getByRole("button", { name: "畫畫" }), { pointerType: "mouse" });
+    fireEvent.pointerUp(dancing, { pointerType: "mouse" });
+    await waitFor(() => expect(billing.writes.length).toBeGreaterThan(0));
+    expect(billing.writes).toHaveLength(3);
+  });
+
   it("switches the world between day and night art", () => {
-    const town = ZONES.town;
+    const town = ZONES["town-centre"];
     expect(isDaytime(new Date("2026-08-14T09:00:00"))).toBe(true);
     expect(isDaytime(new Date("2026-08-14T21:00:00"))).toBe(false);
     expect(zoneBackground(town, new Date("2026-08-14T09:00:00"))).toBe(town.day);
     expect(zoneBackground(town, new Date("2026-08-14T21:00:00"))).toBe(town.night);
+
+    // 小屋區入口 is the only zone Em drew at dawn, and the window is narrow so
+    // catching it feels like catching it.
+    const gate = ZONES["village-gate"];
+    expect(gate.dawn).toBeDefined();
+    expect(isDawn(new Date("2026-08-14T05:30:00"))).toBe(true);
+    expect(isDawn(new Date("2026-08-14T09:00:00"))).toBe(false);
+    expect(zoneBackground(gate, new Date("2026-08-14T05:30:00"))).toBe(gate.dawn);
+    expect(zoneBackground(gate, new Date("2026-08-14T09:00:00"))).toBe(gate.day);
+    // Everywhere else goes straight from night to day at the same hour.
+    expect(zoneBackground(town, new Date("2026-08-14T05:30:00"))).toBe(town.night);
+
+    // Every interior in the map has art, and every art file has a room.
+    for (const interior of Object.values(INTERIORS)) {
+      expect(ROOM_ART[interior.id], `${interior.id} missing from ROOM_ART`).toBe(interior.art);
+    }
+    expect(Object.keys(ROOM_ART).sort()).toEqual(Object.keys(INTERIORS).sort());
   });
 
   it("only offers a door when the child is standing at it", () => {
-    const town = ZONES.town;
+    const town = ZONES["town-centre"];
     const door = town.hotspots[0];
     expect(hotspotNear(town, door.x, door.y)?.id).toBe(door.id);
-    // Standing across the map offers nothing, so prompts cannot stack up.
-    expect(hotspotNear(town, 0.5, 0.75)).toBeNull();
+    // Standing in the middle of the road offers nothing, so prompts cannot
+    // stack up while the child is just walking.
+    expect(hotspotNear(town, 0.45, 0.75)).toBeNull();
+  });
+
+  it("AUDIT: park is a through-route, both directions, with real landings", () => {
+    // 小鎮廣場 ⇄ 散步公園 ⇄ 小屋區入口 — the park is not a dead end.
+    const pairs: Array<[string, string]> = [
+      ["town-square", "seaside-park"], ["seaside-park", "town-square"],
+      ["seaside-park", "village-gate"], ["village-gate", "seaside-park"],
+    ];
+    for (const [from, to] of pairs) {
+      const zone = ZONES[from];
+      const gate = zone.hotspots.find(spot => spot.kind === "gate" && spot.target === to);
+      expect(gate, `${from} has no gate to ${to}`).toBeDefined();
+      // The gate itself must be reachable on foot.
+      expect(isWalkable(zone, gate!.x, gate!.y), `${from}/${gate!.id} off the path`).toBe(true);
+      // And arriving from the far side must land on walkable ground that is
+      // not inside the return gate's own prompt.
+      const landing = arrivalPoint(ZONES[to], { zone: from });
+      expect(isWalkable(ZONES[to], landing.x, landing.y), `${to} landing off the path`).toBe(true);
+      const back = ZONES[to].hotspots.find(spot => spot.kind === "gate" && spot.target === from);
+      expect(hotspotNear(ZONES[to], landing.x, landing.y)?.id).not.toBe(back!.id);
+    }
+  });
+
+  it("routes the world exactly as Em drew it", () => {
+    // The map Em specified, read back out of the model. Every one of these
+    // was a sentence in her brief; if a link goes missing the child ends up
+    // somewhere she never sent them.
+    const gate = (zone: string, target: string) =>
+      ZONES[zone].hotspots.some(s => s.kind === "gate" && s.target === target);
+    const door = (zone: string, target: string) =>
+      ZONES[zone].hotspots.some(s => s.kind === "door" && s.target === target);
+
+    // 小鎮中心 is the hub.
+    expect(door("town-centre", "cafe")).toBe(true);
+    expect(door("town-centre", "studio")).toBe(true);
+    expect(door("town-centre", "album-hall")).toBe(true);
+    expect(gate("town-centre", "wharf-market")).toBe(true);
+    expect(gate("town-centre", "town-square")).toBe(true);
+
+    // 散步公園 joins 小鎮廣場 at its bottom and 小屋區入口 at its top, and
+    // both of those also join each other — the loop Em described.
+    expect(gate("town-square", "seaside-park")).toBe(true);
+    expect(gate("seaside-park", "town-square")).toBe(true);
+    expect(gate("seaside-park", "village-gate")).toBe(true);
+    expect(gate("village-gate", "seaside-park")).toBe(true);
+    expect(gate("town-square", "village-gate")).toBe(true);
+    expect(gate("village-gate", "town-square")).toBe(true);
+
+    // 我的小屋 is the left-hand house off 小屋區入口, not off the square.
+    expect(door("village-gate", "my-home")).toBe(true);
+    expect(door("town-square", "my-home")).toBe(false);
+
+    // Every gate is two-way: walking somewhere and being unable to walk back
+    // is the one thing a child will not forgive.
+    for (const zone of Object.values(ZONES)) {
+      for (const spot of zone.hotspots) {
+        if (spot.kind !== "gate") continue;
+        expect(gate(spot.target, zone.id), `${spot.target} has no way back to ${zone.id}`).toBe(true);
+      }
+    }
+
+    // The wings of the 珍藏館 and the 戲院 hang off their own halls, so
+    // leaving one returns to the hall rather than to the street.
+    expect(ROOM_PARENT["album-books"]).toBe("album-hall");
+    expect(ROOM_PARENT["fragment-room"]).toBe("album-hall");
+    expect(ROOM_PARENT["library"]).toBe("studio");
+    expect(ROOM_PARENT["cinema-lobby"]).toBe("studio");
+    expect(ROOM_PARENT["cinema-hall"]).toBe("cinema-lobby");
+
+    // 碼頭市集 is the parents' entrance and must stay flagged as one.
+    expect(ZONES["wharf-market"].parentsOnly).toBe(true);
+    expect(ZONES["town-centre"].parentsOnly).toBeUndefined();
+  });
+
+  it("puts every building's exit back where the child came in", () => {
+    // 原位入口原位出口. A room's way out is part of its definition rather than
+    // browser history, because history sends a child who deep-linked into the
+    // 戲院 back to whatever page they were on before — possibly nowhere in
+    // the world at all.
+    for (const interior of Object.values(INTERIORS)) {
+      const back = interior.back;
+      if (back.kind === "zone") {
+        expect(ZONES[back.target], `${interior.id} exits to a missing zone`).toBeDefined();
+        // The zone it exits into must actually have a door back in, or the
+        // child steps outside and cannot get back.
+        expect(
+          ZONES[back.target].hotspots.some(spot => spot.kind === "door" && spot.target === interior.id),
+          `${back.target} has no door to ${interior.id}`,
+        ).toBe(true);
+      } else {
+        expect(INTERIORS[back.target], `${interior.id} exits to a missing room`).toBeDefined();
+        expect(
+          INTERIORS[back.target].spots.some(spot => spot.kind === "room" && spot.target === interior.id),
+          `${back.target} has no way into ${interior.id}`,
+        ).toBe(true);
+      }
+    }
+
+    // The wings hang off their halls exactly as Em drew them.
+    expect(INTERIORS["album-books"].back.target).toBe("album-hall");
+    expect(INTERIORS["fragment-room"].back.target).toBe("album-hall");
+    expect(INTERIORS["library"].back.target).toBe("studio");
+    expect(INTERIORS["cinema-lobby"].back.target).toBe("studio");
+    expect(INTERIORS["cinema-hall"].back.target).toBe("cinema-lobby");
+    // 我的小屋 is off 小屋區入口, not off the town.
+    expect(INTERIORS["my-home"].back.target).toBe("village-gate");
+  });
+
+  it("sends a child out of a lesson back into the room they came from", () => {
+    // A lesson is reached through the 戲院廳 or Hero Studio, not off the
+    // street, so the link into it has to carry where the child came from —
+    // otherwise finishing a film drops them on the town map.
+    const room = {
+      id: "r1", nameZh: "海洋", blurb: "", art: "/a.webp", sortOrder: 1,
+      lesson: {
+        id: "l1", roomId: "r1", theme: "海洋", themeId: "theme-14",
+        title: "海底世界", videoPath: null, words: [{ word: "海龜" }],
+      },
+      earned: false,
+    };
+
+    const studio = render(
+      <MemoryRouter>
+        <CurrentWordsPanel rooms={[room]} childId="c1" backTo="studio" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: /睇片同玩遊戲/ }))
+      .toHaveAttribute("href", "/parent/children/c1/room/r1?back=studio");
+    studio.unmount();
+
+    // The lobby hands the choice to the hall rather than straight to the
+    // player, because the hall is where Em's design says the film plays.
+    const picked: string[] = [];
+    render(<TicketsPanel rooms={[room]} onPick={id => picked.push(id)} />);
+    fireEvent.click(screen.getByRole("button", { name: /海底世界/ }));
+    expect(picked).toEqual(["r1"]);
+  });
+
+  it("reads the sky the way the workbook orders it", () => {
+    // 安全天氣限制 is the top of the ordering, so a warning outranks the rain
+    // gauge. A typhoon signal in Hong Kong is often a dry, very windy day —
+    // reading zero millimetres and calling it clear would be exactly wrong.
+    expect(classifyWeather(0, ["WTCSGNL"])).toBe("storm");
+    expect(classifyWeather(0, ["WRAINA"])).toBe("storm");
+    expect(classifyWeather(0, ["WTS"])).toBe("storm");
+    expect(classifyWeather(0, ["WL"])).toBe("storm");
+    expect(classifyWeather(0, ["WTMW"])).toBe("storm");
+    // Real warnings, but not weather a pet shelters from: the sheet's
+    // drizzle/storm columns are about rain.
+    expect(classifyWeather(0, ["WFIREY"])).toBe("clear");
+    expect(classifyWeather(0, ["WHOT"])).toBe("clear");
+    expect(classifyWeather(12, [])).toBe("storm");
+    expect(classifyWeather(1, [])).toBe("drizzle");
+    expect(classifyWeather(0, [])).toBe("clear");
+  });
+
+  it("finds the lunar festivals by rule rather than by a fixed date", () => {
+    // 初五 is the fifth, 十五 the fifteenth, 廿三 the twenty-third. Getting
+    // this wrong tells a child it is 中秋 on the wrong evening, once a year,
+    // and nobody notices until it happens.
+    expect(lunarDayNumber("初一")).toBe(1);
+    expect(lunarDayNumber("初五")).toBe(5);
+    expect(lunarDayNumber("初十")).toBe(10);
+    expect(lunarDayNumber("十五")).toBe(15);
+    expect(lunarDayNumber("二十")).toBe(20);
+    expect(lunarDayNumber("廿三")).toBe(23);
+    expect(lunarDayNumber("卅一")).toBe(31);
+
+    expect(parseLunar("丙午年八月十五")).toEqual({ month: 8, day: 15 });
+    expect(parseLunar("乙巳年正月初一")).toEqual({ month: 1, day: 1 });
+    expect(parseLunar("乙巳年五月初五")).toEqual({ month: 5, day: 5 });
+    expect(parseLunar("乙巳年臘月廿八")).toEqual({ month: 12, day: 28 });
+
+    expect(festivalFor(1, 1)).toBe("lunar-new-year");
+    expect(festivalFor(5, 5)).toBe("dragon-boat");
+    expect(festivalFor(8, 15)).toBe("mid-autumn");
+    // Near misses are not festivals, and a failed lookup is never one.
+    expect(festivalFor(8, 14)).toBeNull();
+    expect(festivalFor(null, null)).toBeNull();
+  });
+
+  it("maps every active theme to exactly one configured card", () => {
+    // The seed Em supplied, read back. A theme does not work out which card
+    // it pays — a release row says so — and 軌道交通 paying MEE-019 (BOOK 4,
+    // slot 1) is the case that proves it: the first theme's card is at the
+    // back of the album, so anything that fills the album in order is wrong.
+    const seed = themeSeed as Array<{
+      traySlot: number; themeId: string; themeNameZh: string; words: string[];
+      status: string; displayOrder: number;
+      targetMeeCard: { cardId: string; bookNumber: number; slotNumber: number };
+    }>;
+
+    expect(seed).toHaveLength(TRAY_SLOTS);
+
+    // One theme per tray, one tray per theme, and the display order is the
+    // configured one rather than anything sorted.
+    expect(seed.map(row => row.traySlot)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(seed.map(row => row.displayOrder)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(new Set(seed.map(row => row.themeId)).size).toBe(TRAY_SLOTS);
+    // Alphabetical order is NOT the product order: sorting the names would
+    // move 軌道交通 away from tray 1.
+    const alphabetical = [...seed.map(row => row.themeNameZh)].sort();
+    expect(alphabetical).not.toEqual(seed.map(row => row.themeNameZh));
+
+    // Every theme has exactly four words, because a tray has four pieces.
+    for (const row of seed) expect(row.words, row.themeId).toHaveLength(4);
+
+    // Each theme's card is distinct, and sits where the catalog puts it.
+    expect(new Set(seed.map(row => row.targetMeeCard.cardId)).size).toBe(TRAY_SLOTS);
+    const first = seed.find(row => row.themeId === "theme-01")!;
+    expect(first.themeNameZh).toBe("軌道交通");
+    expect(first.targetMeeCard.cardId).toBe("MEE-019");
+    expect(first.targetMeeCard.bookNumber).toBe(4);
+    expect(first.targetMeeCard.slotNumber).toBe(1);
+
+    // book/slot must agree with the card number, or the album and the
+    // release configuration are telling two different stories.
+    for (const row of seed) {
+      const number = Number(row.targetMeeCard.cardId.slice(4));
+      expect(Math.floor((number - 1) / CARDS_PER_BOOK) + 1, row.targetMeeCard.cardId)
+        .toBe(row.targetMeeCard.bookNumber);
+      expect(((number - 1) % CARDS_PER_BOOK) + 1, row.targetMeeCard.cardId)
+        .toBe(row.targetMeeCard.slotNumber);
+    }
+  });
+
+  it("carries all 36 themes with their unified 3–12 vocabulary", () => {
+    const book = themeBook as {
+      themes: Array<{ themeId: string; themeNo: number; nameZh: string; words: string[]; question: string }>;
+      cards: Array<{ code: string; bookNo: number; slotNo: number }>;
+    };
+
+    expect(book.themes).toHaveLength(36);
+    expect(book.cards).toHaveLength(24);
+
+    for (const theme of book.themes) {
+      // 規則: 每主題詞彙固定 4 個，方便碎片與 quiz.
+      expect(theme.words, theme.themeId).toHaveLength(4);
+      expect(theme.question, theme.themeId).not.toBe("");
+      expect(theme.themeId).toBe(`theme-${String(theme.themeNo).padStart(2, "0")}`);
+    }
+
+    // Every album position is used once — no two cards share a slot.
+    const seats = book.cards.map(card => `${card.bookNo}:${card.slotNo}`);
+    expect(new Set(seats).size).toBe(book.cards.length);
+  });
+
+  it("keeps every 碼頭市集 counter pointing at a page that exists", () => {
+    // A counter that opens nothing is worse than a counter that is not there:
+    // the child walks up, taps, and the world reads as broken.
+    const routes = new Set([
+      "/parent/children/:id/card", "/parent/dashboard",
+      "/parent/children/:id/subscription", "/parent/children/:id/lost-items",
+      "/parent/privacy",
+    ]);
+    for (const stall of WHARF_STALLS) {
+      expect(routes.has(stall.route), `${stall.id} → ${stall.route}`).toBe(true);
+      expect(stallRoute(stall, "child-1")).not.toContain(":id");
+    }
+    // Every counter on the map has a definition behind it.
+    for (const spot of ZONES["wharf-market"].hotspots) {
+      if (spot.kind !== "stall") continue;
+      expect(WHARF_STALLS.some(stall => stall.id === spot.target), spot.id).toBe(true);
+    }
+  });
+
+  it("asks for the 船飛 before letting anyone into 碼頭市集", () => {
+    closeParentGate();
+    expect(parentGateOpen()).toBe(false);
+    expect(checkParentPin("0000")).toBe(false);
+    expect(checkParentPin("2468")).toBe(true);
+    openParentGate();
+    expect(parentGateOpen()).toBe(true);
+    closeParentGate();
+  });
+
+  it("puts a card in the album slot it was configured for, not where it was earned", () => {
+    // 卡號／Book／Slot 為固定. The album must not reorder itself by unlock
+    // time, and must not re-derive a position from the card number — Em is
+    // re-sequencing the numbering to follow theme order, and when she does,
+    // only the catalog changes.
+    const card = (code: string, bookNo: number | null, slotNo: number | null): CollectedCard => ({
+      id: code, code, name: code, rarity: "normal", art: "", earnedFor: "",
+      earnedAt: null, theme: null, bookNo, slotNo,
+    });
+
+    // T10-N is 第 10 主題's normal card, which sits in book 4 — the binder
+    // is three themes a book, so theme 10 opens book 4. Earning it first
+    // must not move it to the front.
+    const books = booksFrom([
+      card("T10-N", 4, 1),
+      card("T02-N", 1, 3),
+      card("SP-001", null, null),
+    ]);
+
+    expect(books).toHaveLength(BOOKS.length);
+    for (const book of books) expect(book.slots).toHaveLength(CARDS_PER_BOOK);
+    expect(books[3].slots[0]?.code).toBe("T10-N");
+    expect(books[0].slots[2]?.code).toBe("T02-N");
+    // Everything else stays an empty slot: the gap is what tells a child
+    // there is another card to find.
+    expect(books[0].slots[0]).toBeNull();
+    expect(books[0].slots.filter(Boolean)).toHaveLength(1);
+    // A card with no album position is still theirs, and still shown.
+    expect(specialCards([card("T10-N", 4, 1), card("SP-001", null, null)])
+      .map(item => item.code)).toEqual(["SP-001"]);
+  });
+
+  it("keeps 特別回憶 out of the 72 and counts them instead of dividing them", () => {
+    // Em: 「完成率唔應該顯示 0/全部，因為日後會不停新增限定卡，否則小朋友
+    // 會永遠見到未完成」. A denominator that grows every festival is a child
+    // who is permanently behind, so the specials have no denominator at all
+    // and never touch the theme total.
+    const card = (code: string, bookNo: number | null, slotNo: number | null): CollectedCard => ({
+      id: code, code, name: code, rarity: bookNo ? "normal" : "special", art: "",
+      earnedFor: "", earnedAt: null, theme: null, bookNo, slotNo,
+    });
+
+    const held = [
+      card("T01-N", 1, 1), card("T01-F", 1, 2),
+      card("SP-001", null, null), card("SP-005", null, null), card("SP-008", null, null),
+    ];
+
+    // 12 books of six: 36 normal plus 36 flash, and one book a month.
+    expect(BOOKS).toHaveLength(THEME_BOOKS);
+    expect(THEME_SLOTS).toBe(72);
+    expect(BOOKS).toHaveLength(12);
+
+    // Three specials held, and the theme total is untouched by them.
+    expect(specialCards(held)).toHaveLength(3);
+    expect(themeProgress(held)).toEqual({ owned: 2, total: 72 });
+
+    // Adding a whole new page of specials still cannot move the total.
+    const more = [...held, card("SP-009", null, null), card("SP-010", null, null)];
+    expect(themeProgress(more).total).toBe(72);
+    expect(themeProgress(more).owned).toBe(2);
+
+    // A theme's normal and its flash are two cards in two adjacent pockets,
+    // not one card wearing a finish.
+    const books = booksFrom(held);
+    expect(books[0].slots[0]?.code).toBe("T01-N");
+    expect(books[0].slots[1]?.code).toBe("T01-F");
+  });
+
+  it("opens every building and marks what is inside it", async () => {
+    // Each room is one picture with its functions marked on it. If a marker
+    // stops rendering the room becomes a dead end that still looks fine.
+    for (const interior of Object.values(INTERIORS)) {
+      const view = render(
+        <MemoryRouter initialEntries={[`/parent/children/demo-child-01/inside/${interior.id}`]}>
+          <App />
+        </MemoryRouter>,
+      );
+      // The scene waits on its art; jsdom never fires load, so the loading
+      // screen is what a real child sees first and is worth asserting on.
+      expect(await screen.findByRole("status")).toHaveTextContent(interior.name);
+      view.unmount();
+    }
+  });
+
+  it("shows the fragment trays, the four books and the whole shelf", () => {
+    const card = (code: string, rarity: "normal" | "flash" = "normal"): CollectedCard => ({
+      id: code, code, name: `卡 ${code}`, rarity, art: "", earnedFor: "",
+      earnedAt: null, theme: "海洋",
+      bookNo: 1, slotNo: Number(code.slice(-1)),
+    });
+
+    const shelf = render(<AllCardsPanel cards={[card("MEE-001"), card("MEE-002", "flash")]} />);
+    expect(screen.getByText("MEE-001")).toBeInTheDocument();
+    expect(screen.getByText(/其中 1 張閃卡/)).toBeInTheDocument();
+    shelf.unmount();
+
+    const books = render(<BooksPanel cards={[card("MEE-001")]} />);
+    // Five of the six slots in the first book are still empty, and they say so.
+    expect(screen.getAllByText("仲未解鎖")).toHaveLength(5);
+    books.unmount();
+
+    // A tray with four pieces offers to forge; a half-full one just counts;
+    // one whose card is already made says where it went.
+    const tray = (earned: number, owned = false) => ({
+      traySlot: 1, themeId: "theme-14", theme: "神秘深海",
+      words: ["小魚", "章魚", "鯊魚", "海龜"], status: "current" as const,
+      earned, targetCode: "MEE-008", bookNo: 2, slotNo: 2, owned,
+      mode: "make" as const, vo: "", question: "", answerPattern: "",
+    });
+
+    const ready = render(
+      <TraysPanel trays={[tray(4)]} kidCardId="card-1" onForged={() => {}} />);
+    expect(screen.getByRole("button", { name: "砌成一張卡" })).toBeInTheDocument();
+    // The four words are on the tray, so a child can see what they are for.
+    expect(screen.getByText("小魚・章魚・鯊魚・海龜")).toBeInTheDocument();
+    ready.unmount();
+
+    const half = render(<TraysPanel trays={[tray(2)]} kidCardId="card-1" onForged={() => {}} />);
+    expect(screen.queryByRole("button", { name: "砌成一張卡" })).toBeNull();
+    expect(screen.getByText("2 / 4")).toBeInTheDocument();
+    half.unmount();
+
+    // Already forged: no second button, and it names the album slot rather
+    // than counting fragments that have been spent.
+    render(<TraysPanel trays={[tray(0, true)]} kidCardId="card-1" onForged={() => {}} />);
+    expect(screen.queryByRole("button", { name: "砌成一張卡" })).toBeNull();
+    expect(screen.getByText("已砌成 · BOOK 2 第 2 格")).toBeInTheDocument();
+  });
+
+  it("keeps 小鎮趣聞 and 最新消息 apart on the notice board", () => {
+    // A parent who cannot tell an invented pet story from a real product
+    // announcement stops believing either of them.
+    render(<NoticeBoardPanel news={[
+      { id: "a", kind: "announcement", title: "新主題開放", body: "海洋主題今日開始。", publishedAt: "2026-08-14T00:00:00Z" },
+      { id: "f", kind: "fun", title: "企鵝跌咗雪糕", body: "海浪企鵝今朝喺廣場跌咗個雪糕。", publishedAt: "2026-08-14T00:00:00Z" },
+    ]} />);
+
+    expect(screen.getByText("最新消息")).toBeInTheDocument();
+    expect(screen.getByText("MINIMEE 官方")).toBeInTheDocument();
+    // The 趣聞 section says in as many words that it is made up.
+    expect(screen.getByText(/唔係真事/)).toBeInTheDocument();
+    // And the two never share a container.
+    const fun = screen.getByText("企鵝跌咗雪糕").closest(".notice-section");
+    const real = screen.getByText("新主題開放").closest(".notice-section");
+    expect(fun).not.toBe(real);
+    expect(fun).toHaveClass("fun");
   });
 
   it("publishes Organization, Service and FAQ structured data", () => {
@@ -777,5 +1351,248 @@ describe("MINIMEE route shells", () => {
     expect(faqData["@type"]).toBe("FAQPage");
     expect(faqData.mainEntity.length).toBeGreaterThan(0);
     faq.unmount();
+  });
+  // -------------------------------------------------------------------------
+  // 主題小遊戲
+  // -------------------------------------------------------------------------
+
+  const rail: ThemeGameSource = {
+    themeId: "theme-01", nameZh: "軌道交通",
+    words: ["港鐵", "電車", "火車", "輕鐵"],
+    vo: "城市入面有好多沿住路軌行嘅交通工具。港鐵帶我哋去唔同地區，電車慢慢穿過街道，火車可以去更遠地方，新界仲有輕鐵。",
+    question: "你最鍾意搭邊一種有路軌嘅交通工具？",
+    answerPattern: "我最鍾意搭{answer}。",
+    mode: "sentence",
+  };
+
+  it("scales a round to the child's age, and never asks a five-year-old to type", () => {
+    // Em: 「推算嗰個年齡調校難度選項數、有冇提示、要唔要打字」.
+    for (let round = 1; round <= ROUNDS_PER_THEME; round += 1) {
+      expect(difficultyFor(4, round).typing).toBe(false);
+      expect(difficultyFor(4, round).options).toBeLessThanOrEqual(3);
+      // A timer on a four-year-old is a way to make them cry, not to teach.
+      expect(difficultyFor(4, round).seconds).toBeNull();
+      expect(difficultyFor(4, round).hints).toBe(true);
+    }
+    // Typing is the oldest band's last round and nowhere else.
+    expect(difficultyFor(11, 3).typing).toBe(false);
+    expect(difficultyFor(11, 4).typing).toBe(true);
+    expect(difficultyFor(7, 4).typing).toBe(false);
+
+    // An unknown age lands in the middle, never the band that types.
+    expect(bandFor(null)).toBe("6-8");
+    expect(difficultyFor(null, 4).typing).toBe(false);
+    // A family that only ever picked a band gets that band, not a guess.
+    expect(bandFor("3-5")).toBe("3-5");
+    expect(bandFor("13+")).toBe("9-12");
+  });
+
+  it("gives every mode four rounds that escalate and cover all four words", () => {
+    // 「呢個遊戲是要玩四次的」— four rounds, one per fragment, and between
+    // them a child has to have met all four of the theme's words.
+    for (const mode of GAME_MODES) {
+      const rounds = buildRounds({ ...rail, mode }, { age: 8 });
+      expect(rounds).toHaveLength(ROUNDS_PER_THEME);
+      expect(rounds.map(round => round.round)).toEqual([1, 2, 3, 4]);
+
+      // Every round asks something, and asks it in words rather than a code.
+      for (const round of rounds) {
+        expect(round.prompt.length).toBeGreaterThan(4);
+        expect(round.mode).toBe(mode);
+      }
+
+      // 搵一搵 round 3 is the odd-one-out, which is about a foreign word on
+      // purpose — every other mode walks the theme's own four.
+      const covered = new Set(rounds.map(round => round.word));
+      expect(covered.size).toBeGreaterThanOrEqual(mode === "spot" ? 3 : 4);
+
+      // The rounds get harder: options never shrink as the round goes up.
+      const scored = rounds.filter(round => round.input === "tap");
+      for (let index = 1; index < scored.length; index += 1) {
+        expect(scored[index].difficulty.options)
+          .toBeGreaterThanOrEqual(scored[index - 1].difficulty.options);
+      }
+    }
+  });
+
+  it("never marks a child's own preference wrong", () => {
+    // 你會點揀 has no right answer. Marking one would be the single worst
+    // thing that mode could do, so the contract is `answer: ""` and the
+    // checker accepts anything the child actually said.
+    const rounds = buildRounds({ ...rail, mode: "choice" }, { age: 7 });
+    for (const round of rounds) {
+      expect(round.answer).toBe("");
+      expect(isCorrect(round, "電車")).toBe(true);
+      expect(isCorrect(round, "隨便乜都得")).toBe(true);
+      // Still not a way to skip: saying nothing is not answering.
+      expect(isCorrect(round, "   ")).toBe(false);
+    }
+    expect(FAMILIES.choice.openEnded).toBe(true);
+  });
+
+  it("builds 講句子 out of the theme's own narration", () => {
+    const [first] = buildRounds(rail, { age: 7 });
+    // The blank is cut from the VO clause that introduces the word, so the
+    // question is about something the child has just heard.
+    expect(first.prompt).toContain("＿＿");
+    expect(first.prompt).not.toContain("港鐵");
+    expect(first.options).toContain("港鐵");
+    expect(first.answer).toBe("港鐵");
+    expect(isCorrect(first, "港鐵")).toBe(true);
+    expect(isCorrect(first, "電車")).toBe(false);
+
+    // A typed sentence is accepted without its full stop.
+    const typed = buildRounds(rail, { age: 11 })[3];
+    expect(typed.input).toBe("type");
+    expect(isCorrect(typed, "我最鍾意搭輕鐵")).toBe(true);
+    expect(isCorrect(typed, "我最鍾意搭巴士。")).toBe(false);
+  });
+
+  it("stops the narration earlier every round in 估下會點", () => {
+    // Held to one word on purpose. Across the real four words the prompt
+    // lengths are not comparable — each word sits at a different point in
+    // the paragraph — and what escalates is how far back the cut is made.
+    const late = { ...rail, mode: "predict" as const, words: ["輕鐵"] };
+    const heard = buildRounds(late, { age: 8 }).map(round => round.prompt.length);
+    expect(heard[0]).toBeGreaterThan(heard[1]);
+    expect(heard[1]).toBeGreaterThan(heard[2]);
+    expect(heard[2]).toBeGreaterThan(heard[3]);
+
+    // Whatever is played, the answer is never given away in the text — round
+    // one hears the word's own clause, so it has to be bleeped out.
+    for (const round of buildRounds({ ...rail, mode: "predict" }, { age: 8 })) {
+      expect(round.prompt).not.toContain(round.word);
+      expect(round.options).toContain(round.answer);
+    }
+  });
+
+  it("counts within what the band can hold", () => {
+    // A three-year-old counting to fourteen is a bug, not a challenge.
+    for (const round of buildRounds({ ...rail, mode: "number" }, { age: 4 })) {
+      const numbers = (round.prompt.match(/[零一二三四五六七八九十]/g) ?? []).length;
+      expect(numbers).toBeGreaterThan(0);
+      expect(round.prompt).not.toMatch(/\d\d/);
+    }
+  });
+
+  it("borrows the odd one out from another theme, because it has to", () => {
+    const foreign = ["雞蛋仔", "奶茶"];
+    const [, , third] = buildRounds({ ...rail, mode: "spot" }, { age: 8, foreignWords: foreign });
+    expect(third.prompt).toContain("唔屬於");
+    expect(foreign).toContain(third.answer);
+    expect(third.options).toContain(third.answer);
+
+    // With nothing to borrow there is no odd one out, so it falls back to a
+    // find rather than shipping a round with no correct answer.
+    const [, , alone] = buildRounds({ ...rail, mode: "spot" }, { age: 8 });
+    expect(rail.words).toContain(alone.answer);
+  });
+
+  it("redraws on a replay but keeps the same shape", () => {
+    // 「甚至可能有啲小朋友都會想重複玩」— a second run has to feel like
+    // playing again, not like re-reading. Same modes and inputs, new draw.
+    const first = buildRounds({ ...rail, mode: "number" }, { age: 8, salt: 0 });
+    const again = buildRounds({ ...rail, mode: "number" }, { age: 8, salt: 1 });
+    expect(again.map(round => round.input)).toEqual(first.map(round => round.input));
+    expect(again.map(round => round.prompt)).not.toEqual(first.map(round => round.prompt));
+
+    // And the same salt is the same game, or nothing could be tested at all.
+    expect(buildRounds({ ...rail, mode: "number" }, { age: 8, salt: 0 })).toEqual(first);
+  });
+
+  it("resumes at the round the child stopped on", () => {
+    // Fragments already held decide the round, so coming back tomorrow picks
+    // up where they left rather than starting the four again.
+    expect(roundAt(rail, 0, { age: 7 })?.round).toBe(1);
+    expect(roundAt(rail, 2, { age: 7 })?.round).toBe(3);
+    expect(roundAt(rail, ROUNDS_PER_THEME, { age: 7 })).toBeNull();
+  });
+
+  it("splits the VO into clauses that keep their punctuation", () => {
+    const clauses = clausesOf(rail.vo);
+    expect(clauses.length).toBeGreaterThan(3);
+    expect(clauses[0]).toBe("城市入面有好多沿住路軌行嘅交通工具。");
+    expect(clauses.join("")).toBe(rail.vo);
+  });
+
+  it("earns the fragment on a right answer and costs nothing on a wrong one", () => {
+    const earned: number[] = [];
+    render(
+      <ThemeGame source={rail} earned={0} age={7} onComplete={() => earned.push(1)} />);
+
+    // Wrong: says so, does not award, and the round is still there to try.
+    const wrong = rail.words.find(word => word !== "港鐵")!;
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(wrong) }));
+    expect(earned).toHaveLength(0);
+    expect(screen.getByText(/再試一次/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /港鐵/ }));
+    expect(earned).toEqual([1]);
+    expect(screen.getByText(/攞到一塊碎片/)).toBeInTheDocument();
+  });
+
+  it("finishes an open-ended round on the child saying they are done", () => {
+    // 跟住做 and 砌一砌 have nothing to mark. The child decides.
+    const earned: number[] = [];
+    render(
+      <ThemeGame
+        source={{ ...rail, mode: "move" }} earned={0} age={7}
+        onComplete={() => earned.push(1)}
+      />);
+    fireEvent.click(screen.getByRole("button", { name: "做完喇" }));
+    expect(earned).toEqual([1]);
+  });
+
+  it("never shows the same option twice, in any mode or round", () => {
+    // The subtraction round could draw a distractor equal to another one,
+    // which put two identical buttons on screen — and one of them silently
+    // wrong for looking exactly like the right answer.
+    for (const mode of GAME_MODES) {
+      for (const age of [4, 7, 11]) {
+        for (const round of buildRounds({ ...rail, mode }, { age, foreignWords: ["奶茶", "雪糕"] })) {
+          expect(new Set(round.options).size).toBe(round.options.length);
+          // A tap round always has its answer among the options, or the
+          // child is being asked something they cannot answer.
+          if (round.input === "tap" && round.answer) {
+            expect(round.options).toContain(round.answer);
+          }
+        }
+      }
+    }
+  });
+
+  it("can be assembled past the decoy chunk in the last 講句子 round", () => {
+    // Round four puts a chunk on screen that does not belong. Checking only
+    // once every chunk is placed would make the round unwinnable, so the
+    // sentence itself is what is checked.
+    const earned: number[] = [];
+    render(
+      <ThemeGame
+        source={rail} earned={3} age={7} foreignWords={["奶茶"]}
+        onComplete={() => earned.push(1)}
+      />);
+
+    const round = buildRounds(rail, { age: 7, foreignWords: ["奶茶"] })[3];
+    expect(round.input).toBe("order");
+    expect(round.options.length).toBeGreaterThan(2);
+
+    // The decoy is on screen and is not part of the sentence.
+    const decoy = round.options.find(chunk => !round.answer.includes(chunk))!;
+    expect(decoy).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: decoy }));
+    expect(earned).toHaveLength(0);
+    expect(screen.getByText(/再試一次/)).toBeInTheDocument();
+
+    // The real chunks, in order, still finish it.
+    for (const chunk of round.options.filter(candidate => candidate !== decoy)
+      .sort((a, b) => round.answer.indexOf(a) - round.answer.indexOf(b))) {
+      fireEvent.click(screen.getByRole("button", { name: chunk }));
+    }
+    expect(earned).toEqual([1]);
+  });
+
+  it("tells the child the four are done rather than offering a fifth round", () => {
+    render(<ThemeGame source={rail} earned={ROUNDS_PER_THEME} age={7} onComplete={() => {}} />);
+    expect(screen.getByText(/四塊碎片已經儲齊/)).toBeInTheDocument();
   });
 });

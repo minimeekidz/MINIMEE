@@ -102,13 +102,33 @@ export interface EventContext {
   /** True on the day a new theme opens, so the pets can mention it. */
   newThemeToday?: boolean;
   now?: Date;
+  /** Today's lunar festival, from the 天文台 almanac. */
+  lunarFestival?: "lunar-new-year" | "dragon-boat" | "mid-autumn" | null;
 }
+
+/** The three lunar festivals, keyed by what the almanac reports. */
+const LUNAR_FESTIVALS: Record<string, Omit<PetEvent, "kind">> = {
+  "lunar-new-year": {
+    label: "農曆新年", icon: "🧧",
+    lines: ["恭喜發財呀！", "我着咗新衫，靚唔靚？", "有冇利是呀？講笑咋，見到你就開心啦！"],
+  },
+  "dragon-boat": {
+    label: "端午節", icon: "🐉",
+    lines: ["今日食糉呀！", "我啱啱去咗睇龍舟，好勁呀！", "你鍾意鹹糉定甜糉？"],
+  },
+  "mid-autumn": {
+    label: "中秋節", icon: "🥮",
+    lines: ["今晚個月好圓呀！", "我整咗個燈籠，等陣一齊去散步公園玩好唔好？", "你食咗月餅未？"],
+  },
+};
 
 /**
  * Everything happening today for this pet, most personal first — a birthday
  * should outrank the season in whatever the pet says.
  */
-export function eventsFor({ petId, childBirthday, newThemeToday, now = new Date() }: EventContext): PetEvent[] {
+export function eventsFor({
+  petId, childBirthday, newThemeToday, lunarFestival = null, now = new Date(),
+}: EventContext): PetEvent[] {
   const events: PetEvent[] = [];
   const key = monthDay(now);
 
@@ -126,6 +146,12 @@ export function eventsFor({ petId, childBirthday, newThemeToday, now = new Date(
     events.push({ kind: "new-theme", label: "新主題", icon: "📺",
       lines: ["聽講有新嘢學喎，你去咗睇未？", "我好想知今次學咩！", "學完記得返嚟講俾我聽呀。"] });
   }
+
+  // Lunar festivals come from 天文台 rather than from a date in this file:
+  // 新年, 端午 and 中秋 move every year, and a hard-coded date is wrong from
+  // the second year onward. No almanac means no festival, never a guess.
+  const lunar = lunarFestival ? LUNAR_FESTIVALS[lunarFestival] : null;
+  if (lunar) events.push({ kind: "festival", ...lunar });
 
   const festival = FIXED_FESTIVALS[key];
   if (festival) events.push({ kind: "festival", ...festival });

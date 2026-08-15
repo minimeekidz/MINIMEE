@@ -1,0 +1,146 @@
+[
+  {
+    "traySlot": 1,
+    "themeId": "theme-01",
+    "themeNameZh": "軌道交通",
+    "words": [
+      "港鐵",
+      "電車",
+      "火車",
+      "輕鐵"
+    ],
+    "status": "current",
+    "displayOrder": 1,
+    "targetMeeCard": {
+      "cardId": "MEE-019",
+      "cardNumber": 19,
+      "bookNumber": 4,
+      "slotNumber": 1,
+      "normalAsset": "✅_19_NORMAL.webp",
+      "flashAsset": "✅_19_FLASH.webp"
+    },
+    "releaseId": "release-v1-01",
+    "activeFrom": null,
+    "activeTo": null
+  },
+  {
+    "traySlot": 2,
+    "themeId": "theme-09",
+    "themeNameZh": "金錢與商店",
+    "words": [
+      "超市",
+      "玩具店",
+      "麵包店",
+      "書店"
+    ],
+    "status": "current",
+    "displayOrder": 2,
+    "targetMeeCard": {
+      "cardId": "MEE-003",
+      "cardNumber": 3,
+      "bookNumber": 1,
+      "slotNumber": 3,
+      "normalAsset": "✅_3_NORMAL.webp",
+      "flashAsset": "✅_3_FLASH.webp"
+    },
+    "releaseId": "release-v1-02",
+    "activeFrom": null,
+    "activeTo": null
+  },
+  {
+    "traySlot": 3,
+    "themeId": "theme-08",
+    "themeNameZh": "綠色公園",
+    "words": [
+      "大樹",
+      "小草",
+      "花朵",
+      "長椅"
+    ],
+    "status": "current",
+    "displayOrder": 3,
+    "targetMeeCard": {
+      "cardId": "MEE-004",
+      "cardNumber": 4,
+      "bookNumber": 1,
+      "slotNumber": 4,
+      "normalAsset": "✅_4_NORMAL.webp",
+      "flashAsset": "✅_4_FLASH.webp"
+    },
+    "releaseId": "release-v1-03",
+    "activeFrom": null,
+    "activeTo": null
+  },
+  {
+    "traySlot": 4,
+    "themeId": "theme-03",
+    "themeNameZh": "藍天與海洋",
+    "words": [
+      "飛機",
+      "直升機",
+      "輪船",
+      "帆船"
+    ],
+    "status": "carryover",
+    "displayOrder": 4,
+    "targetMeeCard": {
+      "cardId": "MEE-007",
+      "cardNumber": 7,
+      "bookNumber": 2,
+      "slotNumber": 1,
+      "normalAsset": "✅_7_NORMAL.webp",
+      "flashAsset": "✅_7_FLASH.webp"
+    },
+    "releaseId": "release-v1-04",
+    "activeFrom": null,
+    "activeTo": null
+  },
+  {
+    "traySlot": 5,
+    "themeId": "theme-14",
+    "themeNameZh": "神秘深海",
+    "words": [
+      "小魚",
+      "章魚",
+      "鯊魚",
+      "海龜"
+    ],
+    "status": "carryover",
+    "displayOrder": 5,
+    "targetMeeCard": {
+      "cardId": "MEE-008",
+      "cardNumber": 8,
+      "bookNumber": 2,
+      "slotNumber": 2,
+      "normalAsset": "✅_8_NORMAL.webp",
+      "flashAsset": "✅_8_FLASH.webp"
+    },
+    "releaseId": "release-v1-05",
+    "activeFrom": null,
+    "activeTo": null
+  },
+  {
+    "traySlot": 6,
+    "themeId": "theme-19",
+    "themeNameZh": "沙灘探索",
+    "words": [
+      "沙",
+      "貝殼",
+      "水桶",
+      "太陽帽"
+    ],
+    "status": "carryover",
+    "displayOrder": 6,
+    "targetMeeCard": {
+      "cardId": "MEE-009",
+      "cardNumber": 9,
+      "bookNumber": 2,
+      "slotNumber": 3,
+      "normalAsset": "✅_9_NORMAL.webp",
+      "flashAsset": "✅_9_FLASH.webp"
+    },
+    "releaseId": "release-v1-06",
+    "activeFrom": null,
+    "activeTo": null
+  }
+]

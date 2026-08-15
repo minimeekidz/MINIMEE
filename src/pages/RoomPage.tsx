@@ -1,27 +1,41 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Play, Sparkles, X } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI";
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
 import { awardFragment, signedLessonVideo, useRooms, type LessonWord } from "../lib/rooms";
 import { ROOM_ART } from "../lib/world";
+import { useCollection } from "../lib/collection";
+import { ageFrom } from "../lib/age";
+import { ThemeGame } from "../components/ThemeGame";
 
-// One room: watch the video, then a short word game underneath it. Finishing
-// the game earns the fragment for that room's current lesson.
+// One room: watch the video, then the game underneath it. Finishing the game
+// earns the fragment for that room's current lesson.
 //
-// Deliberately one game type rather than a different mechanic per room. A
-// room's identity comes from its subject and its art, not from a novel
-// interaction the child has to relearn each time — and one game can be made
-// good, where five would each be mediocre.
+// The game is the theme's, not the room's. A room's identity comes from its
+// subject and its art; what a child does there is set by whichever theme is
+// screening, because Em's rule is that a month's three themes must be three
+// different games — 「如果三個主題嘅學習影片都係同一個遊戲玩法，咁就好沉悶」.
+//
+// A lesson with no theme still plays: it falls back to the plain pick-a-word
+// game below. That keeps the pre-theme content working instead of going dark
+// the day the theme catalogue arrived.
 export function RoomPage() {
   const { id: childId, roomId } = useParams();
+  // Which building the child walked in from. A lesson is reached through the
+  // 戲院廳 or Hero Studio, so 返出去 has to put them back in that room —
+  // dropping them on the town map would break 原位入口原位出口 the moment
+  // the film finishes.
+  const [params] = useSearchParams();
+  const cameFrom = params.get("back");
   const { children, loading: familyLoading } = useFamily();
   const child = children.find(candidate => candidate.id === childId);
 
   const [card, setCard] = useState<EditableCard | null>(null);
   const [cardLoading, setCardLoading] = useState(true);
   const { rooms, loading: roomsLoading, refresh } = useRooms(card?.id ?? null);
+  const { trays, refresh: refreshTrays } = useCollection(card?.id ?? null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -40,7 +54,7 @@ export function RoomPage() {
     void (async () => {
       // The path is only readable by a subscriber, and the URL it produces
       // expires — nothing durable ever reaches the browser.
-      const path = (room.lesson as unknown as { videoPath?: string }).videoPath;
+      const path = room.lesson?.videoPath;
       setVideoUrl(path ? await signedLessonVideo(path) : null);
     })();
   }, [playing, room]);
@@ -48,8 +62,26 @@ export function RoomPage() {
   const handleComplete = useCallback(async () => {
     if (!card || !room) return;
     await awardFragment(card.id, room.id, room.lesson?.id ?? null);
+    // Both, and in this order: the room's own state decides whether the
+    // fragment button is spent, the tray decides which round comes next.
     await refresh();
-  }, [card, room, refresh]);
+    await refreshTrays();
+  }, [card, room, refresh, refreshTrays]);
+
+  // Which theme is screening in this room, and therefore which game runs.
+  const tray = trays.find(candidate => candidate.themeId === room?.lesson?.themeId);
+  // 搵一搵's odd-one-out round needs a word that is not this theme's, and the
+  // rest of the wall is the right place to borrow one: it is a word the child
+  // has met, so being wrong is still worth something.
+  const foreignWords = trays
+    .filter(candidate => candidate.themeId !== tray?.themeId)
+    .flatMap(candidate => candidate.words);
+  // Difficulty comes from a real age where there is one, and from the band
+  // the family picked at sign-up where there is not. Never a guessed number
+  // out of a band — the band is already the answer.
+  const level = child?.birth_year
+    ? ageFrom(null, child.birth_year)?.years ?? null
+    : child?.age_group ?? null;
 
   if (familyLoading || cardLoading || roomsLoading) {
     return <Shell surface="parent"><DashboardHeader title="房間" />
@@ -98,11 +130,29 @@ export function RoomPage() {
             {playing && !videoUrl && <p className="kid-note">呢一課仲未上載影片，可以直接玩下面嘅詞語遊戲。</p>}
           </section>
 
-          <WordGame
-            words={room.lesson.words}
-            alreadyEarned={room.earned}
-            onComplete={() => void handleComplete()}
-          />
+          {room.earned
+            ? <section className="word-game done" role="status">
+                <Sparkles />
+                <h3>呢間房嘅碎片已經收集咗</h3>
+                <p>儲夠 4 塊碎片就換到一張 MEE 卡。</p>
+              </section>
+            : tray
+              ? <ThemeGame
+                  source={{
+                    themeId: tray.themeId, nameZh: tray.theme, words: tray.words,
+                    vo: tray.vo, question: tray.question,
+                    answerPattern: tray.answerPattern, mode: tray.mode,
+                  }}
+                  earned={tray.earned}
+                  age={level}
+                  foreignWords={foreignWords}
+                  onComplete={() => void handleComplete()}
+                />
+              : <WordGame
+                  words={room.lesson.words}
+                  alreadyEarned={false}
+                  onComplete={() => void handleComplete()}
+                />}
         </>}
 
     <div className="subscription-actions">

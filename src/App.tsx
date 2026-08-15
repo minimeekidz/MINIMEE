@@ -2,6 +2,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { organizationSchema, useRouteSeo, useStructuredData } from "./lib/seo";
 import { AdminDashboard, AdminModulePage } from "./pages/AdminPages";
 import { AdminLessonsPage } from "./pages/AdminLessonsPage";
+import { AdminThemesPage } from "./pages/AdminThemesPage";
 import { AlbumsPage, BuddyCafe, ChildRoutePage, HarborMarket, HeroStudio, PixelWorld } from "./pages/ChildPages";
 import { ChildProfilePage, FriendsSharingPage, ParentAlbums, ParentDashboard, ThemesPage } from "./pages/ParentPages";
 import { AuthPage } from "./pages/AuthPages";
@@ -9,10 +10,11 @@ import { FaqPage, HomePage, HowItWorksPage, LegalPage, PricingPage } from "./pag
 import { MediaWorkflowPage, ParentGatePage, ParentSetupPage } from "./pages/SetupPages";
 import { LostItemsPage, NotificationsPage, PrivacyCenterPage, PublicLostItemPage, SupportCasePage } from "./pages/ParentServicePages";
 import { CheckoutPage, SubscriptionStatesPage } from "./pages/CommercePages";
-import { KidCardPage } from "./pages/KidCardPage";
+import { ChildProfileLanding } from "./pages/ChildProfileLanding";
 import { KidCardEditorPage } from "./pages/KidCardEditorPage";
 import { KidPlayPage } from "./pages/KidPlayPage";
 import { RoomPage } from "./pages/RoomPage";
+import { InteriorPage } from "./pages/InteriorPage";
 import { PixelWorldPage } from "./pages/PixelWorldPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -35,7 +37,7 @@ export default function App() {
       <Route path="/faq" element={<FaqPage />} />
       {/* v2: the shareable child card and its playable demo — both public,
           so a grandparent or a finder can open them without an account. */}
-      <Route path="/kid/:slug" element={<KidCardPage />} />
+      <Route path="/kid/:slug" element={<ChildProfileLanding />} />
       <Route path="/play" element={<PixelWorldPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register" element={<AuthPage />} />
@@ -54,6 +56,9 @@ export default function App() {
       <Route path="/parent/children/:id/card" element={<ProtectedRoute><KidCardEditorPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/play" element={<ProtectedRoute><KidPlayPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/room/:roomId" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
+      {/* The buildings in MEE 世界. A lesson room is /room/:id; a place you
+          walk into — the 珍藏館, Hero Studio, the café, 我的小屋 — is here. */}
+      <Route path="/parent/children/:id/inside/:roomId" element={<ProtectedRoute><InteriorPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/themes" element={<ProtectedRoute><ThemesPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/subscription" element={<ProtectedRoute><SubscriptionStatesPage /></ProtectedRoute>} />
       <Route path="/parent/children/:id/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
@@ -78,6 +83,8 @@ export default function App() {
       {/* Room content is the only thing that changes weekly, so it gets a real
           editor rather than one of the generic admin module placeholders. */}
       <Route path="/admin/lessons" element={<ProtectedRoute requireAdmin><AdminLessonsPage /></ProtectedRoute>} />
+      {/* The monthly switch: six rows decide the 碎片拼合室 for every child. */}
+      <Route path="/admin/themes" element={<ProtectedRoute requireAdmin><AdminThemesPage /></ProtectedRoute>} />
       {adminKinds.map(kind => <Route key={kind} path={`/admin/${kind}`} element={<ProtectedRoute requireAdmin><AdminModulePage kind={kind} /></ProtectedRoute>} />)}
       <Route path="*" element={<NotFound />} />
     </Routes>

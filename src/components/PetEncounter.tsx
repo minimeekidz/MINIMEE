@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TownPet } from "../lib/characters";
 import {
   actionsAt, DAILY_QUIZ_SLOTS, levelProgress, MAX_LEVEL, nextUnlock, pickLine,
@@ -8,7 +8,7 @@ import { profileFor, quizLine } from "../lib/petBible";
 import { actionVo } from "../data/petActionVo";
 import { eventLines, headlineEvent } from "../lib/petEvents";
 import {
-  givePetCard, petQuizFor, recordQuiz, visitPet,
+  givePetCard, petQuizFor, recordQuiz, rollMystery, visitPet,
   type PetGiftCard, type PetQuiz,
 } from "../lib/petStore";
 
@@ -44,6 +44,8 @@ export function PetEncounter({
   const [total, setTotal] = useState(points);
   const [bubble, setBubble] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** A 神秘獎勵, when today's roll came up. */
+  const [prize, setPrize] = useState<{ label: string; asset: string } | null>(null);
   const [quiz, setQuiz] = useState<PetQuiz | null>(null);
   const [phase, setPhase] = useState<QuizPhase>("asking");
   const [tries, setTries] = useState(0);
@@ -61,6 +63,11 @@ export function PetEncounter({
   const headline = useMemo(() => headlineEvent(context), [context]);
 
   const visited = (usedToday[`${pet.id}:visit`] ?? 0) > 0;
+  // The demo has no card, so no server to enforce 「一日一點」 — and without
+  // a guard here every tap added another point: 「我瘋狂咁㩒嘅時候佢都係好
+  // 瘋狂咁樣加上去」. Keyed by pet so meeting a second pet still counts once.
+  const demoAwarded = useRef<Set<string>>(new Set());
+  const counted = visited || demoAwarded.current.has(`${pet.id}:visit`);
   const askedAlready = (usedToday[`${pet.id}:quiz-asked`] ?? 0) > 0;
 
   useEffect(() => { setTotal(points); }, [points]);
@@ -114,16 +121,27 @@ export function PetEncounter({
       || profile?.catchphrase || "…");
 
     if (!cardId) {
-      if (!visited) applyTotal(total + 1);
+      if (!counted) {
+        demoAwarded.current.add(`${pet.id}:visit`);
+        applyTotal(total + 1);
+      }
       return;
     }
     // The point is for turning up, not for this button. Every later tap still
     // has its own VO and adds nothing.
-    if (visited) return;
+    if (counted) return;
     setBusy(true);
     const next = await visitPet(cardId, pet.id);
-    setBusy(false);
     if (next !== null) applyTotal(next);
+    // MR01: 「隨機 roll 只可以喺當日第一次真正產生 +1 嘅互動發生一次」. The
+    // point landing is that interaction, so the roll goes here — and only
+    // here. The database refuses a second roll the same day, so tapping
+    // another pet cannot buy another go.
+    if (next !== null) {
+      const won = await rollMystery(cardId);
+      if (won) setPrize(won);
+    }
+    setBusy(false);
   }
 
   async function answer(choice: string) {
@@ -147,7 +165,10 @@ export function PetEncounter({
       const demoState = correct && attempt === 1 ? "firstCorrect"
         : correct ? "secondCorrect" : "secondWrong";
       setBubble(quizLine(pet.id, demoState)?.vo ?? "");
-      if (correct) applyTotal(total + 1);
+      if (correct && !demoAwarded.current.has(`${pet.id}:quiz`)) {
+        demoAwarded.current.add(`${pet.id}:quiz`);
+        applyTotal(total + 1);
+      }
       return;
     }
 
@@ -197,6 +218,16 @@ export function PetEncounter({
       <button className="button small secondary" onClick={() => setLevelUp(null)}>知道喇</button>
     </div>}
 
+    {prize && <div className="pet-gift mystery" role="status">
+      <img src={prize.asset} alt="" />
+      <div>
+        <strong>神秘獎勵！</strong>
+        <span>{prize.label}</span>
+        <small>今日淨係得一次，第一次同小寵物玩嗰陣先會抽。</small>
+        <button className="button small secondary" onClick={() => setPrize(null)}>好嘢</button>
+      </div>
+    </div>}
+
     {gift && <div className="pet-gift" role="status">
       <img src={gift.art} alt="" />
       <div>
@@ -240,7 +271,7 @@ export function PetEncounter({
     </div>
 
     <p className="pet-locked">
-      {visited ? "今日嘅好感度加咗喇 —— 但傾幾多都得，唔會扣㗎。" : "同佢傾一句就加 1 點好感度。"}
+      {counted ? "今日嘅好感度加咗喇 —— 但傾幾多都得，唔會扣㗎。" : "同佢傾一句就加 1 點好感度。"}
       {upcoming && <> · 🔒 Lv.{upcoming.level} 解鎖 {upcoming.icon} {upcoming.label}</>}
     </p>
 

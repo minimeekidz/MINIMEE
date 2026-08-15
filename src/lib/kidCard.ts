@@ -53,6 +53,18 @@ export interface KidCard {
   /** Lost mode: when on, a finder can reach the parent through /lost/:token. */
   lostMode: { enabled: boolean; token: string; message: string } | null;
   isExample: boolean;
+  // The remaining scrapbook fields live in the database for a real card. The
+  // bundled examples carry them inline so the demo page shows every panel
+  // instead of half a scrapbook.
+  daily?: string[];
+  favourites?: { animal: string; food: string; colour: string; place: string };
+  quote?: string;
+  /**
+   * Demo age. A real card derives age from the child's date of birth; the
+   * examples have no DOB, and taking the low end of `ageGroup` contradicted
+   * the age written into their own self-introductions.
+   */
+  age?: number;
 }
 
 // Two worked examples shipped with the product. They exist so a parent
@@ -67,7 +79,7 @@ export const EXAMPLE_CARDS: KidCard[] = [
     ageGroup: "6-8",
     tagline: "我叫Mimi，我最鍾意畫海底世界！",
     about: "我今年7歲，讀小二。我有一隻叫「泡泡」嘅寵物水母，佢住喺我嘅MEE小屋。我識畫好多種魚，最叻畫水母同海龜。",
-    likes: ["畫畫", "海洋動物", "砌積木", "跳舞"],
+    likes: ["畫畫", "海洋探險", "砌積木", "跳舞"],
     dreamJob: "海洋生物學家",
     avatar: "/assets/hero-girl.webp",
     scene: "/assets/album-ocean.webp",
@@ -84,6 +96,10 @@ export const EXAMPLE_CARDS: KidCard[] = [
     ],
     lostMode: { enabled: true, token: "example-token-mimi", message: "如果你揀到呢張卡，唔該聯絡我媽咪，多謝你！" },
     isExample: true,
+    age: 7,
+    daily: ["畫畫時間", "睇書", "游水", "去海灘"],
+    favourites: { animal: "海龜", food: "西瓜", colour: "藍色", place: "海邊" },
+    quote: "每一日都係新嘅冒險，同朋友一齊，我可以做到更多！",
   },
   {
     id: "example-ryan",
@@ -92,7 +108,7 @@ export const EXAMPLE_CARDS: KidCard[] = [
     ageGroup: "9-12",
     tagline: "我係Ryan，我想做太空人！",
     about: "我10歲，我識砌火箭模型，亦識少少編程。我喺學校參加咗科學隊，我哋做過水火箭比賽，我隊拎咗第二名。",
-    likes: ["太空", "編程", "踩單車", "睇科學書"],
+    likes: ["太空", "寫程式", "踩單車", "科學實驗"],
     dreamJob: "太空人",
     avatar: "/assets/hero-boy.webp",
     scene: "/assets/town-night.webp",
@@ -107,6 +123,10 @@ export const EXAMPLE_CARDS: KidCard[] = [
     ],
     lostMode: null,
     isExample: true,
+    age: 10,
+    daily: ["做功課", "踩單車", "砌積木", "睇書"],
+    favourites: { animal: "貓", food: "壽司", colour: "深藍色", place: "天文館" },
+    quote: "我想飛上去睇下地球係咪真係好靚。",
   },
 ];
 

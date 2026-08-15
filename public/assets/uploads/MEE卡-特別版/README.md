@@ -1,23 +1,20 @@
-# MEE卡－特別版（Special Edition）
+# MEE卡－特別版（Special）
 
-此資料夾只放「無主題、特別時刻派發」的 Special Edition MEE 卡素材。
+**而家係空嘅。**
 
-## 定位
-- 與 36 個學習主題的 NORMAL / FLASH 主卡分開。
-- 不計入 72 張主題卡的完成率，不阻塞主卡冊 100% 收藏。
-- 建議於生日、節日、好友紀念、里程碑、限定活動等特別時刻派發。
-- Special Edition 使用獨立 4 格卡套冊／頁面。
+特別版**唔佔卡冊嗰啲格**，擺喺「特別收藏」嗰行 —— 所以佢係唯一一款
+可以做年繳專屬而唔會令任何一格永遠儲唔到嘅卡。
 
-## 建議檔名
-- `SPECIAL_001_<名稱>.webp`
-- `SPECIAL_002_<名稱>.webp`
-- 依序增加，避免日後活動內容改名導致 ID 改變。
+## 檔名
 
-## 素材規格
-- 以現有 MEE 卡橫向比例為準（約 1080×608）。
-- 優先 WebP。
-- 不要與 NORMAL / FLASH 使用相同 ID。
+跟出處，唔跟主題編號（因為佢唔對主題）：
 
-## 主題卡現有資料夾
-- NORMAL：`public/assets/uploads/MEE卡-普通/`
-- FLASH：`public/assets/uploads/MEE卡-閃耀/`
+- 砌齊一本 BOOK 送嗰啲：`book-1.webp` … `book-4.webp`
+- 節日：`festival-cny.webp`、`festival-dragon.webp`、`festival-midautumn.webp`
+- 生日：`birthday.webp`
+
+規格同其餘兩款一樣：**1672 × 941**，webp。
+
+## 派發規則
+
+見 `docs/design-reference/card-rarity-plan.md`（仲未拍板）。

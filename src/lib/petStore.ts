@@ -77,6 +77,29 @@ export async function visitPet(cardId: string, petId: string): Promise<number | 
   return error ? null : (data as number | null);
 }
 
+export interface MysteryPrize { label: string; asset: string }
+
+/**
+ * MR01. The workbook: 「隨機 roll 只可以喺當日第一次真正產生 +1 嘅互動發生一次。
+ * 重複㩒 Action 唔可以重抽」 — so this is called once, after the visit point
+ * lands, and the database refuses a second roll the same day whatever the
+ * browser does.
+ *
+ * Returns a prize only when the roll actually won; a spent roll and a lost
+ * roll look identical from here, which is correct — neither gives another go.
+ */
+export async function rollMystery(cardId: string, variant?: string | null): Promise<MysteryPrize | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("roll_mystery_reward", {
+    p_kid_card_id: cardId, p_variant: variant ?? null,
+  });
+  if (error) return null;
+  const row = (Array.isArray(data) ? data[0] : data) as
+    { won?: boolean; label?: string; asset?: string } | undefined;
+  if (!row?.won || !row.label || !row.asset) return null;
+  return { label: row.label, asset: row.asset };
+}
+
 export interface QuizResult {
   /** Whether this answer actually paid, or the day's slots were already gone. */
   awarded: boolean;

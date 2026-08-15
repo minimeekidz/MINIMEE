@@ -4,6 +4,12 @@ import { Link, useParams } from "react-router-dom";
 import { DashboardHeader, EmptyState, Shell, StatusPill } from "../components/UI";
 import { HEROES, TOWN_PETS } from "../lib/characters";
 import { CATEGORY_LABELS, stickersIn, type StickerCategory } from "../lib/stickers";
+import { PrivacyFieldSwitch } from "../components/profile/ProfilePanels";
+import {
+  EMPTY_FIELDS, loadChildDob, loadProfileFields, saveChildDob, saveProfileFields,
+  type ProfileFields,
+} from "../lib/profileStore";
+import { ageFrom, ageLabel } from "../lib/age";
 import { useAuth } from "../contexts/AuthContext";
 import { useFamily } from "../contexts/FamilyContext";
 import {
@@ -37,6 +43,10 @@ export function KidCardEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [likeDraft, setLikeDraft] = useState("");
+  // Parent-managed profile data and its per-field switches. Saved on Confirm,
+  // not autosaved — the spec keeps basic profile edits deliberate.
+  const [fields, setFields] = useState<ProfileFields>(EMPTY_FIELDS);
+  const [dob, setDob] = useState("");
 
   const load = useCallback(async () => {
     if (!childId) return;
@@ -46,6 +56,17 @@ export function KidCardEditorPage() {
   }, [childId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    if (!card || !childId) return;
+    void (async () => {
+      const [loaded, storedDob] = await Promise.all([
+        loadProfileFields(card.id), loadChildDob(childId),
+      ]);
+      if (loaded) setFields(loaded);
+      setDob(storedDob);
+    })();
+  }, [card, childId]);
 
   function patch(changes: Partial<EditableCard>) {
     setCard(current => (current ? { ...current, ...changes } : current));
@@ -73,8 +94,12 @@ export function KidCardEditorPage() {
     setBusy(true);
     setError(null);
     const result = await saveCard(card);
+    // Profile fields, privacy switches and the date of birth go with the same
+    // Confirm, so a parent never leaves half of it saved.
+    const savedFields = await saveProfileFields(card.id, fields);
+    if (childId) await saveChildDob(childId, dob);
     setBusy(false);
-    if (!result.ok) { setError("未能儲存，請稍後再試。"); return; }
+    if (!result.ok || !savedFields) { setError("未能儲存，請稍後再試。"); return; }
     setSaved(true);
     await load();
   }
@@ -277,6 +302,65 @@ export function KidCardEditorPage() {
             </button>
           ))}
         </div>
+      </div>
+    </section>
+
+    <section className="editor-grid">
+      <label>
+        <span>出生日期</span>
+        <input type="date" value={dob} onChange={event => setDob(event.target.value)} />
+        <small>
+          {/* Age is derived from this, never stored — a stored age is wrong the
+              day after the birthday. */}
+          {dob ? `而家顯示：${ageLabel(ageFrom(dob))}` : "填咗之後，年齡會自動計同自動更新。"}
+        </small>
+      </label>
+
+      <label>
+        <span>學校</span>
+        <input value={fields.school} maxLength={60} placeholder="例如：快樂小學"
+          onChange={event => setFields({ ...fields, school: event.target.value })} />
+      </label>
+
+      <label><span>最愛動物</span>
+        <input value={fields.favouriteAnimal} maxLength={20}
+          onChange={event => setFields({ ...fields, favouriteAnimal: event.target.value })} /></label>
+      <label><span>最愛食物</span>
+        <input value={fields.favouriteFood} maxLength={20}
+          onChange={event => setFields({ ...fields, favouriteFood: event.target.value })} /></label>
+      <label><span>最愛顏色</span>
+        <input value={fields.favouriteColour} maxLength={20}
+          onChange={event => setFields({ ...fields, favouriteColour: event.target.value })} /></label>
+      <label><span>最愛地方</span>
+        <input value={fields.favouritePlace} maxLength={20}
+          onChange={event => setFields({ ...fields, favouritePlace: event.target.value })} /></label>
+
+      <label className="editor-wide">
+        <span>小朋友嘅一句說話</span>
+        <input value={fields.quote} maxLength={80} placeholder="例如：我希望有一日可以去太空！"
+          onChange={event => setFields({ ...fields, quote: event.target.value })} />
+      </label>
+    </section>
+
+    <section className="privacy-panel">
+      <h2>邊啲資料可以公開？</h2>
+      <p className="editor-help">
+        每項獨立控制。<strong>唔係一個掣控制晒全部</strong> —— 你可以公開夢想同最愛，
+        但收起年齡同學校。
+      </p>
+      <div className="privacy-list">
+        <PrivacyFieldSwitch label="年齡" hint="由出生日期自動計"
+          isPublic={fields.showAge} onChange={value => setFields({ ...fields, showAge: value })} />
+        <PrivacyFieldSwitch label="學校" hint="建議保持私人"
+          isPublic={fields.showSchool} onChange={value => setFields({ ...fields, showSchool: value })} />
+        <PrivacyFieldSwitch label="關於我"
+          isPublic={fields.showAbout} onChange={value => setFields({ ...fields, showAbout: value })} />
+        <PrivacyFieldSwitch label="我的最愛"
+          isPublic={fields.showFavourites} onChange={value => setFields({ ...fields, showFavourites: value })} />
+        <PrivacyFieldSwitch label="我的夢想"
+          isPublic={fields.showDream} onChange={value => setFields({ ...fields, showDream: value })} />
+        <PrivacyFieldSwitch label="小朋友嘅說話"
+          isPublic={fields.showQuote} onChange={value => setFields({ ...fields, showQuote: value })} />
       </div>
     </section>
 

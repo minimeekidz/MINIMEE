@@ -7,7 +7,11 @@ import { GameWorld } from "../components/GameWorld";
 export function PixelWorldPage() {
   const navigate = useNavigate();
   return <GameWorld
+    // Everything a visitor taps in the demo leads to the same place: the
+    // world is real, the contents are what an account buys.
     onEnterRoom={() => navigate("/register")}
+    onEnterStall={() => navigate("/register")}
+    onReadBoard={() => navigate("/register")}
     onExit={() => navigate("/")}
   />;
 }

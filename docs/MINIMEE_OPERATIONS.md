@@ -522,6 +522,137 @@ transaction: unpublished cards and their tokens invisible to `anon`,
 published ones resolving, a wrong token returning nothing, and lost mode
 switched off instantly killing a previously working token.
 
+### 7c-i. 我的小屋 — the scrapbook profile at `/kid/:slug`
+
+The card page is a scrapbook, not a dashboard: a hero portrait, sticker
+walls for 日常 and 興趣, 我的最愛, 我的夢想, and small previews of the MEE
+collection, learning and friends. `src/pages/ChildProfileLanding.tsx` with
+components under `src/components/profile/`.
+
+**One layout, two permission models.** A visitor and the signed-in owner see
+the same design through different queries, and the difference is enforced in
+the database rather than in the UI:
+
+- Visitors read `kid_card_public(p_slug)` and `kid_card_public_stickers(p_slug)`
+  — `SECURITY DEFINER` functions that apply the per-field `show_*` switches
+  and compute age. A visitor is never handed private data and asked not to
+  render it.
+- Owners read `kid_cards` / `kid_card_stickers` directly under RLS, so notes
+  and private photos are present.
+
+**`anon` has no grant at all on `children.dob` or `kid_cards.school`.** The
+functions derive age and decide about the school; the grants make sure there
+is nothing to derive it from otherwise. Note the Postgres trap this design
+depends on: a column-level `revoke` does nothing while a table-level grant
+stands, so the migration does `revoke all on kid_cards from anon` first and
+then grants the readable columns back one by one. Adding a column later
+means deciding explicitly whether to grant it.
+
+**Age is never stored.** `children.dob` is the source; `src/lib/age.ts`
+derives the number on read, so it is right the day after a birthday without
+anything having to run. `birth_year` remains only as a legacy fallback and
+renders as `約 N 歲`, because a year alone can be one out.
+
+**Photos stay in the private `child-photos` bucket.** A sticker row stores a
+*path*, never a URL, and a signed URL with a 10-minute life is minted at view
+time — so a parent switching the photo off takes the picture away
+immediately. `photo_public` resets to `false` whenever the file is removed,
+so a later upload cannot inherit permission granted to a picture that no
+longer exists. The upload warning is shown to whoever is uploading and never
+to a visitor.
+
+**Who edits what.** Basic profile fields and every privacy switch belong to
+the parent and save on Confirm (`/parent/children/:id/card`). Stickers belong
+to the child — add, remove, reorder, notes, photos — and save as they happen,
+with no parent approval step. The child's edit mode is a permission mode
+inside the authenticated family session, not a separate login.
+
+Two things worth knowing before touching the drag code in
+`StickerWall.tsx`: a pointer-up at the end of a drag is seen by the sticker
+*and* by the grid it bubbles to, so `drop()` is guarded against writing the
+same reorder twice; and the sticker a drag lands on would otherwise treat
+that pointer-up as an ordinary tap and open its detail panel. Both are
+covered by tests.
+
+Sticker artwork follows the same filename-is-the-label contract as
+everything else — see 7e-i. Until the packs are filled, a sticker renders as
+a paper chip with the word on it; nothing is broken and no placeholder
+artwork is invented.
+
+### 7d-0. The buildings and what is inside them
+
+Five outdoor zones you walk around, nine interiors you step into. The routing
+is Em's, traced off the annotated maps in `public/assets/uploads/場景/`:
+
+| 由 | 去 | 點樣 |
+|---|---|---|
+| 小鎮中心 | Buddy Café / Hero Studio / MEE 珍藏館 | 門 |
+| 小鎮中心 | 碼頭市集（要船飛）/ 小鎮廣場 | 閘 |
+| 小鎮廣場 | 公告板 | 睇板 |
+| 小鎮廣場 | 散步公園（左）/ 小屋區入口（右拱門）| 閘 |
+| 散步公園 | 小屋區入口（上閘）| 閘 |
+| 小屋區入口 | 我的小屋（左邊屋）| 門 |
+| MEE 珍藏館主廳 | 卡冊珍藏館（右）/ 碎片拼合室（左）| 通道 |
+| Hero Studio | MEE 圖書館（右）/ 戲院大堂（左）| 通道 |
+| 戲院大堂 | 戲院廳 | 入場 |
+
+**Interiors are not walked around.** Em's rule is 原位入口原位出口: one
+picture, the things you came for marked on it, and a door back to exactly
+where you came in. Only outdoor zones carry a walk mask. A room's exit is
+part of its definition (`src/lib/interiors.ts`), not browser history —
+history sends a child who deep-linked into the 戲院 back to wherever they
+were before, which may be nowhere in the world.
+
+**What each building does**, from the labels Em wrote on the maps:
+
+- **MEE 珍藏館主廳** — every card the child owns, one tap, no filters.
+- **卡冊珍藏館** — the printed set: four books of six, gaps left visible.
+  The empty slot is the point; it is what says there is another card to find.
+- **碎片拼合室** — **exactly six** active theme trays, four fragments to a
+  card. Six because a month normally introduces three themes and a child may
+  leave one half-finished while working on another, so six covers the
+  overlap. The artwork is drawn as a 3x3 grid; **the artwork does not define
+  the data model** and must not be read as nine.
+
+  **A theme's card is configured, never chosen.** `theme_releases` says which
+  card a theme pays out, `card_catalog` says where that card sits (卡號／
+  Book／Slot 為固定), and `forge_theme_card` reads both. An earlier version
+  minted the lowest-numbered card the child did not own, which meant 海洋
+  could pay out a 城市 card and the album filled in unlock order. The case
+  that proves the rule: 軌道交通 is theme 01 and its card is MEE-019, BOOK 4
+  slot 1 — the first theme's card is at the *back* of the album.
+
+  A theme may later have a second card. That is another release row, never an
+  edit to the old one: the original album identity is not overwritten.
+
+  Switching the month is `/admin/themes` — six rows, one button each, and it
+  changes every child at once. Retiring a theme does **not** delete a child's
+  fragments; the theme picks up where it left off if it returns.
+- **Hero Studio** — 今期詞語. **圖書館** — 過往詞語重溫, review only, no
+  second fragment. **戲院大堂** — the posters are the real lesson themes and
+  the 買飛 counter picks one; **戲院廳** plays it.
+- **Buddy Café** — 好友掃 code, and nothing else. No walking inside.
+- **我的小屋** — 關於我（卡片）, 更新我的卡片, 我的好友冊.
+- **碼頭市集** — the parents' entrance, behind the 船飛 (the existing parent
+  PIN). Five counters: 管理自我介紹卡／上載影片與相片, 新增孩子檔案,
+  付款訂閱, 認領失物區／開啟遺失模式, 保安／條例規則.
+
+**公告板 keeps 小鎮趣聞 and 最新消息 apart, and this is not cosmetic.**
+趣聞 are invented pet stories and are labelled as such; 最新消息 is MINIMEE
+speaking. A parent who cannot tell one from the other stops believing both,
+so `town_news.kind` is `not null` and the two render in separate sections
+with different colours and different words.
+
+**神秘獎勵 (MR01)** rolls once a day, on the day's first interaction that
+actually pays a point — the workbook's anti-farm rule. It is enforced by a
+primary key on `(kid_card_id, rolled_on)` rather than by a check, so a repeat
+tap loses the insert and gets nothing. 10%, with a guaranteed win on the 8th
+consecutive dry day. The pool is Em's 雙人 pose cards, 31 of them.
+
+**Fragments become cards in the database** (`forge_theme_card`), not in the
+browser: the four fragments are marked spent inside the same statement that
+reads them, so two taps cannot mint two cards off the same four.
+
 ### 7d. MEE 世界 — a town you walk around
 
 The world is **four full-screen maps joined by gates**, and the map is drawn
@@ -739,9 +870,11 @@ fragment — the child has to visit a different room, or wait for new content.
 Cards come with the subscription. There is deliberately no per-card
 purchase: a paid card draw is the thing parents most object to.
 
-**One game type, not one per room.** A room's identity comes from its
-subject and its art, not from a novel interaction the child has to relearn.
-One game can be made good where five would each be mediocre.
+**The game belongs to the theme, not the room.** A room's identity comes
+from its subject and its art; what a child *does* there is set by whichever
+theme is screening. See 7e-ii. A lesson with no `theme_id` still plays — it
+falls back to the plain pick-a-word game, which is what keeps the
+pre-theme content working.
 
 **`room_lessons.video_path` is not readable by `anon`.** Note that a
 column-level `REVOKE` does nothing while a table-level `GRANT` stands —
@@ -764,6 +897,65 @@ one per room.
 A lesson with no `video_path` is legitimate — the word game still works, so
 rooms can open with content before the video is shot. Two words is the
 minimum, since the game needs something to choose between.
+
+### 7e-ii. 主題小遊戲 — seven games, four rounds, one card
+
+The full table (game ↔ theme ↔ vocabulary ↔ VO, the age ladder, the
+12-month rotation and the asset list) is generated into
+**`docs/design-reference/theme-game-plan.md`** by
+`npx vite-node scripts/build-game-plan.mts`. Regenerate it after touching
+`src/lib/games.ts` or the theme workbook — it prints the prompts the code
+actually produces, so a stale copy is a copy Em would prepare the wrong
+material from.
+
+Em's two rules:
+
+- 「每個月轉換更新嘅時候，就順便換埋個遊戲玩法」 — so `game_mode` lives on
+  `theme_releases`, not on `themes`. The same theme can come back next year
+  as a different game without rewriting the theme or detaching the card the
+  old release already paid out.
+- 「如果三個主題嘅學習影片都係同一個遊戲玩法，咁就好沉悶」 — the cinema
+  screens three themes at once and six sit on the wall, so **no two themes
+  on the wall may share a mode.** That is a partial unique index on
+  `theme_releases (game_mode) where status <> 'retired' and tray_slot is not
+  null`, not a check in the back office: a UI check is advisory and this is
+  not. `/admin/themes` greys out taken modes so the refusal is visible
+  before the click, and reports the constraint's error if it fires anyway.
+
+**Seven modes, not six**, because six sit on the wall at once and any six
+consecutive entries of a seven-cycle are distinct — six modes would have
+worked only until the first theme was held back for a month.
+
+`sentence` 講句子 (中文) · `number` 數一數 (數學) · `spot` 搵一搵 (觀察) ·
+`predict` 估下會點 (科學推理) · `choice` 你會點揀 (品德情緒) ·
+`move` 跟住做 (體能) · `make` 砌一砌 (美藝).
+
+**Four rounds, one per fragment.** The round a child gets is decided by how
+many fragments they already hold for that theme, so leaving half way and
+coming back resumes rather than restarts. Round 1 recognises; round 4
+produces. Replaying a finished theme redraws the specifics from a new seed —
+same shape, new questions — which is what Em asked for with 「重複玩都會感
+覺會良好」.
+
+**Difficulty is derived, never stored.** Age from `children.dob`, or the
+band the family picked at sign-up, or 6–8 when neither exists — the middle
+band, because the worst outcome is asking a five-year-old to type. Options
+2/3/4 by band, hints fade with the round, typing only in 9–12's last round.
+
+Two things the games may never do, both enforced in code and covered by
+tests:
+
+- **A timer never costs the fragment**, only the star. A clock that could
+  delete the reward turns the one thing the child came for into a threat.
+- **`choice` never marks an answer wrong.** Its `answer` is `""`, which is
+  the contract with the UI: no tick, no cross, and the fragment is earned by
+  answering at all. Marking a child's own preference wrong is the single
+  worst thing that mode could do.
+
+Nothing here waits on artwork. Every mode runs on the words, the VO
+paragraph, the question and the answer pattern already in the database;
+art improves `spot`, `move` and `make` and is listed as A-level in the plan,
+but its absence degrades those modes rather than breaking them.
 
 ### 7e-i. 貼紙包 Sticker packs
 
@@ -851,6 +1043,15 @@ forever, and the uploads ran 25-27 MB a batch against ~3 MB converted.
 - `dist/assets/index-*.js` is ~514 kB (≈151 kB gzipped), over Vite's
   500 kB warning. Not a blocker; worth code-splitting the admin routes if
   first paint on mobile disappoints.
+- The games' A-level assets are not in yet: no VO recordings, no clause
+  timestamps, no action poses, no draggable props. Every mode runs without
+  them (see 7e-ii), but `spot`/`move`/`make` are text-only until they
+  land. Listed for Em in `docs/design-reference/theme-game-plan.md`.
+- `room_lessons.theme_id` is still null on the nine placeholder lessons, so
+  they play the fallback word game rather than a theme's configured one.
+  Republish each room from `/admin/lessons` picking a theme from the
+  dropdown and they pick up that theme's game; the picker fills the four
+  words in from the theme itself.
 
 ## 16. Restart instructions for any future assistant/developer
 

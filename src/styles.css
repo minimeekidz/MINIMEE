@@ -444,7 +444,7 @@ footer div { display: flex; gap: 20px; }
 .kid-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; margin-top: 14px; }
 .mee-card { border: 3px solid #2c2140; border-radius: 6px; overflow: hidden; background: white; box-shadow: 0 5px 0 rgba(0,0,0,.28); }
 .mee-card.flash { border-color: var(--gold); box-shadow: 0 5px 0 rgba(160,120,20,.5); }
-.mee-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; image-rendering: pixelated; }
+.mee-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; image-rendering: pixelated; }
 .mee-card-body { padding: 10px 12px 13px; }
 .mee-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .mee-code { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .8px; }
@@ -607,6 +607,31 @@ footer div { display: flex; gap: 20px; }
 .word-option:hover { background: var(--gold); }
 .word-option:active { translate: 0 3px; box-shadow: 0 2px 0 rgba(0,0,0,.3); }
 .word-option.wrong { background: #ffd9dc; border-color: #a32d3b; color: #a32d3b; }
+.word-option:disabled { opacity: .35; cursor: default; }
+
+/* 主題遊戲 — the same tap targets as the plain word game, in a frame that
+   names which of the seven is running and how far through the four the
+   child is. */
+.theme-game { padding: 22px; border: 4px solid #2c2140; border-radius: 8px; background: #fff8ec; box-shadow: 0 6px 0 rgba(0,0,0,.28); }
+.theme-game-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 14px; }
+.theme-game-badge { padding: 4px 10px; border: 3px solid #2c2140; border-radius: 999px; background: var(--gold); font-size: 11px; font-weight: 900; }
+.theme-game-head small { color: var(--muted); font-size: 10px; font-weight: 800; }
+.theme-game-progress { margin-left: auto; color: var(--muted); font-size: 10px; font-weight: 800; }
+.theme-game-prompt { margin: 0 0 12px; font-size: 17px; font-weight: 800; line-height: 1.6; }
+.theme-game-cue { display: block; width: 96px; height: 96px; margin: 0 auto 12px; object-fit: contain; image-rendering: pixelated; }
+.theme-game-hint { margin: 0 0 12px; padding: 8px 12px; border-radius: 6px; background: #f2ecff; color: var(--violet-dark); font-size: 12px; }
+.theme-game-clock { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; color: var(--muted); font-size: 11px; font-weight: 800; }
+.theme-game-clock.out { color: var(--violet-dark); }
+.theme-game-built { min-height: 34px; margin: 0 0 12px; padding: 8px 12px; border: 3px dashed #2c2140; border-radius: 6px; background: #fff; font-size: 18px; font-weight: 900; }
+.theme-game-type { display: flex; gap: 9px; flex-wrap: wrap; }
+.theme-game-type input { flex: 1 1 200px; padding: 12px; border: 3px solid #2c2140; border-radius: 6px; font-size: 17px; }
+.theme-game-moves ol { margin: 0 0 14px; padding-left: 22px; font-size: 18px; font-weight: 800; line-height: 2; }
+.theme-game-make .word-chips { margin-bottom: 14px; }
+.theme-game-done { text-align: center; padding: 8px 0; }
+.theme-game-done h3 { margin: 8px 0 4px; }
+.theme-game-done p { margin: 0; font-size: 12px; color: var(--muted); }
+.game-ladder { margin: 0; padding-left: 18px; }
+.game-ladder li { line-height: 1.6; }
 .fragment-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 14px 0; padding: 13px 18px; border: 3px solid #2c2140; border-radius: 8px; background: var(--lavender); }
 .fragment-count { font-size: 13px; font-weight: 900; color: var(--violet-dark); }
 .fragment-pips { display: inline-flex; gap: 6px; }
@@ -746,3 +771,589 @@ footer div { display: flex; gap: 20px; }
 .learning-stats small { color: var(--muted); font-size: 9px; }
 .learning-review { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .learning-review li { padding: 6px 11px; border: 2px solid var(--line); border-radius: 999px; background: #fff7e8; font-size: 11px; font-weight: 800; }
+
+/* =====================================================================
+   我的小屋 — the child's scrapbook profile.
+   A notebook page laid over a painted bedroom, not a card grid on white.
+   Everything below is scoped under .scrapbook-page so it cannot leak into
+   the parent dashboard, which keeps its existing look.
+   ===================================================================== */
+.scrapbook-page {
+  --paper-cream: #fdf6e6;
+  --paper-warm: #f6e8cd;
+  --paper-edge: #e2cfa8;
+  --ink-warm: #4a3826;
+  --ink-soft: #8a7458;
+  --tape: rgba(233, 199, 138, .78);
+  --pin-red: #c9503f;
+  position: relative;
+  min-height: 100vh;
+  padding: 0 0 92px;
+  color: var(--ink-warm);
+  font-family: inherit;
+  background: #2b2018;
+  overflow-x: hidden;
+}
+/* The painted room sits behind the paper, dimmed so the panels read first. */
+.scrapbook-room {
+  position: fixed; inset: 0; z-index: 0;
+  background: url("/assets/my-home.webp") center/cover no-repeat;
+  filter: saturate(.92);
+}
+.scrapbook-room::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 35%, rgba(43,32,24,.18), rgba(43,32,24,.62));
+}
+
+.scrapbook-topbar {
+  position: relative; z-index: 3;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px;
+}
+.round-button {
+  display: inline-flex; align-items: center; gap: 5px;
+  min-height: 40px; padding: 9px 15px;
+  border: 3px solid #8a6b45; border-radius: 999px;
+  background: var(--paper-cream); color: var(--ink-warm);
+  font-size: 12px; font-weight: 900; text-decoration: none; cursor: pointer;
+  box-shadow: 0 3px 0 rgba(90,66,40,.45);
+}
+.round-button.on { background: var(--brand-gold); }
+
+.scrapbook-spread {
+  position: relative; z-index: 2;
+  display: grid; gap: 16px;
+  padding: 4px 14px 18px;
+}
+
+/* ---- paper panels ---- */
+.scrapbook-page .paper-panel {
+  position: relative;
+  padding: 18px 16px 16px;
+  border-radius: 16px 20px 16px 22px;   /* irregular, so it reads as cut paper */
+  background: var(--paper-cream);
+  border: 1px solid var(--paper-edge);
+  box-shadow: 0 10px 22px rgba(40,28,16,.34), inset 0 0 0 6px rgba(255,255,255,.5);
+}
+/* Notebook binding holes down the left edge. */
+.scrapbook-page .paper-panel::before {
+  content: ""; position: absolute; left: 8px; top: 22px; bottom: 22px; width: 8px;
+  background-image: radial-gradient(circle, rgba(120,94,60,.32) 42%, transparent 44%);
+  background-size: 8px 26px; background-repeat: repeat-y;
+  pointer-events: none;
+}
+.scrapbook-page .paper-panel > * { margin-left: 12px; }
+
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.panel-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0; padding: 5px 14px 5px 12px;
+  border-radius: 6px 12px 12px 6px;
+  background: var(--brand-pink); color: #fff;
+  font-size: 13px; font-weight: 900;
+  box-shadow: 0 2px 0 rgba(120,60,80,.35);
+}
+.panel-empty { margin: 0; color: var(--ink-soft); font-size: 11px; }
+.panel-note { display: flex; align-items: center; gap: 5px; margin: 8px 0 0; color: var(--ink-soft); font-size: 9px; }
+.tape-button {
+  display: inline-flex; align-items: center; min-height: 34px; padding: 7px 14px;
+  border: 0; border-radius: 4px; background: var(--tape); color: var(--ink-warm);
+  font-size: 11px; font-weight: 900; text-decoration: none; cursor: pointer;
+  box-shadow: 0 2px 0 rgba(150,115,60,.4);
+}
+
+/* ---- hero ---- */
+.profile-hero {
+  position: relative;
+  /* Explicit cells rather than absolute pins: the featured stickers used to
+     be positioned over the whole card and landed on top of the name banner
+     the moment the portrait column was narrower than the row of pins. */
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px; align-items: start;
+  padding: 16px 14px 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(253,246,230,.96), rgba(246,232,205,.96));
+  border: 1px solid var(--paper-edge);
+  box-shadow: 0 12px 26px rgba(40,28,16,.38);
+}
+/* 22px of clearance under the portrait for the name banner, which overhangs
+   its bottom edge by 16px. */
+.hero-portrait { position: relative; grid-column: 1; grid-row: 1; width: 116px; margin-bottom: 22px; }
+.hero-avatar {
+  width: 116px; height: 116px; object-fit: cover;
+  border: 5px solid #fff; border-radius: 18px;
+  box-shadow: 0 6px 14px rgba(60,40,20,.32);
+}
+.tape { position: absolute; width: 52px; height: 20px; background: var(--tape); z-index: 2; }
+.tape-a { top: -9px; left: -12px; transform: rotate(-24deg); }
+.tape-b { top: -7px; right: -12px; transform: rotate(19deg); }
+.hero-name-banner {
+  position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%);
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--brand-pink); color: #fff; white-space: nowrap;
+  box-shadow: 0 3px 0 rgba(120,60,80,.4);
+}
+.hero-name-banner h1 { margin: 0; font-size: 14px; font-weight: 900; }
+.hero-name-banner em { font-size: 10px; font-style: normal; opacity: .92; }
+
+.hero-bubble {
+  position: relative;
+  grid-column: 2; grid-row: 1;
+  /* A speech bubble, not a banner: past this width it stops looking like
+     something the child said and the row goes hollow. */
+  max-width: 460px; justify-self: start;
+  padding: 13px 15px; border-radius: 14px 14px 14px 3px;
+  background: #fff; border: 2px solid var(--paper-edge);
+}
+.hero-bubble p { margin: 0; font-size: 12px; line-height: 1.7; }
+.hero-companion { position: absolute; right: -6px; bottom: -26px; width: 54px; image-rendering: pixelated; }
+
+/* The featured pins get their own row under the portrait and bubble, with the
+   right edge kept clear for the MEE character. */
+.hero-featured {
+  position: relative;
+  grid-column: 1 / -1; grid-row: 2;
+  display: flex; flex-wrap: wrap; gap: 8px; padding-right: 56px;
+}
+/* A fixed width, or `img { width: 100% }` resolves against the button's
+   max-content size and the pin stretches to the artwork's 512px. */
+.hero-pin {
+  display: grid; place-items: center;
+  width: 58px; height: 58px; padding: 0;
+  border: 0; border-radius: 12px; background: none; cursor: pointer;
+  color: var(--ink-warm);
+}
+.hero-pin img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(60,40,20,.34));
+}
+.hero-pin.wordonly {
+  width: auto; padding: 4px 12px; font-size: 12px; font-weight: 900;
+  border: 3px solid #fff; background: var(--paper-warm);
+  box-shadow: 0 3px 8px rgba(60,40,20,.3);
+}
+.hero-pin.wordonly .sticker-wordmark { font-size: 12px; }
+/* Stitching between the portrait and what it likes — not a flowchart arrow. */
+.hero-featured::before {
+  content: ""; position: absolute; left: 0; top: 50%; width: 100%; height: 2px;
+  background-image: linear-gradient(90deg, rgba(160,130,90,.55) 45%, transparent 45%);
+  background-size: 9px 2px; z-index: -1;
+}
+.hero-mee { position: absolute; right: 10px; bottom: 10px; width: 44px; opacity: .95; image-rendering: pixelated; }
+
+/* ---- stickers ---- */
+.sticker-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.sticker { position: relative; display: grid; justify-items: center; gap: 4px; touch-action: none; }
+/* The artwork is die-cut — every sticker carries its own white outline — so
+   the face is just a hit area. Framing it again in paper gave every sticker
+   a second border inside its own. Only word chips, which have no art to
+   supply an edge, keep the paper look. */
+.sticker-face {
+  display: grid; place-items: center; padding: 0;
+  border: 0; border-radius: 14px; background: none; box-shadow: none;
+  cursor: pointer; transition: transform .12s ease;
+}
+.sticker-face img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(60,40,20,.34));
+}
+.sticker-s .sticker-face { width: 62px; height: 62px; }
+.sticker-m .sticker-face { width: 86px; height: 86px; }
+.sticker-xl .sticker-face { width: 116px; height: 116px; }
+.sticker-label { max-width: 92px; font-size: 10px; font-weight: 900; text-align: center; }
+.sticker:nth-child(3n) .sticker-face { transform: rotate(-3deg); }
+.sticker:nth-child(4n) .sticker-face { transform: rotate(2.5deg); }
+.sticker-held .sticker-face { transform: scale(1.08) rotate(0deg); box-shadow: 0 10px 18px rgba(40,28,16,.4); }
+.sticker-wordmark { font-size: 18px; font-weight: 900; color: var(--ink-soft); }
+/* No artwork for this word yet: the face becomes a paper name chip that grows
+   with the word, rather than a fixed square holding a cropped fragment. */
+.sticker-wordonly .sticker-face {
+  width: auto; height: auto; min-height: 44px; padding: 11px 14px;
+  border: 3px solid #fff; background: var(--paper-warm);
+  box-shadow: 0 4px 10px rgba(60,40,20,.26);
+}
+.sticker-wordonly .sticker-wordmark { font-size: 14px; color: var(--ink-warm); white-space: nowrap; }
+.sticker-xl.sticker-wordonly .sticker-wordmark { font-size: 19px; }
+.sticker-s.sticker-wordonly .sticker-wordmark { font-size: 12px; }
+.sticker-has-note, .sticker-has-photo { position: absolute; bottom: 2px; right: 3px; font-size: 9px; }
+.sticker-has-photo { right: 16px; }
+.sticker-remove {
+  position: absolute; top: -6px; right: -6px; width: 22px; height: 22px;
+  border: 2px solid #fff; border-radius: 50%; background: var(--pin-red); color: #fff; font-size: 11px; font-weight: 900; cursor: pointer;
+}
+
+/* ---- favourites / dream ---- */
+.favourite-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.favourite-slot { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border-radius: 12px; background: rgba(255,255,255,.6); }
+.favourite-label { font-size: 9px; font-weight: 900; color: var(--ink-soft); }
+.favourite-art { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
+.favourite-art.wordonly { aspect-ratio: auto; padding: 10px 4px; }
+.favourite-art img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(60,40,20,.28)); }
+.favourite-word { font-size: 13px; font-weight: 900; }
+.favourite-slot small { font-size: 9px; font-weight: 800; }
+
+.dream-body { display: flex; align-items: center; gap: 12px; }
+.dream-body img { width: 84px; height: 84px; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(60,40,20,.3)); }
+.dream-body strong { font-size: 15px; }
+.dream-body.wordonly strong { font-size: 20px; }
+/* auto-fit rather than a media query: the pair splits when there is room for
+   both and stacks when there is not, including inside the desktop column. */
+.panel-pair { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-items: start; }
+.dream-bubbles { display: flex; flex-wrap: wrap; gap: 8px; }
+.dream-bubble { padding: 8px 14px; border-radius: 999px; background: #fff; border: 2px dashed var(--paper-edge); font-size: 11px; font-weight: 900; }
+.dream-bubble.a { transform: rotate(-3deg); } .dream-bubble.b { transform: rotate(2deg); } .dream-bubble.c { transform: rotate(-1.5deg); }
+
+/* ---- small modules ---- */
+.mee-strip { display: flex; gap: 8px; }
+.mee-mini { flex: 1; display: grid; gap: 4px; padding: 6px; border-radius: 10px; background: #fff; border: 2px solid var(--paper-edge); }
+.mee-mini img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; }
+.mee-mini span { font-size: 9px; font-weight: 900; text-align: center; }
+.mee-mini.flash { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(217,164,65,.3); }
+.mee-code { font-size: 8px; font-weight: 800; text-align: center; letter-spacing: .04em; color: var(--ink-soft); }
+
+.learning-line { display: grid; gap: 6px; margin-bottom: 10px; }
+.learning-bar { height: 10px; border-radius: 6px; background: rgba(160,130,90,.25); overflow: hidden; }
+.learning-bar span { display: block; height: 100%; background: var(--brand-gold); }
+
+.friend-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.friend-chip { display: grid; justify-items: center; gap: 3px; width: 52px; }
+.friend-chip img { width: 44px; height: 44px; object-fit: cover; border: 3px solid #fff; border-radius: 50%; }
+.friend-chip span { font-size: 9px; font-weight: 800; }
+
+.about-text { margin: 0; font-size: 12px; line-height: 1.8; }
+.about-meta { margin: 8px 0 0; font-size: 11px; font-weight: 800; color: var(--ink-soft); }
+.video-panel video { width: 100%; border-radius: 12px; background: #000; }
+
+/* ---- quote ---- */
+.quote-note {
+  position: relative; z-index: 2; margin: 4px 16px 0;
+  padding: 20px 18px; border-radius: 12px;
+  background: var(--paper-warm); border: 1px solid var(--paper-edge);
+  box-shadow: 0 8px 18px rgba(40,28,16,.34);
+  transform: rotate(-.7deg);
+}
+.quote-note p { margin: 0; font-size: 13px; font-weight: 800; line-height: 1.8; text-align: center; }
+.quote-note .pin { position: absolute; left: 50%; top: -9px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #c9503f; box-shadow: 0 2px 4px rgba(0,0,0,.35); }
+
+/* ---- detail panel ---- */
+.detail-panel { position: relative; }
+.detail-close { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border: 2px solid var(--paper-edge); border-radius: 50%; background: #fff; font-weight: 900; cursor: pointer; }
+.detail-banner { display: flex; justify-content: center; margin-bottom: 10px; }
+.detail-banner span { padding: 6px 22px; border-radius: 6px; background: var(--brand-pink); color: #fff; font-size: 13px; font-weight: 900; }
+.detail-art { display: grid; place-items: center; padding: 10px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge); }
+.detail-art img { width: 120px; height: 120px; object-fit: contain; }
+.detail-note { margin: 10px 0 0; font-size: 12px; line-height: 1.7; }
+.detail-note-field { display: grid; gap: 5px; margin-top: 10px; }
+.detail-note-field span { font-size: 10px; font-weight: 900; }
+.detail-note-field textarea { padding: 9px 11px; border: 2px solid var(--paper-edge); border-radius: 10px; background: #fff; font: inherit; font-size: 12px; resize: vertical; }
+.detail-photo { margin: 10px 0 0; }
+/* contain, not cover: a portrait photo must not be cropped to a square. */
+.detail-photo img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 10px; background: rgba(0,0,0,.05); }
+.detail-upload { display: grid; gap: 8px; margin-top: 12px; }
+.upload-drop { display: grid; justify-items: center; gap: 5px; padding: 18px; border: 2px dashed var(--paper-edge); border-radius: 12px; background: rgba(255,255,255,.6); font-size: 11px; font-weight: 900; cursor: pointer; }
+.upload-warning { margin: 0; padding: 9px 11px; border-radius: 9px; background: #fff3cd; border: 1px solid #e8d08a; color: #6b4e18; font-size: 10px; line-height: 1.65; }
+
+/* ---- picker ---- */
+.picker-scrim { position: fixed; inset: 0; z-index: 60; display: grid; place-items: end center; background: rgba(30,20,12,.55); }
+.picker-sheet { width: min(560px, 100%); max-height: 82vh; overflow-y: auto; padding: 18px 16px 24px; border-radius: 22px 22px 0 0; background: var(--paper-cream); }
+.picker-head { display: flex; align-items: center; justify-content: space-between; }
+.picker-head h2 { margin: 0; font-size: 15px; }
+.picker-close { width: 30px; height: 30px; border: 2px solid var(--paper-edge); border-radius: 50%; background: #fff; font-weight: 900; cursor: pointer; }
+.picker-tabs { display: flex; gap: 6px; margin: 12px 0; }
+.picker-tab { flex: 1; min-height: 44px; padding: 8px; border: 2px solid var(--paper-edge); border-radius: 12px; background: #fff; font-size: 11px; font-weight: 900; cursor: pointer; }
+.picker-tab.on { background: var(--brand-gold); border-color: #b98c30; }
+.picker-search { width: 100%; padding: 11px 13px; border: 2px solid var(--paper-edge); border-radius: 12px; background: #fff; font: inherit; font-size: 13px; }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; margin-top: 12px; }
+.picker-option { display: grid; justify-items: center; gap: 5px; min-height: 96px; padding: 9px 5px; border: 3px solid #fff; border-radius: 14px; background: var(--paper-warm); cursor: pointer; box-shadow: 0 3px 8px rgba(60,40,20,.22); }
+.picker-option img { width: 52px; height: 52px; object-fit: contain; }
+.picker-option span { font-size: 10px; font-weight: 900; }
+.picker-option.taken { opacity: .45; cursor: default; }
+
+/* ---- privacy switch ---- */
+.privacy-switch { display: flex; align-items: flex-start; gap: 11px; padding: 12px; border: 2px solid var(--line); border-radius: 14px; background: white; cursor: pointer; }
+.privacy-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.privacy-track { flex: none; width: 44px; height: 26px; border-radius: 999px; background: #d8d2e4; transition: background .18s ease; }
+.privacy-track em { display: block; width: 20px; height: 20px; margin: 3px; border-radius: 50%; background: #fff; transition: transform .18s ease; }
+.privacy-switch.on .privacy-track { background: var(--green); }
+.privacy-switch.on .privacy-track em { transform: translateX(18px); }
+.privacy-text { display: grid; gap: 2px; }
+.privacy-text strong { font-size: 12px; }
+.privacy-text small { color: var(--muted); font-size: 9px; }
+.privacy-hint { font-style: italic; }
+
+/* ---- dock ---- */
+.scrapbook-dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 9px 8px calc(9px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, #6b4a2c, #4e341d);
+  border-top: 3px solid #8a6b45;
+}
+.dock-item { display: grid; justify-items: center; gap: 2px; min-width: 60px; min-height: 44px; color: #ffeccd; font-size: 9px; font-weight: 900; text-decoration: none; }
+.dock-item span { font-size: 17px; }
+.scrapbook-footnote { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 5px; margin: 12px 16px 0; color: #e6d5b8; font-size: 10px; }
+
+/* ---- desktop: a two-page spread rather than stretched mobile cards ---- */
+@media (min-width: 900px) {
+  .scrapbook-spread { grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr); align-items: start; max-width: 1180px; margin: 0 auto; padding: 8px 24px 24px; gap: 20px; }
+  .scrapbook-column { display: grid; gap: 16px; align-content: start; }
+  .scrapbook-column.narrow { position: sticky; top: 16px; }
+  /* A handwritten note, not a banner: it keeps a note's width on a wide
+     screen instead of stretching the full spread. */
+  .quote-note { max-width: 620px; margin: 16px auto 0; }
+  .scrapbook-dock { position: sticky; border-radius: 16px 16px 0 0; max-width: 1180px; margin: 20px auto 0; }
+}
+@media (max-width: 899px) {
+  .scrapbook-column { display: grid; gap: 14px; }
+  .favourite-grid { grid-template-columns: repeat(2, 1fr); }
+}
+/* Phones: four to a row by construction rather than by arithmetic. Fixed
+   widths meant one sticker wrapped onto a line of its own, which reads as a
+   mistake rather than a cluster — and the reference is a four-across row at
+   this width anyway. Size hierarchy still applies from tablet up. */
+@media (max-width: 480px) {
+  .sticker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: end; }
+  .sticker .sticker-face { width: 100%; height: auto; aspect-ratio: 1; }
+  .sticker-wordonly .sticker-face { height: auto; aspect-ratio: auto; padding: 10px 6px; }
+  .sticker-label { max-width: 100%; }
+}
+.privacy-panel { margin-top: 20px; padding: 22px; border: 1px solid var(--line); border-radius: 20px; background: white; }
+.privacy-panel h2 { margin: 0 0 6px; font-size: 14px; }
+.privacy-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 12px; }
+.example-flag { margin: 0; padding: 7px 14px; border-radius: 999px; background: var(--brand-gold); color: #3a2a12; font-size: 10px; font-weight: 900; text-align: center; }
+.video-pending { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 120px; border: 2px dashed var(--paper-edge); border-radius: 12px; background: rgba(255,255,255,.55); color: var(--ink-soft); font-size: 12px; font-weight: 900; }
+
+/* =====================================================================
+   室內場景 — a building is one picture with the things you came for
+   marked on it. No walking: Em's 原位入口原位出口 rule.
+   ===================================================================== */
+.interior-scene { position: relative; min-height: 100vh; background: #17110c; color: #f6e8cd; }
+.interior-art { position: relative; width: 100%; }
+.interior-art img { display: block; width: 100%; height: auto; }
+
+.interior-bar {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-top));
+  background: linear-gradient(180deg, rgba(23,17,12,.92), rgba(23,17,12,0));
+}
+.interior-bar h1 { margin: 0; font-size: 15px; font-weight: 900; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+
+/* A marker sits on the thing it names, not in a list down the side — the
+   room is the menu. */
+.interior-spot {
+  position: absolute; transform: translate(-50%, -50%);
+  display: grid; justify-items: center; gap: 5px;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  animation: spot-in .4s ease both;
+}
+@keyframes spot-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); } }
+.spot-pin {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--brand-gold); border: 3px solid #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.5);
+  animation: spot-pulse 2.2s ease-in-out infinite;
+}
+@keyframes spot-pulse { 50% { transform: scale(1.18); } }
+.spot-label {
+  display: grid; justify-items: center; gap: 1px;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(24,16,10,.86); border: 2px solid rgba(255,255,255,.35);
+  color: #fff; white-space: nowrap;
+}
+.spot-label strong { font-size: 12px; font-weight: 900; }
+.spot-label small { font-size: 9px; opacity: .82; }
+.interior-note { position: fixed; bottom: 14px; left: 14px; }
+
+/* ---- the sheet a marker opens ---- */
+.interior-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: end center;
+  background: rgba(18,12,8,.62);
+}
+.interior-panel {
+  width: min(680px, 100%); max-height: 86vh; display: flex; flex-direction: column;
+  border-radius: 22px 22px 0 0; background: var(--paper-cream, #fdf6e6);
+  color: var(--ink-warm, #4a3826);
+  animation: sheet-up .22s ease both;
+}
+@keyframes sheet-up { from { transform: translateY(14px); opacity: 0; } }
+.interior-panel > header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px 10px;
+}
+.interior-panel > header h2 { margin: 0; font-size: 16px; font-weight: 900; }
+.interior-panel-body { overflow-y: auto; padding: 0 18px 26px; }
+
+/* ---- collection ---- */
+.collection-count { margin: 0 0 12px; font-size: 12px; font-weight: 800; }
+.collection-count strong { font-size: 18px; }
+.card-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.shelf-card { margin: 0; display: grid; gap: 4px; padding: 6px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.shelf-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; }
+.shelf-card figcaption { display: grid; text-align: center; }
+.shelf-card strong { font-size: 10px; font-weight: 900; }
+.shelf-card small { font-size: 8px; color: var(--ink-soft, #8a7458); }
+.shelf-card.flash { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(217,164,65,.32); }
+
+.book-spines { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+.book-spine {
+  flex: none; display: grid; gap: 2px; padding: 9px 14px; cursor: pointer;
+  border: 2px solid var(--paper-edge, #e2cfa8); border-radius: 10px; background: #fff;
+  font: inherit; color: inherit; text-align: left;
+}
+.book-spine.on { background: var(--brand-gold); border-color: #b98c30; }
+.book-spine span { font-size: 12px; font-weight: 900; }
+.book-spine small { font-size: 9px; opacity: .75; }
+.book-spread h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 14px; }
+.book-spread h3 em { font-size: 11px; font-style: normal; color: var(--ink-soft, #8a7458); }
+.book-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.book-slot { margin: 0; display: grid; gap: 4px; padding: 6px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.book-slot img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; }
+.book-slot strong { font-size: 10px; font-weight: 900; }
+.book-slot small { font-size: 8px; color: var(--ink-soft, #8a7458); }
+.book-slot.flash { border-color: var(--brand-gold); }
+/* An empty slot is deliberately legible: the gap is what says "keep going". */
+.book-slot.empty {
+  display: grid; place-items: center; gap: 4px; aspect-ratio: 16/9;
+  border-style: dashed; background: rgba(160,130,90,.10); color: var(--ink-soft, #8a7458);
+}
+.book-slot.empty span { font-size: 26px; font-weight: 900; opacity: .45; }
+
+.tray-wall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tray { display: grid; gap: 6px; padding: 10px 8px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); text-align: center; }
+.tray strong { font-size: 11px; font-weight: 900; }
+.tray small { font-size: 9px; color: var(--ink-soft, #8a7458); }
+.tray.empty { background: rgba(160,130,90,.10); border-style: dashed; opacity: .7; }
+.tray-pieces { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.piece { display: block; aspect-ratio: 1; border-radius: 4px; background: rgba(160,130,90,.22); }
+.piece.lit { background: var(--brand-gold); box-shadow: 0 0 8px rgba(217,164,65,.7); }
+
+/* ---- studio / cinema / library ---- */
+.studio-list { display: grid; gap: 14px; }
+.studio-lesson { padding: 12px; border-radius: 14px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.studio-lesson header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.studio-lesson h3 { margin: 0; font-size: 14px; }
+.lesson-flag { padding: 4px 10px; border-radius: 999px; background: rgba(160,130,90,.22); font-size: 9px; font-weight: 900; }
+.lesson-flag.done { background: var(--brand-gold); }
+.lesson-theme { margin: 4px 0 10px; font-size: 11px; color: var(--ink-soft, #8a7458); }
+.word-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.word-chip { display: grid; justify-items: center; gap: 2px; width: 74px; }
+.word-chip img { width: 56px; height: 56px; object-fit: contain; }
+.word-chip-text { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 12px; background: var(--paper-warm, #f6e8cd); font-size: 12px; font-weight: 900; }
+.word-chip strong { font-size: 11px; }
+.word-chip small { font-size: 9px; color: var(--ink-soft, #8a7458); text-align: center; }
+
+.poster-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.poster {
+  display: grid; gap: 4px; padding: 8px; cursor: pointer; text-align: center;
+  border: 3px solid #6b4a2c; border-radius: 10px; background: #2b1d12; color: #ffeccd;
+  font: inherit;
+}
+.poster img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 6px; }
+.poster-title { font-size: 12px; font-weight: 900; }
+.poster small { font-size: 9px; opacity: .8; }
+.poster-ticket { margin-top: 4px; padding: 4px 8px; border-radius: 999px; background: var(--brand-gold); color: #3a2a12; font-size: 10px; font-weight: 900; font-style: normal; }
+
+/* ---- café / home / board ---- */
+.cafe-scan { display: grid; gap: 14px; }
+.scan-frame {
+  display: grid; justify-items: center; gap: 8px; padding: 26px;
+  border: 3px dashed var(--paper-edge, #e2cfa8); border-radius: 16px;
+  background: rgba(255,255,255,.6); font-size: 12px; font-weight: 800;
+}
+.scan-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 12px; line-height: 1.7; }
+.scan-mine { display: flex; align-items: center; gap: 10px; padding: 11px; border-radius: 12px; background: #fff; border: 2px solid var(--paper-edge, #e2cfa8); }
+.scan-mine strong { display: block; font-size: 11px; }
+.scan-mine code { font-size: 12px; font-weight: 800; }
+
+.home-panel { display: grid; gap: 10px; justify-items: start; font-size: 12px; line-height: 1.7; }
+.home-panel p { margin: 0; }
+.tape-button.ghost { background: rgba(160,130,90,.22); }
+
+.notice-board { display: grid; gap: 18px; }
+.notice-section { padding: 12px; border-radius: 14px; border: 2px solid var(--paper-edge, #e2cfa8); background: #fff; }
+.notice-section header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.notice-section h3 { margin: 0; font-size: 14px; }
+.notice-section article { padding: 8px 0; border-top: 1px dashed var(--paper-edge, #e2cfa8); }
+.notice-section article strong { font-size: 12px; }
+.notice-section article p { margin: 4px 0 0; font-size: 12px; line-height: 1.7; }
+.notice-section article small { font-size: 9px; color: var(--ink-soft, #8a7458); }
+.notice-flag { padding: 4px 10px; border-radius: 999px; font-size: 9px; font-weight: 900; }
+/* The two are never the same colour and never the same words: a parent who
+   cannot tell an invented pet story from a real announcement stops trusting
+   both of them. */
+.notice-flag.real { background: #2f6b4f; color: #fff; }
+.notice-flag.fun { background: #e6d5b8; color: #6b4e18; }
+.notice-section.fun { background: #fffaf0; border-style: dashed; }
+
+/* ---- 船飛 ---- */
+.pin-sheet {
+  width: min(420px, 100%); display: grid; gap: 12px; padding: 22px 20px 26px;
+  border-radius: 22px 22px 0 0; background: var(--paper-cream, #fdf6e6); color: var(--ink-warm, #4a3826);
+}
+.pin-sheet h2 { margin: 0; font-size: 17px; }
+.pin-sheet p { margin: 0; font-size: 12px; line-height: 1.7; }
+.pin-sheet label { display: grid; gap: 6px; font-size: 11px; font-weight: 900; }
+.pin-sheet input {
+  padding: 12px 14px; border: 2px solid var(--paper-edge, #e2cfa8); border-radius: 12px;
+  background: #fff; font: inherit; font-size: 22px; letter-spacing: .5em; text-align: center;
+}
+.pin-sheet-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ---- loading, with a pet walking the bar ---- */
+.world-loading {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-content: center; justify-items: center; gap: 18px;
+  background: #17110c; color: #ffeccd;
+}
+.world-loading h2 { margin: 0; font-size: 15px; font-weight: 900; }
+.loading-track {
+  position: relative; width: min(280px, 72vw); height: 10px;
+  border-radius: 999px; background: rgba(255,236,205,.18); overflow: visible;
+}
+.loading-fill { display: block; height: 100%; border-radius: 999px; background: var(--brand-gold); transition: width .25s linear; }
+.loading-walker {
+  position: absolute; bottom: 6px; width: 42px; image-rendering: pixelated;
+  transform: translateX(-50%); transition: left .25s linear;
+  animation: walker-bob .5s steps(2, end) infinite;
+}
+@keyframes walker-bob { 50% { transform: translate(-50%, -3px); } }
+.loading-hint { margin: 0; font-size: 11px; opacity: .75; }
+.forged-card {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  padding: 10px; border-radius: 14px; background: var(--brand-gold); color: #3a2a12;
+}
+.forged-card img { width: 96px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; }
+.forged-card strong { display: block; font-size: 13px; }
+.forged-card p { margin: 2px 0 0; font-size: 12px; font-weight: 800; }
+.forged-card em { font-style: normal; }
+.pet-gift.mystery { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(217,164,65,.35); }
+
+/* The four unified words a tray is for, so a child can see what they are
+   collecting rather than only how many pieces are left. */
+.tray-words { display: block; font-size: 9px; font-style: normal; color: var(--ink-soft, #8a7458); line-height: 1.5; }
+.tray.done { background: rgba(217,164,65,.16); border-color: var(--brand-gold); }
+
+/* ---- 主題後台 ---- */
+.admin-block { margin-top: 26px; }
+.admin-block h2 { margin: 0 0 4px; font-size: 15px; }
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+.admin-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--line); font-size: 11px; }
+.admin-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.admin-table td small { color: var(--muted); font-size: 10px; }
+.admin-table button + button { margin-left: 6px; }
+.admin-new-release { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
+.admin-new-release label { display: grid; gap: 4px; font-size: 11px; font-weight: 800; }
+.admin-new-release select { min-width: 190px; padding: 9px 11px; border: 2px solid var(--line); border-radius: 10px; font: inherit; }
+
+/* 特別回憶 — counted, not divided. The locked slot is a hint that more
+   exist, not a measure of how far behind you are, so there are two of them
+   rather than a full grid: a wall of padlocks reads as failure. */
+.book-spread.specials h3 em { color: var(--violet-dark); font-weight: 900; }
+.book-slot.special { border-color: var(--violet-dark); background: #f6f1ff; }
+.book-slot.locked { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 3px dashed #bdb3d4; border-radius: 8px; background: #efeaf8; color: #8a7fa8; text-align: center; }
+.book-slot.locked span { font-size: 26px; filter: blur(0.4px); opacity: .65; }
+.book-slot.locked small { font-size: 10px; font-weight: 800; }
