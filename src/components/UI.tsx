@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { GameNav } from "./GameNav";
 import {
   Bell, ChevronRight, CloudOff, LockKeyhole, Menu, ShieldCheck, Sparkles
 } from "lucide-react";
@@ -95,7 +96,15 @@ export function SideNav({ surface }: { surface: "parent" | "admin" }) {
 }
 
 export function Shell({ surface, children }: { surface: "parent" | "admin"; children: ReactNode }) {
-  return <div className="dashboard-shell"><SideNav surface={surface} /><main className="dashboard-main">{children}</main></div>;
+  return (
+    <div className="dashboard-shell">
+      <SideNav surface={surface} />
+      <main className="dashboard-main">{children}</main>
+      {/* The shortcut bar rides on every in-game page. It renders nothing
+          without a child in the route, so the admin surface never sees it. */}
+      {surface === "parent" && <GameNav />}
+    </div>
+  );
 }
 
 export function FeatureCard({ title, detail, to, icon }: { title: string; detail: string; to: string; icon?: ReactNode }) {

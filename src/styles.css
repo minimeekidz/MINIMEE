@@ -1357,3 +1357,57 @@ footer div { display: flex; gap: 20px; }
 .book-slot.locked { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 3px dashed #bdb3d4; border-radius: 8px; background: #efeaf8; color: #8a7fa8; text-align: center; }
 .book-slot.locked span { font-size: 26px; filter: blur(0.4px); opacity: .65; }
 .book-slot.locked small { font-size: 10px; font-weight: 800; }
+
+/* ---------------------------------------------------------------------------
+   Landing page.
+
+   Em: 「一入到 Landing page 就已經係首頁主頁，然後開始遊戲之後透過城鎮去操作
+   任何嘅功能」. So this is the game's title screen on the same scrapbook paper
+   as 我的小屋, not a marketing page with a link to a game. One real button.
+   --------------------------------------------------------------------------- */
+.game-home { position: relative; min-height: 100dvh; padding: 20px 14px 40px; background: #23163a; overflow-x: hidden; }
+.game-home-sky { position: fixed; inset: 0; background: url("/assets/world/town-centre-day.webp") center/cover no-repeat; filter: blur(7px) brightness(.55) saturate(1.1); transform: scale(1.08); z-index: 0; }
+.game-home-paper { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 26px 18px 22px; border: 5px solid #2c2140; border-radius: 14px; background: #fff8ec; box-shadow: 0 12px 0 rgba(0,0,0,.35); }
+
+.game-home-title { position: relative; text-align: center; margin-bottom: 22px; }
+.game-home-tape { position: absolute; top: -34px; left: 50%; translate: -50% 0; width: 116px; height: 26px; background: rgba(255,214,132,.85); border: 2px solid rgba(44,33,64,.25); rotate: -3deg; }
+.game-home-title h1 { margin: 0; font-size: clamp(34px, 9vw, 54px); letter-spacing: 2px; color: var(--violet-dark); }
+.game-home-title p { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+
+.game-home-start { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 74px; margin-bottom: 24px; border: 5px solid #2c2140; border-radius: 12px; background: var(--gold); color: #2c2140; font-size: 22px; font-weight: 900; text-decoration: none; box-shadow: 0 7px 0 rgba(0,0,0,.32); }
+.game-home-start:active { translate: 0 4px; box-shadow: 0 3px 0 rgba(0,0,0,.32); }
+
+.game-home-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px; }
+.game-home-place { margin: 0; border: 3px solid #2c2140; border-radius: 9px; overflow: hidden; background: #fff; }
+.game-home-place img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; image-rendering: pixelated; }
+.game-home-place figcaption { display: flex; flex-direction: column; gap: 1px; padding: 7px 9px; }
+.game-home-place strong { font-size: 13px; }
+.game-home-place small { font-size: 10px; color: var(--muted); }
+
+.game-home-cards { margin-bottom: 22px; }
+.game-home-cards h2 { margin: 0 0 10px; font-size: 15px; }
+.game-home-tab { display: inline-block; padding: 4px 14px; border: 3px solid #2c2140; border-radius: 999px; background: var(--lavender); }
+.game-home-card-row { display: grid; gap: 9px; }
+.game-home-card { display: flex; flex-direction: column; gap: 2px; padding: 11px 14px; border: 3px solid #2c2140; border-radius: 9px; background: #fff; color: inherit; text-decoration: none; }
+.game-home-card-name { font-size: 15px; font-weight: 900; }
+.game-home-card small { font-size: 11px; color: var(--muted); }
+
+.game-home-notes { display: grid; gap: 7px; margin-bottom: 20px; }
+.game-home-notes p { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; color: var(--muted); }
+
+.game-home-foot { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding-top: 16px; border-top: 3px dashed #d8cdbb; }
+.game-home-foot a { font-size: 11px; color: var(--muted); }
+
+@media (min-width: 700px) {
+  .game-home-strip { grid-template-columns: repeat(4, 1fr); }
+  .game-home-card-row { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* The shortcut bar. A way to jump, never the only way — everything on it is
+   also somewhere the child can walk to. Bottom-anchored on phones because
+   that is where a thumb is, and it sits above the safe area on iOS. */
+.game-nav { position: sticky; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 22px; padding: 8px 6px calc(8px + env(safe-area-inset-bottom)); border-top: 4px solid #2c2140; background: #fff8ec; box-shadow: 0 -5px 0 rgba(0,0,0,.18); }
+.game-nav-stop { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px; border-radius: 8px; color: var(--violet-dark); text-decoration: none; }
+.game-nav-stop span { font-size: 10px; font-weight: 800; }
+.game-nav-stop.on { background: var(--gold); }
+.game-nav-stop:active { translate: 0 1px; }
