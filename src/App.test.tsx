@@ -905,6 +905,27 @@ describe("MINIMEE route shells", () => {
     expect(hotspotNear(town, 0.45, 0.75)).toBeNull();
   });
 
+  it("AUDIT: park is a through-route, both directions, with real landings", () => {
+    // 小鎮廣場 ⇄ 散步公園 ⇄ 小屋區入口 — the park is not a dead end.
+    const pairs: Array<[string, string]> = [
+      ["town-square", "seaside-park"], ["seaside-park", "town-square"],
+      ["seaside-park", "village-gate"], ["village-gate", "seaside-park"],
+    ];
+    for (const [from, to] of pairs) {
+      const zone = ZONES[from];
+      const gate = zone.hotspots.find(spot => spot.kind === "gate" && spot.target === to);
+      expect(gate, `${from} has no gate to ${to}`).toBeDefined();
+      // The gate itself must be reachable on foot.
+      expect(isWalkable(zone, gate!.x, gate!.y), `${from}/${gate!.id} off the path`).toBe(true);
+      // And arriving from the far side must land on walkable ground that is
+      // not inside the return gate's own prompt.
+      const landing = arrivalPoint(ZONES[to], { zone: from });
+      expect(isWalkable(ZONES[to], landing.x, landing.y), `${to} landing off the path`).toBe(true);
+      const back = ZONES[to].hotspots.find(spot => spot.kind === "gate" && spot.target === from);
+      expect(hotspotNear(ZONES[to], landing.x, landing.y)?.id).not.toBe(back!.id);
+    }
+  });
+
   it("routes the world exactly as Em drew it", () => {
     // The map Em specified, read back out of the model. Every one of these
     // was a sentence in her brief; if a link goes missing the child ends up
