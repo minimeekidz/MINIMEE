@@ -608,8 +608,11 @@ were before, which may be nowhere in the world.
 - **MEE 珍藏館主廳** — every card the child owns, one tap, no filters.
 - **卡冊珍藏館** — the printed set: four books of six, gaps left visible.
   The empty slot is the point; it is what says there is another card to find.
-- **碎片拼合室** — nine trays, four fragments to a card. Nine because three
-  themes rotate monthly and a half-finished tray has to keep sitting there.
+- **碎片拼合室** — **exactly six** active theme trays, four fragments to a
+  card. Six because a month normally introduces three themes and a child may
+  leave one half-finished while working on another, so six covers the
+  overlap. The artwork is drawn as a 3x3 grid; **the artwork does not define
+  the data model** and must not be read as nine.
 - **Hero Studio** — 今期詞語. **圖書館** — 過往詞語重溫, review only, no
   second fragment. **戲院大堂** — the posters are the real lesson themes and
   the 買飛 counter picks one; **戲院廳** plays it.

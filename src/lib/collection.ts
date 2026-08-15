@@ -12,14 +12,17 @@ import { FRAGMENTS_PER_CARD } from "./rooms";
 //   • 拼合室    — the fragments underneath: four to a card, one tray per
 //                 theme, lighting up as they are earned
 //
-// The trays are sized to the art (nine frames) rather than to the number of
-// themes running this month. Em's reason: three themes rotate monthly and a
-// child may leave one half-finished and come back to it, so a tray has to
-// keep sitting there with two of its four pieces lit. Empty frames read as
-// "not started yet", which is true, and cost nothing.
+// The wall shows exactly six trays. The artwork is drawn as a 3x3 grid, but
+// the artwork does not define the data model: the product rule is six active
+// themes at a time, because a month normally introduces three and six leaves
+// room for the ones a child has not finished yet. A tray keeps sitting there
+// with two of its four pieces lit until they come back to it.
 
-/** Frames drawn on the 拼合室 wall. Nine in the art; themes fill them in. */
-export const TRAY_SLOTS = 9;
+/**
+ * Active theme trays on the 拼合室 wall. A hard maximum, not a minimum — six
+ * is the rule even where the art has nine frames.
+ */
+export const TRAY_SLOTS = 6;
 /** Cards to a book in the 卡冊 art. */
 export const CARDS_PER_BOOK = 6;
 

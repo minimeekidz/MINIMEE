@@ -103,18 +103,17 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
 // ---------------------------------------------------------------------------
 
 /**
- * 拼合室: one tray per theme, four pieces to a card, lit as they are earned.
- * The wall has nine frames whatever the month is running, because a child may
- * leave a theme half-finished and come back to it — an empty frame says "not
- * started", which is true.
+ * 拼合室: one tray per active theme, four pieces to a card, lit as they are
+ * earned. Exactly six, always — `Math.max` here used to let a seventh theme
+ * push the wall wider, which is the artwork's 3x3 grid overriding the product
+ * rule rather than the other way round.
  */
 export function TraysPanel({ trays, kidCardId, onForged }: {
   trays: ThemeTray[];
   kidCardId: string | null;
   onForged: () => void;
 }) {
-  const slots = Array.from({ length: Math.max(TRAY_SLOTS, trays.length) },
-    (_, index) => trays[index] ?? null);
+  const slots = Array.from({ length: TRAY_SLOTS }, (_, index) => trays[index] ?? null);
   const [busy, setBusy] = useState<string | null>(null);
   const [won, setWon] = useState<{ name: string; art: string; rarity: string } | null>(null);
 

@@ -17,6 +17,7 @@ import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
 import { booksFrom, BOOKS, CARDS_PER_BOOK, looseCards, type CollectedCard } from "./lib/collection";
 import { checkParentPin, closeParentGate, openParentGate, parentGateOpen } from "./lib/parentGate";
+import { classifyWeather, festivalFor, lunarDayNumber, parseLunar } from "./lib/almanac";
 import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
 import { NoticeBoardPanel } from "./components/interior/HomePanels";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
@@ -1036,6 +1037,49 @@ describe("MINIMEE route shells", () => {
     render(<TicketsPanel rooms={[room]} onPick={id => picked.push(id)} />);
     fireEvent.click(screen.getByRole("button", { name: /海底世界/ }));
     expect(picked).toEqual(["r1"]);
+  });
+
+  it("reads the sky the way the workbook orders it", () => {
+    // 安全天氣限制 is the top of the ordering, so a warning outranks the rain
+    // gauge. A typhoon signal in Hong Kong is often a dry, very windy day —
+    // reading zero millimetres and calling it clear would be exactly wrong.
+    expect(classifyWeather(0, ["WTCSGNL"])).toBe("storm");
+    expect(classifyWeather(0, ["WRAINA"])).toBe("storm");
+    expect(classifyWeather(0, ["WTS"])).toBe("storm");
+    expect(classifyWeather(0, ["WL"])).toBe("storm");
+    expect(classifyWeather(0, ["WTMW"])).toBe("storm");
+    // Real warnings, but not weather a pet shelters from: the sheet's
+    // drizzle/storm columns are about rain.
+    expect(classifyWeather(0, ["WFIREY"])).toBe("clear");
+    expect(classifyWeather(0, ["WHOT"])).toBe("clear");
+    expect(classifyWeather(12, [])).toBe("storm");
+    expect(classifyWeather(1, [])).toBe("drizzle");
+    expect(classifyWeather(0, [])).toBe("clear");
+  });
+
+  it("finds the lunar festivals by rule rather than by a fixed date", () => {
+    // 初五 is the fifth, 十五 the fifteenth, 廿三 the twenty-third. Getting
+    // this wrong tells a child it is 中秋 on the wrong evening, once a year,
+    // and nobody notices until it happens.
+    expect(lunarDayNumber("初一")).toBe(1);
+    expect(lunarDayNumber("初五")).toBe(5);
+    expect(lunarDayNumber("初十")).toBe(10);
+    expect(lunarDayNumber("十五")).toBe(15);
+    expect(lunarDayNumber("二十")).toBe(20);
+    expect(lunarDayNumber("廿三")).toBe(23);
+    expect(lunarDayNumber("卅一")).toBe(31);
+
+    expect(parseLunar("丙午年八月十五")).toEqual({ month: 8, day: 15 });
+    expect(parseLunar("乙巳年正月初一")).toEqual({ month: 1, day: 1 });
+    expect(parseLunar("乙巳年五月初五")).toEqual({ month: 5, day: 5 });
+    expect(parseLunar("乙巳年臘月廿八")).toEqual({ month: 12, day: 28 });
+
+    expect(festivalFor(1, 1)).toBe("lunar-new-year");
+    expect(festivalFor(5, 5)).toBe("dragon-boat");
+    expect(festivalFor(8, 15)).toBe("mid-autumn");
+    // Near misses are not festivals, and a failed lookup is never one.
+    expect(festivalFor(8, 14)).toBeNull();
+    expect(festivalFor(null, null)).toBeNull();
   });
 
   it("keeps every 碼頭市集 counter pointing at a page that exists", () => {
