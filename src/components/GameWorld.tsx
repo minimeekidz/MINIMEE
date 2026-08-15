@@ -25,8 +25,13 @@ import {
  * to suit, rather than the other way round: keying the zoom off the window
  * height alone made a phone — tall and narrow — show nothing but the paving
  * slab underfoot, so the anchor is the geometric mean of both dimensions.
+ *
+ * Raised from 0.125 because Em read the child as 勁細粒 against the animals
+ * painted into the backgrounds. This closes most of the gap without touching
+ * her artwork; the rest of it is that some scenes have large pets drawn in,
+ * and a painted pet cannot be out-scaled — it has to come out of the picture.
  */
-const HERO_ON_SCREEN = 0.125;
+const HERO_ON_SCREEN = 0.18;
 /** Map-space units per frame at 60fps. */
 const SPEED = 0.0028;
 /** Hero height as a share of the drawn map height. */

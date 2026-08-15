@@ -9,7 +9,7 @@
 // and the word it illustrates are matched by name rather than by a lookup
 // table somebody has to keep in step. See the README in that folder.
 
-export type StickerCategory = "interest" | "activity" | "job" | "mood";
+export type StickerCategory = "interest" | "activity" | "job" | "mood" | "theme";
 
 export interface Sticker {
   /** The word this sticker illustrates, taken from the filename. */
@@ -23,6 +23,10 @@ export const CATEGORY_LABELS: Record<StickerCategory, string> = {
   activity: "活動",
   job: "職業",
   mood: "心情",
+  // The 144 theme-vocabulary stickers, cut from Em's nine sheets by
+  // scripts/cut-theme-stickers.mjs. They carry their own word — she drew them
+  // that way so they can be the answer buttons in the games.
+  theme: "主題詞彙",
 };
 
 const files = import.meta.glob<string>(

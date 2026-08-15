@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TownPet } from "../lib/characters";
 import {
   actionsAt, DAILY_QUIZ_SLOTS, levelProgress, MAX_LEVEL, nextUnlock, pickLine,
@@ -63,6 +63,11 @@ export function PetEncounter({
   const headline = useMemo(() => headlineEvent(context), [context]);
 
   const visited = (usedToday[`${pet.id}:visit`] ?? 0) > 0;
+  // The demo has no card, so no server to enforce 「一日一點」 — and without
+  // a guard here every tap added another point: 「我瘋狂咁㩒嘅時候佢都係好
+  // 瘋狂咁樣加上去」. Keyed by pet so meeting a second pet still counts once.
+  const demoAwarded = useRef<Set<string>>(new Set());
+  const counted = visited || demoAwarded.current.has(`${pet.id}:visit`);
   const askedAlready = (usedToday[`${pet.id}:quiz-asked`] ?? 0) > 0;
 
   useEffect(() => { setTotal(points); }, [points]);
@@ -116,12 +121,15 @@ export function PetEncounter({
       || profile?.catchphrase || "…");
 
     if (!cardId) {
-      if (!visited) applyTotal(total + 1);
+      if (!counted) {
+        demoAwarded.current.add(`${pet.id}:visit`);
+        applyTotal(total + 1);
+      }
       return;
     }
     // The point is for turning up, not for this button. Every later tap still
     // has its own VO and adds nothing.
-    if (visited) return;
+    if (counted) return;
     setBusy(true);
     const next = await visitPet(cardId, pet.id);
     if (next !== null) applyTotal(next);
@@ -157,7 +165,10 @@ export function PetEncounter({
       const demoState = correct && attempt === 1 ? "firstCorrect"
         : correct ? "secondCorrect" : "secondWrong";
       setBubble(quizLine(pet.id, demoState)?.vo ?? "");
-      if (correct) applyTotal(total + 1);
+      if (correct && !demoAwarded.current.has(`${pet.id}:quiz`)) {
+        demoAwarded.current.add(`${pet.id}:quiz`);
+        applyTotal(total + 1);
+      }
       return;
     }
 
@@ -260,7 +271,7 @@ export function PetEncounter({
     </div>
 
     <p className="pet-locked">
-      {visited ? "今日嘅好感度加咗喇 —— 但傾幾多都得，唔會扣㗎。" : "同佢傾一句就加 1 點好感度。"}
+      {counted ? "今日嘅好感度加咗喇 —— 但傾幾多都得，唔會扣㗎。" : "同佢傾一句就加 1 點好感度。"}
       {upcoming && <> · 🔒 Lv.{upcoming.level} 解鎖 {upcoming.icon} {upcoming.label}</>}
     </p>
 
