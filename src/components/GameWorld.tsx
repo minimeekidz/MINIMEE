@@ -427,7 +427,7 @@ export function GameWorld({
       className="world-stage"
       onPointerDown={walkTo}
       style={{
-        backgroundImage: `url(${zoneBackground(zone)})`,
+        backgroundImage: `url(${zoneBackground(zone, undefined, viewport.w > viewport.h)})`,
         backgroundSize: `${map.w}px ${map.h}px`,
         backgroundPosition: `${-camera.x}px ${-camera.y}px`,
       }}

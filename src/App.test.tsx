@@ -916,6 +916,21 @@ describe("MINIMEE route shells", () => {
     expect(zoneBackground(town, new Date("2026-08-14T09:00:00"))).toBe(town.day);
     expect(zoneBackground(town, new Date("2026-08-14T21:00:00"))).toBe(town.night);
 
+    // Em paints both a 9:16 and a 16:9 of each scene. A wide screen gets the
+    // wide painting rather than a stretched portrait one; a scene with no
+    // wide cut yet falls back to the portrait rather than to nothing.
+    const noon = new Date("2026-08-14T09:00:00");
+    const night = new Date("2026-08-14T21:00:00");
+    expect(zoneBackground(town, noon, true)).toBe(town.dayWide ?? town.day);
+    expect(zoneBackground(town, night, true)).toBe(town.nightWide ?? town.night);
+    const park = ZONES["seaside-park"];
+    expect(zoneBackground(park, noon, true)).toBe(park.day);
+
+    // Dawn has one cut only — a second painting of a 90-minute window is a
+    // lot of drawing for very few minutes.
+    const dawnZone = ZONES["village-gate"];
+    expect(zoneBackground(dawnZone, new Date("2026-08-14T06:00:00"), true)).toBe(dawnZone.dawn);
+
     // 小屋區入口 is the only zone Em drew at dawn, and the window is narrow so
     // catching it feels like catching it.
     const gate = ZONES["village-gate"];

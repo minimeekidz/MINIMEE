@@ -46,6 +46,20 @@ export interface Zone {
   /** The same place at different times; all three share one walk mask. */
   day: string;
   night: string;
+  /**
+   * Landscape cuts of the same scene, for a screen wider than it is tall.
+   *
+   * Em draws both: a 9:16 for a phone and a 16:9 for a desktop. Stretching
+   * one to fit the other is what makes a town look like a smear, and
+   * letterboxing it breaks the illusion of standing somewhere — so the wide
+   * screen gets the wide painting.
+   *
+   * The hotspots and the walk mask stay in the portrait cut's coordinates.
+   * Both paintings hold the same buildings in the same relative places, so
+   * the same fractions land on the same doors.
+   */
+  dayWide?: string;
+  nightWide?: string;
   /** Only 小屋區入口 has dawn art; everywhere else goes straight day/night. */
   dawn?: string;
   /** 碼頭市集 is the parents' entrance and asks for the parent PIN. */
@@ -70,14 +84,26 @@ export const ZONES: Record<string, Zone> = {
     name: "小鎮中心",
     day: "/assets/world/town-centre-day.webp",
     night: "/assets/world/town-centre-night.webp",
+    dayWide: "/assets/world/town-centre-day-wide.webp",
+    nightWide: "/assets/world/town-centre-night-wide.webp",
     mask: "town-centre",
-    spawn: { x: 0.450, y: 0.880 },
+    spawn: { x: 0.470, y: 0.760 },
+    // Five doors around one plaza, read off the art by the sign over each:
+    // marquee = cinema, star = studio, book = library, cup = cafe, card =
+    // album hall. Em's prose and her bullet list disagreed about which
+    // building sat where; the signs do not, so the signs win.
+    //
+    // 圖書館 and 戲院大堂 are reachable from Hero Studio as well. Em:
+    // 「只係小鎮中心都有多一個捷徑入口比佢地入去」— the town square is a
+    // shortcut into them, not a replacement for the studio's own doors.
     hotspots: [
-      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.330, y: 0.260, target: "cafe" },
-      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.800, y: 0.420, target: "studio" },
-      { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.680, y: 0.680, target: "album-hall" },
-      { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.790, y: 0.930, target: "wharf-market" },
-      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.460, y: 0.980, target: "town-square" },
+      { id: "d-cinema", kind: "door", label: "戲院大堂", x: 0.200, y: 0.300, target: "cinema-lobby" },
+      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.500, y: 0.285, target: "studio" },
+      { id: "d-library", kind: "door", label: "MEE 圖書館", x: 0.790, y: 0.310, target: "library" },
+      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.210, y: 0.580, target: "cafe" },
+      { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.760, y: 0.600, target: "album-hall" },
+      { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.930, y: 0.105, target: "wharf-market" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.470, y: 0.980, target: "town-square" },
     ],
   },
 
@@ -221,9 +247,17 @@ export function isDawn(now: Date = new Date()): boolean {
   return hour >= 5 && hour < 7;
 }
 
-export function zoneBackground(zone: Zone, now?: Date): string {
+export function zoneBackground(zone: Zone, now?: Date, wide = false): string {
+  // Dawn has one cut only — it is a 90-minute window, and a second painting
+  // of it would be a lot of drawing for very few minutes.
   if (zone.dawn && isDawn(now)) return zone.dawn;
-  return isDaytime(now) ? zone.day : zone.night;
+  if (isDaytime(now)) return (wide && zone.dayWide) || zone.day;
+  return (wide && zone.nightWide) || zone.night;
+}
+
+/** A screen wider than it is tall wants the landscape painting. */
+export function prefersWide(width: number, height: number): boolean {
+  return width > height;
 }
 
 // ---------------------------------------------------------------------------

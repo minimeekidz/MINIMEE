@@ -29,37 +29,55 @@ export const CORRIDORS = {
   // a 0.07 step with a 0.055 radius near the top, which on a 1.78 portrait map
   // is a 0.124 gap between centres — the chain came apart and left the whole
   // upper town unreachable. Keep every step shorter than the smaller radius.
+  // 小鎮中心 — one central plaza with a compass rose, five doors around it,
+  // and two ways out. Redrawn for Em's new art (2026-08-16): the old chain
+  // climbed diagonally to a café at the top left, which no longer exists.
+  //
+  // Discs are spaced closer than their radii on purpose. An early pass used a
+  // 0.07 step with a 0.055 radius, which on a 1.78 portrait map leaves a gap
+  // between centres — the chain came apart and left the upper town
+  // unreachable. Keep every step shorter than the smaller radius.
   "town-centre-day": [
-    [ // main road, bottom edge up to the café terrace
-      { x: 0.46, y: 0.99, r: 0.12 }, { x: 0.45, y: 0.93, r: 0.12 },
-      { x: 0.45, y: 0.87, r: 0.11 }, { x: 0.45, y: 0.81, r: 0.10 },
-      { x: 0.45, y: 0.75, r: 0.095 }, { x: 0.45, y: 0.69, r: 0.09 },
-      { x: 0.44, y: 0.64, r: 0.085 }, { x: 0.44, y: 0.59, r: 0.08 },
-      { x: 0.43, y: 0.54, r: 0.075 }, { x: 0.43, y: 0.49, r: 0.07 },
-      { x: 0.42, y: 0.45, r: 0.065 }, { x: 0.40, y: 0.41, r: 0.06 },
-      { x: 0.38, y: 0.37, r: 0.055 }, { x: 0.36, y: 0.33, r: 0.05 },
-      { x: 0.34, y: 0.30, r: 0.045 }, { x: 0.33, y: 0.27, r: 0.045 },
-      { x: 0.32, y: 0.24, r: 0.045 },
+    [ // the plaza itself, a wide walkable disc in the middle
+      { x: 0.48, y: 0.42, r: 0.20 }, { x: 0.44, y: 0.48, r: 0.19 },
+      { x: 0.52, y: 0.48, r: 0.19 }, { x: 0.48, y: 0.53, r: 0.18 },
     ],
-    [ // right, along the terrace under Hero Studio to its door
-      { x: 0.47, y: 0.52, r: 0.07 }, { x: 0.53, y: 0.51, r: 0.06 },
-      { x: 0.59, y: 0.50, r: 0.055 }, { x: 0.65, y: 0.48, r: 0.055 },
-      { x: 0.71, y: 0.46, r: 0.05 }, { x: 0.76, y: 0.44, r: 0.05 },
-      { x: 0.80, y: 0.41, r: 0.05 },
+    [ // main road, bottom edge up into the plaza
+      { x: 0.47, y: 0.99, r: 0.10 }, { x: 0.47, y: 0.93, r: 0.10 },
+      { x: 0.47, y: 0.87, r: 0.10 }, { x: 0.47, y: 0.81, r: 0.10 },
+      { x: 0.47, y: 0.75, r: 0.11 }, { x: 0.47, y: 0.69, r: 0.12 },
+      { x: 0.47, y: 0.63, r: 0.13 },
     ],
-    [ // right to the MEE 珍藏館 steps
-      { x: 0.47, y: 0.71, r: 0.07 }, { x: 0.53, y: 0.71, r: 0.06 },
-      { x: 0.59, y: 0.71, r: 0.055 }, { x: 0.64, y: 0.70, r: 0.05 },
-      { x: 0.68, y: 0.68, r: 0.05 },
+    [ // up-left to the cinema door
+      { x: 0.42, y: 0.44, r: 0.11 }, { x: 0.36, y: 0.41, r: 0.10 },
+      { x: 0.30, y: 0.38, r: 0.09 }, { x: 0.25, y: 0.35, r: 0.08 },
+      { x: 0.21, y: 0.32, r: 0.07 }, { x: 0.20, y: 0.30, r: 0.065 },
     ],
-    [ // along the bottom to the wharf gate
-      { x: 0.52, y: 0.91, r: 0.08 }, { x: 0.59, y: 0.91, r: 0.07 },
-      { x: 0.66, y: 0.92, r: 0.07 }, { x: 0.73, y: 0.92, r: 0.065 },
-      { x: 0.79, y: 0.93, r: 0.06 },
+    [ // straight up to Hero Studio, the centrepiece
+      { x: 0.49, y: 0.40, r: 0.11 }, { x: 0.50, y: 0.36, r: 0.09 },
+      { x: 0.50, y: 0.32, r: 0.08 }, { x: 0.50, y: 0.29, r: 0.07 },
+    ],
+    [ // up-right to the library door
+      { x: 0.55, y: 0.44, r: 0.11 }, { x: 0.62, y: 0.41, r: 0.10 },
+      { x: 0.68, y: 0.38, r: 0.09 }, { x: 0.74, y: 0.35, r: 0.08 },
+      { x: 0.78, y: 0.32, r: 0.07 }, { x: 0.79, y: 0.31, r: 0.065 },
+    ],
+    [ // down-left to the café door
+      { x: 0.40, y: 0.53, r: 0.12 }, { x: 0.34, y: 0.55, r: 0.10 },
+      { x: 0.28, y: 0.57, r: 0.09 }, { x: 0.23, y: 0.58, r: 0.08 },
+      { x: 0.21, y: 0.58, r: 0.07 },
+    ],
+    [ // down-right to the album hall door
+      { x: 0.56, y: 0.54, r: 0.12 }, { x: 0.62, y: 0.56, r: 0.10 },
+      { x: 0.68, y: 0.58, r: 0.09 }, { x: 0.73, y: 0.59, r: 0.08 },
+      { x: 0.76, y: 0.60, r: 0.07 },
+    ],
+    [ // the coast path, up the right edge to the wharf gate
+      { x: 0.66, y: 0.36, r: 0.09 }, { x: 0.74, y: 0.30, r: 0.08 },
+      { x: 0.81, y: 0.24, r: 0.075 }, { x: 0.87, y: 0.18, r: 0.07 },
+      { x: 0.91, y: 0.13, r: 0.065 }, { x: 0.93, y: 0.10, r: 0.06 },
     ],
   ],
-
-  // 小鎮廣場 — an open plaza rather than a road, so the discs are wide.
   "town-square-day": [
     [
       { x: 0.45, y: 0.99, r: 0.16 }, { x: 0.44, y: 0.90, r: 0.18 },
