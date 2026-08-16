@@ -115,6 +115,15 @@ export function GameWorld({
   const [moving, setMoving] = useState(false);
   const [fading, setFading] = useState(false);
   const [near, setNear] = useState<Hotspot | null>(null);
+  // Sitting down. Em: 「公園長椅及野餐墊是可以有『坐下』的互動」. It is a
+  // state rather than an animation because there is no sitting sprite yet —
+  // the child stops where the seat is, the scene says what they can see from
+  // there, and any step in any direction stands them back up.
+  const [seated, setSeated] = useState<Hotspot | null>(null);
+  // A pet's front door. Five of the six cottages in 小屋區入口 do not open,
+  // and a tap that does nothing reads as broken, so they say whose house it
+  // is instead.
+  const [peek, setPeek] = useState<Hotspot | null>(null);
   const [meeting, setMeeting] = useState<TownPet | null>(null);
   const [viewport, setViewport] = useState({ w: 1280, h: 800 });
 
@@ -251,6 +260,8 @@ export function GameWorld({
   useEffect(() => {
     setPos(arrivalPoint(zone, arriveFrom.current));
     target.current = null;
+    setSeated(null);
+    setPeek(null);
   }, [zone]);
 
   useEffect(() => {
@@ -342,6 +353,9 @@ export function GameWorld({
       if (!dir) return;
       event.preventDefault();
       held.current[dir] = value;
+      // A step in any direction is standing up. Nothing to press, nothing to
+      // dismiss — walking away is how a child leaves a bench.
+      if (value) setSeated(null);
     };
     const down = (e: KeyboardEvent) => set(e, true);
     const up = (e: KeyboardEvent) => set(e, false);
@@ -372,6 +386,7 @@ export function GameWorld({
     // Tapping a rooftop walks to the doorstep in front of it rather than
     // doing nothing at all.
     target.current = nearestWalkable(zone, x, y);
+    setSeated(null);
   }, [camera, map, zone]);
 
   const travel = useCallback((spot: Hotspot) => {
@@ -381,6 +396,15 @@ export function GameWorld({
     // real place to stand, and what is on it comes from the almanac rather
     // than from a schedule anybody has to maintain.
     if (spot.kind === "stage") { onTakeStage?.(); return; }
+    if (spot.kind === "seat") {
+      // Snap onto the seat rather than stopping a stride short of it: the
+      // whole point is that the child is on the bench, not beside it.
+      target.current = null;
+      setPos({ x: spot.x, y: spot.y });
+      setSeated(spot);
+      return;
+    }
+    if (spot.kind === "cottage") { setPeek(spot); return; }
     if (spot.kind === "stall") { onEnterStall?.(spot.target); return; }
     // 碼頭市集 asks for the 船飛 first. A child holding the phone must not be
     // able to walk into the account, the money or the privacy switches.
@@ -452,6 +476,8 @@ export function GameWorld({
           <span>{
             spot.kind === "gate" ? "➜"
               : spot.kind === "stage" ? "🎪"
+              : spot.kind === "seat" ? "🪑"
+              : spot.kind === "cottage" ? "🏠"
               : spot.kind === "board" ? "🗞"
               : spot.kind === "stall" ? "🛎"
               : doneRooms.includes(spot.target) ? "✓" : "▲"
@@ -481,7 +507,7 @@ export function GameWorld({
       ))}
 
       <img
-        className={moving ? "world-hero walking" : "world-hero"}
+        className={seated ? "world-hero sitting" : moving ? "world-hero walking" : "world-hero"}
         src={hero.art}
         alt={hero.nameZh}
         style={{
@@ -506,12 +532,23 @@ export function GameWorld({
       {onExit && <button className="world-exit" onClick={onExit}>離開</button>}
     </div>
 
-    {/* A door beats a pet for the main prompt: the pet can be tapped directly
-        and will still be there, whereas a covered doorway is a dead end. */}
-    {near
+    {/* Sitting takes over the prompt: while the child is on the bench, the
+        thing to offer is what they can see and a way up, not the button that
+        put them there. */}
+    {seated
+      ? <div className="world-seated" role="status">
+          <p>{seated.note ?? `坐緊喺${seated.label}度。`}</p>
+          <button className="world-action" onClick={() => setSeated(null)}>
+            企返起身
+            <small>行一步都得</small>
+          </button>
+        </div>
+      : near
       ? <button className="world-action" onClick={() => travel(near)}>
           {near.kind === "door" ? `入去 ${near.label}`
             : near.kind === "stage" ? `上 ${near.label}`
+            : near.kind === "seat" ? `坐低 · ${near.label}`
+            : near.kind === "cottage" ? `望下 ${near.label}`
             : near.kind === "board" ? `睇 ${near.label}`
             : near.kind === "stall" ? `去 ${near.label}`
             : near.label}
@@ -521,6 +558,16 @@ export function GameWorld({
           同 {nearPet.pet.nameZh} 傾計
           <small>空白鍵</small>
         </button>}
+
+    {/* A closed front door. It says whose house it is and that it is shut,
+        which is a place; saying nothing would be a bug. */}
+    {peek && (
+      <button className="world-peek" onClick={() => setPeek(null)}>
+        <strong>{peek.label}</strong>
+        <span>{peek.note}</span>
+        <small>呢間屋暫時入唔到 · 撳一下收埋</small>
+      </button>
+    )}
 
     {askingPin && (
       <div className="picker-scrim" role="dialog" aria-label="船飛" onClick={() => setAskingPin(null)}>

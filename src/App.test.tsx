@@ -917,38 +917,45 @@ describe("MINIMEE route shells", () => {
     expect(zoneBackground(town, new Date("2026-08-14T09:00:00"))).toBe(town.day);
     expect(zoneBackground(town, new Date("2026-08-14T21:00:00"))).toBe(town.night);
 
-    // Em paints both a 9:16 and a 16:9 of each scene. A wide screen gets the
-    // wide painting rather than a stretched portrait one; a scene with no
-    // wide cut yet falls back to the portrait rather than to nothing.
     const noon = new Date("2026-08-14T09:00:00");
     const night = new Date("2026-08-14T21:00:00");
-    expect(zoneBackground(town, noon, true)).toBe(town.dayWide ?? town.day);
-    expect(zoneBackground(town, night, true)).toBe(town.nightWide ?? town.night);
-    const park = ZONES["seaside-park"];
-    expect(zoneBackground(park, noon, true)).toBe(park.day);
 
-    // Drawn as CSS layers rather than one chosen file, because a zone names
-    // its wide cut before that cut has been painted. Wide on top, portrait
-    // underneath, so a missing 16:9 file shows a cropped town rather than a
-    // blank screen; a zone with no wide cut has nothing to stack.
-    expect(zoneBackgroundLayers(town, noon, true)).toEqual([town.dayWide, town.day]);
-    expect(zoneBackgroundLayers(town, noon, false)).toEqual([town.day]);
-    expect(zoneBackgroundLayers(park, noon, true)).toEqual([park.day]);
+    // No zone names a wide cut yet, and that is the assertion rather than an
+    // omission. A wide cut only works when it is the same painting framed
+    // wider: the hotspots and the walk mask are in the portrait cut's
+    // fractions, so a re-rendered 16:9 — which is what the 16:9 files
+    // delivered so far are — puts every door marker on grass. Until one is a
+    // crop, wiring one is a regression, so this fails the day somebody wires
+    // one without also solving the coordinates.
+    for (const zone of Object.values(ZONES)) {
+      expect(zone.dayWide, `${zone.id} wired a wide cut`).toBeUndefined();
+      expect(zone.nightWide, `${zone.id} wired a wide cut`).toBeUndefined();
+      expect(zoneBackground(zone, noon, true)).toBe(zone.day);
+      expect(zoneBackground(zone, night, true)).toBe(zone.night);
+    }
 
-    // Dawn has one cut only — a second painting of a 90-minute window is a
-    // lot of drawing for very few minutes.
-    const dawnZone = ZONES["village-gate"];
-    expect(zoneBackground(dawnZone, new Date("2026-08-14T06:00:00"), true)).toBe(dawnZone.dawn);
+    // The layering still works, and it is what makes wiring a wide cut safe
+    // the moment there is a real one: wide on top, portrait underneath, so a
+    // missing file shows a cropped town rather than a blank screen. With no
+    // wide cut there is nothing to stack and it collapses to one layer.
+    expect(zoneBackgroundLayers(town, noon, true)).toEqual([town.day]);
+    expect(zoneBackgroundLayers(
+      { ...town, dayWide: "/wide.webp" }, noon, true,
+    )).toEqual(["/wide.webp", town.day]);
 
-    // 小屋區入口 is the only zone Em drew at dawn, and the window is narrow so
-    // catching it feels like catching it.
-    const gate = ZONES["village-gate"];
-    expect(gate.dawn).toBeDefined();
+    // Dawn is off too. The one dawn painting was of a canal town with a
+    // lighthouse, which is not the village Em drew, so 小屋區入口 pointing at
+    // it would have put its doorways over an unrelated picture every morning.
+    // isDawn still works; it is waiting for art, not broken.
+    for (const zone of Object.values(ZONES)) {
+      expect(zone.dawn, `${zone.id} wired dawn art`).toBeUndefined();
+    }
     expect(isDawn(new Date("2026-08-14T05:30:00"))).toBe(true);
     expect(isDawn(new Date("2026-08-14T09:00:00"))).toBe(false);
-    expect(zoneBackground(gate, new Date("2026-08-14T05:30:00"))).toBe(gate.dawn);
+    // So everywhere goes straight from night to day at the same hour.
+    const gate = ZONES["village-gate"];
+    expect(zoneBackground(gate, new Date("2026-08-14T05:30:00"))).toBe(gate.night);
     expect(zoneBackground(gate, new Date("2026-08-14T09:00:00"))).toBe(gate.day);
-    // Everywhere else goes straight from night to day at the same hour.
     expect(zoneBackground(town, new Date("2026-08-14T05:30:00"))).toBe(town.night);
 
     // Every interior in the map has art, and every art file has a room.
@@ -1400,6 +1407,47 @@ describe("MINIMEE route shells", () => {
     const real = screen.getByText("新主題開放").closest(".notice-section");
     expect(fun).not.toBe(real);
     expect(fun).toHaveClass("fun");
+  });
+
+  it("makes the park's seats and the village's closed doors real places", () => {
+    const park = ZONES["seaside-park"];
+    const village = ZONES["village-gate"];
+
+    // 「公園長椅及野餐墊是可以有『坐下』的互動」. A seat with no line to show
+    // would sit the child down in silence, which is the same as nothing
+    // happening — the note is the interaction.
+    const seats = park.hotspots.filter(spot => spot.kind === "seat");
+    expect(seats.length).toBeGreaterThanOrEqual(4);
+    for (const seat of seats) {
+      expect(seat.note, `${seat.id} has nothing to see`).toBeTruthy();
+      // And you have to be able to reach it, or it is only a picture.
+      expect(isWalkable(park, seat.x, seat.y), `${seat.id} off the path`).toBe(true);
+    }
+
+    // 「最大明突出果間係通往我的小屋，其餘係小寵物的家，不能進入」— exactly
+    // one door, and every other cottage says whose house it is rather than
+    // doing nothing when a child taps it.
+    const doors = village.hotspots.filter(spot => spot.kind === "door");
+    expect(doors).toHaveLength(1);
+    expect(doors[0].target).toBe("my-home");
+    const cottages = village.hotspots.filter(spot => spot.kind === "cottage");
+    expect(cottages.length).toBeGreaterThanOrEqual(4);
+    for (const cottage of cottages) {
+      expect(cottage.note, `${cottage.id} says nothing`).toBeTruthy();
+      expect(isWalkable(village, cottage.x, cottage.y), `${cottage.id} off the path`).toBe(true);
+    }
+
+    // 「小屋區係由小鎮廣場入去的，散步區亦可從小鎮廣場入去，而屋區及散步公園
+    // 亦是互通的」— six gates, all of them two-way.
+    const goes = (from: string, to: string) =>
+      ZONES[from].hotspots.some(spot => spot.kind === "gate" && spot.target === to);
+    for (const [a, b] of [
+      ["town-square", "village-gate"], ["town-square", "seaside-park"],
+      ["village-gate", "seaside-park"],
+    ] as const) {
+      expect(goes(a, b), `${a} → ${b}`).toBe(true);
+      expect(goes(b, a), `${b} → ${a}`).toBe(true);
+    }
   });
 
   it("gives every festival something to do on the 廣場 stage", () => {
