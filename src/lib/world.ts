@@ -263,7 +263,7 @@ export const ROOM_ART: Record<string, string> = {
  */
 export const ROOM_DOORS: Record<string, Array<{ id: string; label: string; target: string; side: "left" | "right" }>> = {
   "album-hall": [
-    { id: "r-books", label: "卡冊珍藏館", target: "album-books", side: "right" },
+    { id: "r-books", label: "卡冊展示室", target: "album-books", side: "right" },
     { id: "r-fragments", label: "碎片拼合室", target: "fragment-room", side: "left" },
   ],
   "studio": [

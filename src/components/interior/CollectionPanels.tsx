@@ -4,6 +4,7 @@ import {
   booksFrom, forgeCard, SPECIAL_COVERS, specialCards, themeProgress, TRAY_SLOTS,
   type CollectedCard, type ForgedCard, type ThemeTray,
 } from "../../lib/collection";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // The three ways the 珍藏館 shows a collection.
 
@@ -39,6 +40,18 @@ export function AllCardsPanel({ cards }: { cards: CollectedCard[] }) {
 // ---------------------------------------------------------------------------
 
 /**
+ * One notch of the carousel, wrapping at both ends.
+ *
+ * 「支援現有 12＋2 本及日後擴充，冇畫死數量」— so this counts the books it is
+ * given rather than assuming twelve.
+ */
+export function turn(books: Array<{ no: number }>, from: number, step: number): number {
+  const index = books.findIndex(book => book.no === from);
+  const next = ((index < 0 ? 0 : index) + step + books.length) % books.length;
+  return books[next].no;
+}
+
+/**
  * 卡冊: 「打開主題1果冊，就會見到一冊6張入面，邊張未解鎖，邊張已獲得」.
  * The empty slots are the point — they are what tells a child there is still
  * something to find.
@@ -58,18 +71,32 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
         主題收藏 <strong>{progress.owned}</strong> / {progress.total}
       </p>
 
-      <div className="book-spines">
-        {books.map(candidate => (
-          <button
-            key={candidate.no}
-            type="button"
-            className={candidate.no === book.no ? "book-spine on" : "book-spine"}
-            onClick={() => setOpen(candidate.no)}
-          >
-            <span>{candidate.name}</span>
-            <small>{candidate.slots.filter(Boolean).length} / {candidate.slots.length}</small>
-          </button>
-        ))}
+      {/* 「轉轉轉就會見到唔同卡套冊 display 出黎」 — the room is a carousel,
+          so turning it one notch at a time is the primary control and the row
+          of spines is the shortcut. Wrapping at both ends is what makes it a
+          cylinder rather than a list with two dead stops. */}
+      <div className="book-carousel">
+        <button type="button" className="book-turn" aria-label="轉上一本"
+          onClick={() => setOpen(turn(books, book.no, -1))}>
+          <ChevronLeft size={18} />
+        </button>
+        <div className="book-spines">
+          {books.map(candidate => (
+            <button
+              key={candidate.no}
+              type="button"
+              className={candidate.no === book.no ? "book-spine on" : "book-spine"}
+              onClick={() => setOpen(candidate.no)}
+            >
+              <span>{candidate.name}</span>
+              <small>{candidate.slots.filter(Boolean).length} / {candidate.slots.length}</small>
+            </button>
+          ))}
+        </div>
+        <button type="button" className="book-turn" aria-label="轉下一本"
+          onClick={() => setOpen(turn(books, book.no, 1))}>
+          <ChevronRight size={18} />
+        </button>
       </div>
 
       <div className="book-spread">
@@ -92,36 +119,45 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
         </div>
       </div>
 
-      {/* 特別回憶.
-          Counted, never divided. Em: 「完成率唔應該顯示 0/全部，因為日後會
-          不停新增限定卡，否則小朋友會永遠見到未完成」— a denominator that
-          keeps growing is a child who is permanently behind, so there is no
-          denominator. The two empty pockets are there to say more exist, not
-          to measure anything. */}
-      <div className="book-spread specials">
-        <h3>特別回憶<em>已收藏 {specials.length} 張</em></h3>
-        <img className="book-cover" src={SPECIAL_COVERS[0]} alt="" loading="lazy" />
-        <p className="panel-note">
-          特別回憶係喺特別時刻先攞到嘅，唔計入主題收藏。
-        </p>
-        <div className="book-grid">
-          {specials.map(card => (
-            <figure className="book-slot special" key={card.id}>
-              <img src={card.art} alt="" />
-              <figcaption><strong>{card.name}</strong><small>{card.code}</small></figcaption>
-            </figure>
-          ))}
-          {/* Two hints of what is out there. Deliberately not a full grid of
-              everything unearned: a wall of locks reads as failure. */}
-          {[0, 1].map(index => (
-            <div className="book-slot locked" key={`locked-${index}`}>
-              <span aria-hidden>🔒</span>
-              <small>仲有特別回憶等緊你</small>
-            </div>
-          ))}
-        </div>
-      </div>
+      <SpecialsPanel cards={cards} />
     </>
+  );
+}
+
+/**
+ * 特別回憶 — 生日寶箱's drawer, and the tail of the 卡冊 spread.
+ *
+ * Counted, never divided. Em: 「完成率唔應該顯示 0/全部，因為日後會不停新增
+ * 限定卡，否則小朋友會永遠見到未完成」— a denominator that keeps growing is a
+ * child who is permanently behind, so there is no denominator. The two empty
+ * pockets are there to say more exist, not to measure anything.
+ */
+export function SpecialsPanel({ cards }: { cards: CollectedCard[] }) {
+  const specials = useMemo(() => specialCards(cards), [cards]);
+  return (
+    <div className="book-spread specials">
+      <h3>特別回憶<em>已收藏 {specials.length} 張</em></h3>
+      <img className="book-cover" src={SPECIAL_COVERS[0]} alt="" loading="lazy" />
+      <p className="panel-note">
+        生日、節慶、活動先攞到嘅卡都收喺呢個寶箱度，唔計入主題收藏。
+      </p>
+      <div className="book-grid">
+        {specials.map(card => (
+          <figure className="book-slot special" key={card.id}>
+            <img src={card.art} alt="" />
+            <figcaption><strong>{card.name}</strong><small>{card.code}</small></figcaption>
+          </figure>
+        ))}
+        {/* Two hints of what is out there. Deliberately not a full grid of
+            everything unearned: a wall of locks reads as failure. */}
+        {[0, 1].map(index => (
+          <div className="book-slot locked" key={`locked-${index}`}>
+            <span aria-hidden>🔒</span>
+            <small>仲有特別回憶等緊你</small>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -133,12 +169,14 @@ export function BooksPanel({ cards }: { cards: CollectedCard[] }) {
  * push the wall wider, which is the artwork's 3x3 grid overriding the product
  * rule rather than the other way round.
  */
-export function TraysPanel({ trays, kidCardId, onForged }: {
+export function TraysPanel({ trays, kidCardId, onForged, width = TRAY_SLOTS }: {
   trays: ThemeTray[];
   kidCardId: string | null;
   onForged: () => void;
+  /** How many stations to draw. One when a single mount was tapped. */
+  width?: number;
 }) {
-  const slots = Array.from({ length: TRAY_SLOTS }, (_, index) => trays[index] ?? null);
+  const slots = Array.from({ length: width }, (_, index) => trays[index] ?? null);
   const [busy, setBusy] = useState<string | null>(null);
   // Plural on purpose. An annual member gets the normal and the flash from
   // one completion, and the two pockets lighting together is the moment

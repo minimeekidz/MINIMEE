@@ -1372,6 +1372,28 @@ footer div { display: flex; gap: 20px; }
 
 .ticket.done, .ticket.past { opacity: .82; }
 
+/* 碎片拼合室嘅寶石燈 —— 每組四粒，直接亮喺張圖上面。 */
+.interior-frame.tray { padding: 0 2%; }
+.tray-gems { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 100%; }
+.tray-gems .gem {
+  flex: 0 0 auto; width: 18%; aspect-ratio: 1; border-radius: 50%;
+  background: rgba(20,16,40,.35); box-shadow: inset 0 0 4px rgba(0,0,0,.5);
+}
+.tray-gems .gem.lit {
+  background: radial-gradient(circle at 35% 30%, #fff6c8, var(--brand-gold, #f2c14e) 60%, #d9922b);
+  box-shadow: 0 0 8px 2px rgba(255,214,120,.85);
+}
+
+/* 卡冊展示室嘅轉盤：左右轉一格，兩頭接得返，先似個圓柱。 */
+.book-carousel { display: flex; align-items: center; gap: 6px; }
+.book-carousel .book-spines { flex: 1; overflow-x: auto; }
+.book-turn {
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+  border: 2px solid var(--paper-edge, #e2cfa8); background: #fff; color: inherit;
+}
+.book-turn:active { translate: 0 1px; }
+
 /* 房入面嘅小動作 —— 坐低、食嘢、望下未整好嘅嘢。全部冇獎，淨係一句說話。 */
 .room-moment { display: grid; gap: 12px; justify-items: center; text-align: center; }
 .room-moment p { margin: 0; font-size: 12px; line-height: 1.8; }

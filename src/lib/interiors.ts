@@ -55,7 +55,7 @@ export interface InteriorSpot {
  */
 export interface InteriorFrame {
   id: string;
-  kind: "marquee" | "poster" | "screen" | "board";
+  kind: "marquee" | "poster" | "screen" | "board" | "tray";
   x: number; y: number; w: number; h: number;
 }
 
@@ -80,37 +80,74 @@ export interface Interior {
 
 export const INTERIORS: Record<string, Interior> = {
   // --- MEE 珍藏館 -----------------------------------------------------------
-  // 「主廳係只會一禁就show所有己獲得的卡」 — the hall is the whole collection,
-  // and its two arches are the wings.
+  //
+  // Em's new art (2026-08-16): 「明亮奇幻收藏俱樂部」. 「展示哂收有珍藏的地方，
+  // 包括主題MEE卡、神秘MEE卡、節慶／活動觸發的禮物、生日卡、貼紙、相框等」.
+  //
+  // The two round portals are the wings, and she drew which is which: the
+  // left one is tiled like a jigsaw (fragments), the right one has books
+  // radiating out of it (binders). No guessing needed.
+  //
+  // The side furniture is not decoration either — 「厚度嘅紀念冊、卡冊、生日
+  // 寶箱、貼紙抽屜、禮物膠囊及驚喜裝置」. Each of those that has real data
+  // behind it gets a marker; the ones that do not stay as scenery rather than
+  // become buttons that apologise.
   "album-hall": {
     id: "album-hall",
     name: "MEE 珍藏館",
     art: "/assets/world/album-hall.webp",
     back: { kind: "zone", target: "town-centre", side: "bottom" },
     spots: [
-      { id: "all-cards", label: "我全部嘅卡", x: 0.50, y: 0.45, kind: "panel", target: "all-cards", hint: "一禁就睇晒" },
-      { id: "to-fragments", label: "碎片拼合室", x: 0.16, y: 0.52, kind: "room", target: "fragment-room", hint: "儲碎片砌卡" },
-      { id: "to-books", label: "卡冊珍藏館", x: 0.84, y: 0.52, kind: "room", target: "album-books", hint: "一冊冊咁揭" },
+      { id: "all-cards", label: "中央展示櫃", x: 0.465, y: 0.370, kind: "panel", target: "all-cards", hint: "一禁就睇晒" },
+      { id: "to-fragments", label: "碎片拼合室", x: 0.105, y: 0.335, kind: "room", target: "fragment-room", hint: "儲碎片砌卡" },
+      { id: "to-books", label: "卡冊展示室", x: 0.885, y: 0.335, kind: "room", target: "album-books", hint: "轉住揀一本" },
+      { id: "birthday-chest", label: "生日寶箱", x: 0.195, y: 0.570, kind: "panel", target: "specials", hint: "生日同節慶卡" },
+      { id: "sticker-drawer", label: "貼紙抽屜", x: 0.800, y: 0.640, kind: "panel", target: "stickers", hint: "我儲落嘅貼紙" },
     ],
   },
+
+  // --- 卡冊展示室 -----------------------------------------------------------
+  // 「可旋轉記憶書樂園…應是轉換 display 卡套冊的感覺，可能係圓柱，插住唔同
+  // 卡套冊，轉轉轉就會見到唔同卡套冊 display 出黎」. The art is exactly that,
+  // and 「支援現有 12＋2 本及日後擴充，冇畫死數量」 — so nothing here counts
+  // books, the panel reads however many the data has.
   "album-books": {
     id: "album-books",
-    name: "卡冊珍藏館",
+    name: "卡冊展示室",
     art: "/assets/world/album-books.webp",
-    // The art's usable archway is on the right in both wings, so both return
-    // doors are drawn there.
     back: { kind: "room", target: "album-hall", side: "right" },
     spots: [
-      { id: "books", label: "揀一本卡冊", x: 0.50, y: 0.42, kind: "panel", target: "books", hint: "每冊六張" },
+      { id: "books", label: "轉盤揀卡冊", x: 0.500, y: 0.395, kind: "panel", target: "books", hint: "轉一轉揀一本" },
     ],
   },
+
+  // --- 碎片拼合室 -----------------------------------------------------------
+  //
+  // 「卡冊拼合工作坊，準確保留 3 組卡冊、每組 4 盞寶石進度燈」 — and the art
+  // has exactly three mounts with four gems under each, so the wall is three
+  // wide rather than the six it used to be.
+  //
+  // 「生成一盞＝草起一塊…4 盞燈起就會草起…按主題更換，有 3 組（3 個主題），
+  // 不過主題一過就無得草返轉頭，只能係 library／戲院睇返」. The three stations
+  // are therefore this month's three themes and nothing else: a theme that
+  // rolls off is still watchable and still readable, it just stops being
+  // collectable.
   "fragment-room": {
     id: "fragment-room",
     name: "碎片拼合室",
     art: "/assets/world/fragment-room.webp",
     back: { kind: "room", target: "album-hall", side: "right" },
     spots: [
-      { id: "trays", label: "碎片主題盤", x: 0.50, y: 0.40, kind: "panel", target: "trays", hint: "四塊砌一張" },
+      { id: "tray-1", label: "第一組", x: 0.225, y: 0.310, kind: "panel", target: "tray-1", hint: "四塊砌一張" },
+      { id: "tray-2", label: "第二組", x: 0.500, y: 0.300, kind: "panel", target: "tray-2", hint: "四塊砌一張" },
+      { id: "tray-3", label: "第三組", x: 0.775, y: 0.310, kind: "panel", target: "tray-3", hint: "四塊砌一張" },
+    ],
+    // The four gems under each mount. Lit from the fragments actually held,
+    // so the room itself is the progress bar rather than a panel about it.
+    frames: [
+      { id: "tray-1", kind: "tray", x: 0.118, y: 0.347, w: 0.216, h: 0.038 },
+      { id: "tray-2", kind: "tray", x: 0.400, y: 0.324, w: 0.212, h: 0.037 },
+      { id: "tray-3", kind: "tray", x: 0.672, y: 0.347, w: 0.216, h: 0.038 },
     ],
   },
 
