@@ -251,6 +251,7 @@ export const ROOM_ART: Record<string, string> = {
   "library": "/assets/world/library.webp",
   "cinema-lobby": "/assets/world/cinema-lobby.webp",
   "cinema-hall": "/assets/world/cinema-hall.webp",
+  "cinema-hall-2": "/assets/world/cinema-hall-2.webp",
   "my-home": "/assets/world/my-home.webp",
 };
 
@@ -270,7 +271,8 @@ export const ROOM_DOORS: Record<string, Array<{ id: string; label: string; targe
     { id: "r-cinema", label: "戲院大堂", target: "cinema-lobby", side: "left" },
   ],
   "cinema-lobby": [
-    { id: "r-hall", label: "入場", target: "cinema-hall", side: "right" },
+    { id: "r-hall", label: "1 號廳", target: "cinema-hall", side: "right" },
+    { id: "r-hall-2", label: "2 號廳", target: "cinema-hall-2", side: "right" },
   ],
 };
 
