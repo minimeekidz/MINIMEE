@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import { HEROES, TOWN_PETS } from "./lib/characters";
-import { arrivalPoint, hotspotNear, isDaytime, isDawn, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground } from "./lib/world";
+import { arrivalPoint, hotspotNear, isDaytime, isDawn, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground, zoneBackgroundLayers } from "./lib/world";
 import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
 import { actionVo } from "./data/petActionVo";
@@ -926,6 +926,14 @@ describe("MINIMEE route shells", () => {
     expect(zoneBackground(town, night, true)).toBe(town.nightWide ?? town.night);
     const park = ZONES["seaside-park"];
     expect(zoneBackground(park, noon, true)).toBe(park.day);
+
+    // Drawn as CSS layers rather than one chosen file, because a zone names
+    // its wide cut before that cut has been painted. Wide on top, portrait
+    // underneath, so a missing 16:9 file shows a cropped town rather than a
+    // blank screen; a zone with no wide cut has nothing to stack.
+    expect(zoneBackgroundLayers(town, noon, true)).toEqual([town.dayWide, town.day]);
+    expect(zoneBackgroundLayers(town, noon, false)).toEqual([town.day]);
+    expect(zoneBackgroundLayers(park, noon, true)).toEqual([park.day]);
 
     // Dawn has one cut only — a second painting of a 90-minute window is a
     // lot of drawing for very few minutes.

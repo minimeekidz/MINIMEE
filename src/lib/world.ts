@@ -271,6 +271,22 @@ export function prefersWide(width: number, height: number): boolean {
   return width > height;
 }
 
+/**
+ * The background as CSS layers: the wide cut on top, the portrait one under
+ * it.
+ *
+ * The wide cuts are drawn per scene and arrive one scene at a time, so a zone
+ * can name a `_wide` file months before that file exists. Stacking rather
+ * than choosing means a missing wide cut shows the portrait painting instead
+ * of showing nothing — a child on a laptop gets a slightly cropped town, not
+ * a blank screen.
+ */
+export function zoneBackgroundLayers(zone: Zone, now?: Date, wide = false): string[] {
+  const top = zoneBackground(zone, now, wide);
+  const base = zoneBackground(zone, now, false);
+  return top === base ? [top] : [top, base];
+}
+
 // ---------------------------------------------------------------------------
 // Walkability
 // ---------------------------------------------------------------------------
