@@ -24,7 +24,14 @@ jobs:
 
       - run: npm install
 
+      # Baked into the bundle as well as served from the Worker's secrets.
+      # Both values are public by design — RLS is what protects the data, not
+      # secrecy — and having only the runtime route meant one bad secret took
+      # the whole site down with a message nobody could act on.
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       # Deploy first, secrets second, and in two steps rather than one.
       #

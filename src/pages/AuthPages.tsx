@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { DemoBadge } from "../components/UI";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { supabase, supabaseSetupError } from "../lib/supabase";
 
 type AuthMode = "login" | "register" | "forgot" | "reset";
 
@@ -56,7 +56,11 @@ export function AuthPage() {
     event.preventDefault();
     setError("");
     if (!supabase) {
-      setError("Supabase環境變數尚未載入，請重新部署後再試。");
+      // Say which of the two it is. 「請重新部署」 was advice that did not
+      // work — the deploy was fine, one of the values was.
+      setError(supabaseSetupError
+        ? `連唔到資料庫：${supabaseSetupError}`
+        : "連唔到資料庫，請稍後再試。");
       return;
     }
 
