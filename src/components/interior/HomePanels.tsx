@@ -5,12 +5,17 @@ import type { EditableCard } from "../../lib/kidCardStore";
 // Buddy Café, the 公告板, and the three things in 我的小屋.
 
 /**
- * Buddy Café. 「掃好友QRCode的功能入口…有好似相機咁的圖，有教學及說明」.
+ * Buddy Café's centre table. 「讓小朋友與小朋友之間互掃 qrcode 加好友及同意
+ * 加入好友的」— which is the two consoles Em drew facing each other across a
+ * divider, one child on each side.
  *
  * The scanner itself needs a camera permission prompt and a friends backend,
  * neither of which exists yet, so the café teaches the exchange and shows the
  * child their own code. That is honest and still useful: two children can
- * read each other's code off the screen today.
+ * read each other's code off the screen today. The consent step is written
+ * into the steps now rather than added later, because 「同意加入好友」 is the
+ * half that has to be true before any of this ships — a code that adds a
+ * friend the moment it is scanned is a code anybody can point a camera at.
  */
 export function FriendScanPanel({ card }: { card: EditableCard | null }) {
   return (
@@ -21,9 +26,10 @@ export function FriendScanPanel({ card }: { card: EditableCard | null }) {
       </div>
 
       <ol className="scan-steps">
-        <li>同朋友坐埋一齊，兩個人都打開自己張卡。</li>
+        <li>兩個人面對面坐低，一人一邊，打開自己張卡。</li>
         <li>一個人揀「我的好友冊」，另一個人俾佢掃。</li>
-        <li>掃到之後，兩個人嘅好友冊都會多咗對方。</li>
+        <li><strong>兩邊都撳「同意」</strong>先加得成 —— 一邊撳係唔算數嘅。</li>
+        <li>加咗之後，兩個人嘅好友冊都會多咗對方。</li>
       </ol>
 
       {card?.slug && (

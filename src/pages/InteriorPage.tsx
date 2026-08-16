@@ -16,6 +16,9 @@ import { ageFrom } from "../lib/age";
 import {
   AboutMePanel, FriendScanPanel, FriendsBookPanel, NoticeBoardPanel, UpdateCardPanel,
 } from "../components/interior/HomePanels";
+import {
+  PetNewsPanel, SeatPanel, SoonPanel, TreatsPanel,
+} from "../components/interior/RoomMoments";
 
 // One page for every building in the world.
 //
@@ -40,6 +43,10 @@ export function InteriorPage() {
 
   const [card, setCard] = useState<EditableCard | null>(null);
   const [open, setOpen] = useState<InteriorSpot | null>(null);
+  // What was ordered at the café counter. Deliberately not persisted: it is a
+  // cake, not an inventory item, and a child coming back tomorrow should walk
+  // into a café rather than into yesterday's half-eaten plate.
+  const [holding, setHolding] = useState<string | null>(null);
   // Arriving from the box office or from the film opens the right thing by
   // itself. A child who has just chosen a film should not have to find the
   // screen, and one sent out to answer should not have to find the desk.
@@ -132,10 +139,20 @@ export function InteriorPage() {
 
           {open.target === "friend-scan" && <FriendScanPanel card={card} />}
           {open.target === "notice-board" && <NoticeBoardPanel news={news} />}
+          {open.target === "pet-news" && <PetNewsPanel news={news} />}
 
           {open.target === "about-me" && <AboutMePanel card={card} />}
           {open.target === "update-card" && <UpdateCardPanel card={card} childId={childId} />}
           {open.target === "friends" && <FriendsBookPanel />}
+
+          {/* The small in-room moments. Driven by the spot's kind rather than
+              its target, because every seat behaves the same and only the
+              line differs. */}
+          {open.kind === "seat" && <SeatPanel spot={open} holding={holding} />}
+          {open.kind === "treat" && (
+            <TreatsPanel holding={holding} onEat={setHolding} />
+          )}
+          {open.kind === "soon" && <SoonPanel spot={open} />}
         </InteriorPanel>
       )}
 

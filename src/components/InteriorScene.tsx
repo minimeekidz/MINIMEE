@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { Interior, InteriorSpot } from "../lib/interiors";
+import { isDaytime } from "../lib/world";
 
 // A room, drawn as one picture with the things you came for marked on it.
 //
@@ -39,13 +40,21 @@ export function InteriorScene({ interior, onSpot, onBack, backLabel, children }:
   return (
     <main className="interior-scene">
       <div className="interior-art">
-        <img ref={art} src={interior.art} alt="" onLoad={() => setReady(true)} />
+        {/* Indoors follows the same clock as outdoors. A café lit like noon
+            at ten at night is the kind of small wrongness a child notices
+            without being able to say what is wrong. */}
+        <img
+          ref={art}
+          src={(!isDaytime() && interior.artNight) || interior.art}
+          alt=""
+          onLoad={() => setReady(true)}
+        />
 
         {ready && interior.spots.map(spot => (
           <button
             key={spot.id}
             type="button"
-            className="interior-spot"
+            className={`interior-spot ${spot.kind}`}
             style={{ left: `${spot.x * 100}%`, top: `${spot.y * 100}%` }}
             onClick={() => onSpot(spot)}
           >

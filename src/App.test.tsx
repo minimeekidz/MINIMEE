@@ -26,6 +26,7 @@ import { classifyWeather, festivalFor, lunarDayNumber, parseLunar } from "./lib/
 import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
 import { NoticeBoardPanel } from "./components/interior/HomePanels";
 import { EVERYDAY_ACTS, STAGE_FESTIVALS, StagePanel } from "./components/interior/StagePanel";
+import { TreatsPanel } from "./components/interior/RoomMoments";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 import {
   bandFor, buildRounds, clausesOf, difficultyFor, FAMILIES, GAME_MODES,
@@ -1407,6 +1408,74 @@ describe("MINIMEE route shells", () => {
     const real = screen.getByText("新主題開放").closest(".notice-section");
     expect(fun).not.toBe(real);
     expect(fun).toHaveClass("fun");
+  });
+
+  it("gives 我的小屋 and Buddy Café the things Em put in them", () => {
+    const home = INTERIORS["my-home"];
+    const cafe = INTERIORS["cafe"];
+    const targets = (interior: typeof home) => interior.spots.map(spot => spot.target);
+
+    // 「裡面會有小朋友更改自我介紹卡的貼紙功能、更改角色造型（之後開放的新
+    // 功能）、我的好友冊、檢視我的卡片」 — four things, and the fourth is
+    // marked as not built rather than quietly missing.
+    expect(targets(home)).toEqual(
+      expect.arrayContaining(["update-card", "about-me", "friends", "looks"]));
+    const looks = home.spots.find(spot => spot.target === "looks")!;
+    expect(looks.kind).toBe("soon");
+    expect(looks.note).toBeTruthy();
+
+    // 「這間 cafe 主要的功能有 2 樣」 — the code swap and the pet news. Both
+    // are real panels, not seats.
+    const scan = cafe.spots.find(spot => spot.target === "friend-scan")!;
+    const petNews = cafe.spots.find(spot => spot.target === "pet-news")!;
+    expect(scan.kind).toBe("panel");
+    expect(petNews.kind).toBe("panel");
+
+    // 「舒適又有不同活動及坐位進食（有坐下的互動鍵）、吸引的甜點及飲品
+    // （有進食的互動鍵）」.
+    const seats = cafe.spots.filter(spot => spot.kind === "seat");
+    expect(seats.length).toBeGreaterThanOrEqual(3);
+    for (const seat of seats) expect(seat.note, `${seat.id} has nothing to see`).toBeTruthy();
+    expect(cafe.spots.some(spot => spot.kind === "treat")).toBe(true);
+
+    // Every spot has to be somewhere on the picture, and no two may sit on
+    // top of each other — an earlier room had two markers 0.04 apart and a
+    // small finger could not pick between them.
+    for (const interior of Object.values(INTERIORS)) {
+      for (const spot of interior.spots) {
+        expect(spot.x, `${interior.id}/${spot.id}`).toBeGreaterThan(0);
+        expect(spot.x, `${interior.id}/${spot.id}`).toBeLessThan(1);
+        expect(spot.y, `${interior.id}/${spot.id}`).toBeGreaterThan(0);
+        expect(spot.y, `${interior.id}/${spot.id}`).toBeLessThan(1);
+      }
+      for (const a of interior.spots) {
+        for (const b of interior.spots) {
+          if (a.id >= b.id) continue;
+          const apart = Math.hypot(a.x - b.x, a.y - b.y);
+          expect(apart, `${interior.id}: ${a.id} and ${b.id} overlap`).toBeGreaterThan(0.08);
+        }
+      }
+    }
+  });
+
+  it("lets a child order something at the café counter without paying anything", () => {
+    // The treat list is drawn from what is in the display case, and none of
+    // it costs or earns — Em ruled out a second currency, so a café that
+    // handed out points for a cake would be a shop.
+    const eaten: string[] = [];
+    const { rerender } = render(
+      <TreatsPanel holding={null} onEat={label => eaten.push(label)} />);
+    expect(screen.getByText(/呢度唔使錢/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /熱朱古力/ }));
+    expect(eaten).toEqual(["熱朱古力"]);
+
+    // Once something is chosen the panel says what it was like, and the rest
+    // of the case is still open — there is nothing to run out of.
+    rerender(<TreatsPanel holding="熱朱古力" onEat={label => eaten.push(label)} />);
+    expect(screen.getByText(/棉花糖/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /熱朱古力/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /星星曲奇/ })).toBeInTheDocument();
   });
 
   it("makes the park's seats and the village's closed doors real places", () => {
