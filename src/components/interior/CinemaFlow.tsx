@@ -24,13 +24,41 @@ import { awardThemeFragment, type ThemeTray } from "../../lib/collection";
 // theme, which is what the games were always shaped like — one theme, four
 // plays, harder each time.
 
+/** A film that is not one of this month's themes — 2 號廳's programme. */
+export interface PastFilm { themeId: string; theme: string; words: string[] }
+
+/**
+ * Every film the child can watch, drawn from the two sources the cinema
+ * actually has: the month's trays and the older lessons.
+ *
+ * 「無論是當月影片／過去的影片，所有影片都會在這邊選擇播放」— so the split is
+ * by hall, not by whether something is offered at all. Anything on this
+ * month's wall plays in 1 號廳; anything else plays in 2 號廳.
+ */
+export function pastFilmsFrom(
+  lessons: Array<{ themeId: string | null; theme: string; words: string[] }>,
+  trays: ThemeTray[],
+): PastFilm[] {
+  const current = new Set(trays.map(tray => tray.themeId));
+  const seen = new Set<string>();
+  const out: PastFilm[] = [];
+  for (const lesson of lessons) {
+    if (!lesson.themeId || current.has(lesson.themeId) || seen.has(lesson.themeId)) continue;
+    seen.add(lesson.themeId);
+    out.push({ themeId: lesson.themeId, theme: lesson.theme, words: lesson.words });
+  }
+  return out;
+}
+
 /** Ask the receptionist, pick a film. */
-export function BoxOfficePanel({ trays, childId }: {
-  trays: ThemeTray[]; childId: string;
+export function BoxOfficePanel({ trays, past = [], childId }: {
+  trays: ThemeTray[]; past?: PastFilm[]; childId: string;
 }) {
   const navigate = useNavigate();
   const showing = trays.filter(tray => !tray.owned);
   const done = trays.filter(tray => tray.owned);
+  const hall = (room: string, themeId: string) =>
+    navigate(`/parent/children/${childId}/inside/${room}?theme=${themeId}`);
 
   return (
     <div className="box-office">
@@ -44,41 +72,91 @@ export function BoxOfficePanel({ trays, childId }: {
           <strong>戲院職員</strong>
           {showing.length > 0
             ? "歡迎返嚟！你今日想睇邊一條學習影片呀？"
-            : "今期嘅片你都睇晒喇，好叻！新片出咗我會擺喺呢度。"}
+            : "今期嘅片你都睇晒喇，好叻！想重溫舊片就入 2 號廳。"}
         </p>
       </div>
 
       {showing.length > 0 && (
-        <div className="ticket-row">
-          {showing.map(tray => (
-            <button
-              key={tray.themeId}
-              type="button"
-              className="ticket"
-              onClick={() => navigate(
-                `/parent/children/${childId}/inside/cinema-hall?theme=${tray.themeId}`)}
-            >
-              <Ticket size={17} />
-              <strong>{tray.theme}</strong>
-              <small>{tray.words.join("・")}</small>
-              <em>{tray.earned} / 4 塊碎片</em>
-            </button>
-          ))}
-        </div>
+        <>
+          <p className="panel-note">1 號廳 · 今期上映</p>
+          <div className="ticket-row">
+            {showing.map(tray => (
+              <button
+                key={tray.themeId}
+                type="button"
+                className="ticket"
+                onClick={() => hall("cinema-hall", tray.themeId)}
+              >
+                <Ticket size={17} />
+                <strong>{tray.theme}</strong>
+                <small>{tray.words.join("・")}</small>
+                <em>{tray.earned} / 4 塊碎片</em>
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
+      {/* Finished themes stay in 1 號廳 — they are still this month's films,
+          and a child who wants one again should not have to pretend they
+          have not finished it. Watching does not pay a second time. */}
       {done.length > 0 && (
-        <p className="panel-note">
-          已經砌成卡：{done.map(tray => tray.theme).join("、")}
-        </p>
+        <>
+          <p className="panel-note">1 號廳 · 已經完成（睇返都得，唔會再有碎片）</p>
+          <div className="ticket-row">
+            {done.map(tray => (
+              <button
+                key={tray.themeId}
+                type="button"
+                className="ticket done"
+                onClick={() => hall("cinema-hall", tray.themeId)}
+              >
+                <strong>{tray.theme}</strong>
+                <small>{tray.words.join("・")}</small>
+                <em>已砌成卡 ✓</em>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {past.length > 0 && (
+        <>
+          <p className="panel-note">2 號廳 · 過往主題</p>
+          <div className="ticket-row">
+            {past.map(film => (
+              <button
+                key={film.themeId}
+                type="button"
+                className="ticket past"
+                onClick={() => hall("cinema-hall-2", film.themeId)}
+              >
+                <strong>{film.theme}</strong>
+                <small>{film.words.join("・")}</small>
+                <em>重溫</em>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-/** 戲院 1 號廳. Watch, then the exit is the question room. */
-export function ScreeningPanel({ tray, childId, videoPath }: {
-  tray: ThemeTray | null; childId: string; videoPath: string | null;
+/**
+ * A hall. Watch, and — in 1 號廳, on a theme still worth fragments — the exit
+ * is the question room.
+ *
+ * `rewatch` is what keeps 2 號廳 honest. A finished or older film offers a way
+ * back to the lobby instead of a way to the questions, because the questions
+ * would hand out nothing and a button that does nothing is worse than no
+ * button.
+ */
+export function ScreeningPanel({ tray, childId, videoPath, rewatch = false }: {
+  tray: ThemeTray | null;
+  childId: string;
+  videoPath: string | null;
+  rewatch?: boolean;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -95,6 +173,8 @@ export function ScreeningPanel({ tray, childId, videoPath }: {
       入場前要先去接待處買飛，揀定睇邊一條片。
     </p>;
   }
+
+  const backToLobby = `/parent/children/${childId}/inside/cinema-lobby`;
 
   const toQuestions =
     `/parent/children/${childId}/inside/studio?theme=${tray.themeId}&ask=1`;
@@ -118,7 +198,12 @@ export function ScreeningPanel({ tray, childId, videoPath }: {
 
       {/* The exit is the question room. That is the whole route: a film is
           not finished until the child has done something with it. */}
-      <Link className="button" to={toQuestions}>出去答問題 →</Link>
+      {rewatch
+        ? <>
+            <p className="kid-note">呢條片你已經完成咗，重溫唔會再有碎片。</p>
+            <Link className="button" to={backToLobby}>返大堂揀第二套 →</Link>
+          </>
+        : <Link className="button" to={toQuestions}>出去答問題 →</Link>}
     </div>
   );
 }

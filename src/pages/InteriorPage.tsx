@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { INTERIORS, type InteriorSpot } from "../lib/interiors";
+import { INTERIORS, type InteriorFrame, type InteriorSpot } from "../lib/interiors";
 import { InteriorPanel, InteriorScene } from "../components/InteriorScene";
 import { WorldLoading } from "../components/WorldLoading";
 import { useFamily } from "../contexts/FamilyContext";
@@ -11,13 +11,15 @@ import { useTownNews } from "../lib/townNews";
 import { ZONES } from "../lib/world";
 import { AllCardsPanel, BooksPanel, TraysPanel } from "../components/interior/CollectionPanels";
 import { CurrentWordsPanel, PastWordsPanel } from "../components/interior/StudioPanels";
-import { BoxOfficePanel, QuestionPanel, ScreeningPanel } from "../components/interior/CinemaFlow";
+import {
+  BoxOfficePanel, pastFilmsFrom, QuestionPanel, ScreeningPanel,
+} from "../components/interior/CinemaFlow";
 import { ageFrom } from "../lib/age";
 import {
   AboutMePanel, FriendScanPanel, FriendsBookPanel, NoticeBoardPanel, UpdateCardPanel,
 } from "../components/interior/HomePanels";
 import {
-  PetNewsPanel, SeatPanel, SoonPanel, TreatsPanel,
+  PetNewsPanel, SeatPanel, SnacksPanel, SoonPanel, TreatsPanel,
 } from "../components/interior/RoomMoments";
 
 // One page for every building in the world.
@@ -53,8 +55,8 @@ export function InteriorPage() {
   useEffect(() => {
     if (!chosenTheme) return;
     const spot = INTERIORS[roomId ?? ""]?.spots.find(candidate =>
-      (roomId === "cinema-hall" && candidate.target === "screen")
-      || (roomId === "studio" && asking && candidate.target === "current-words"));
+      ((roomId === "cinema-hall" || roomId === "cinema-hall-2") && candidate.target === "screen")
+      || (roomId === "studio" && asking && candidate.target === "theme-game"));
     if (spot) setOpen(spot);
   }, [chosenTheme, asking, roomId]);
   const [arrived, setArrived] = useState(false);
@@ -73,12 +75,87 @@ export function InteriorPage() {
     return <main className="interior-scene"><p className="panel-empty">搵唔到呢間房。</p></main>;
   }
 
+  // Films that are not on this month's wall. 2 號廳's whole programme, and
+  // the reason 「無論是當月影片／過去的影片」 is a promise the lobby can keep.
+  const pastFilms = pastFilmsFrom(
+    rooms.flatMap(room => room.lesson
+      ? [{
+          themeId: room.lesson.themeId,
+          theme: room.lesson.theme,
+          words: room.lesson.words.map(word => word.word),
+        }]
+      : []),
+    collection.trays,
+  );
+  // The film this hall is showing: a tray in 1 號廳, an older lesson in 2 號廳.
+  const past = pastFilms.find(film => film.themeId === chosenTheme);
+  const showing = collection.trays.find(tray => tray.themeId === chosenTheme)
+    ?? (past ? {
+      traySlot: 0, themeId: past.themeId, theme: past.theme, words: past.words,
+      status: "carryover" as const, earned: 4, targetCode: "", bookNo: 0, slotNo: 0,
+      owned: true, mode: "sentence" as const, vo: "", question: "", answerPattern: "",
+    } : null);
+
   const backTo = interior.back.kind === "zone"
     ? `/parent/children/${childId}/play?zone=${interior.back.target}&from=${interior.id}`
     : `/parent/children/${childId}/inside/${interior.back.target}`;
   const backLabel = interior.back.kind === "zone"
     ? (ZONES[interior.back.target]?.name ?? "出去")
     : (INTERIORS[interior.back.target]?.name ?? "出去");
+
+  // What goes in the blank rectangles Em painted. Returning null leaves one
+  // empty, which is what a month with nothing scheduled should look like —
+  // an empty poster frame reads as "no film yet", a placeholder reads as a
+  // bug.
+  function renderFrame(frame: InteriorFrame) {
+    if (frame.kind === "marquee") {
+      const names = collection.trays.filter(tray => tray.status === "current")
+        .map(tray => tray.theme);
+      if (names.length === 0) return null;
+      return <span className="marquee-text">本月上映 · {names.join("・")}</span>;
+    }
+
+    if (frame.kind === "poster") {
+      // Poster 1, 2, 3 in the order the releases are configured, so the wall
+      // does not reshuffle itself when a child finishes one.
+      const index = Number(frame.id.split("-")[1]) - 1;
+      const tray = collection.trays.filter(t => t.status === "current")[index];
+      if (!tray) return null;
+      return (
+        <button
+          type="button"
+          className={tray.owned ? "poster done" : "poster"}
+          onClick={() => navigate(
+            `/parent/children/${childId}/inside/cinema-hall?theme=${tray.themeId}`)}
+        >
+          <span className="poster-name">{tray.theme}</span>
+          <span className="poster-mark">{tray.owned ? "✓" : `${tray.earned}/4`}</span>
+        </button>
+      );
+    }
+
+    if (frame.kind === "screen") {
+      if (!showing) return <span className="screen-idle">未揀片</span>;
+      return <span className="screen-title">{showing.theme}</span>;
+    }
+
+    if (frame.kind === "board" && interior?.id === "studio") {
+      const tray = showing ?? collection.trays.find(t => t.status === "current");
+      if (!tray) return null;
+      return <span className="board-words">
+        {tray.theme}<em>{tray.words.join("・")}</em>
+      </span>;
+    }
+
+    if (frame.kind === "board" && interior?.id === "library") {
+      if (pastFilms.length === 0) return null;
+      return <span className="board-words">
+        重溫架<em>{pastFilms.length} 個主題</em>
+      </span>;
+    }
+
+    return null;
+  }
 
   function handleSpot(spot: InteriorSpot) {
     if (spot.kind === "room") { navigate(`/parent/children/${childId}/inside/${spot.target}`); return; }
@@ -96,6 +173,7 @@ export function InteriorPage() {
       onSpot={handleSpot}
       onBack={() => navigate(backTo)}
       backLabel={backLabel}
+      renderFrame={renderFrame}
     >
       {open && (
         <InteriorPanel title={open.label} onClose={() => setOpen(null)}>
@@ -109,8 +187,15 @@ export function InteriorPage() {
             />
           )}
 
+          {/* Em split these: 「做當期學習主題的小遊戲、詞彙認讀學習等」. The
+              board on the wall is the reading; the table in the middle is the
+              game. One spot doing both meant a child sent out of the film to
+              answer landed on a vocabulary list. */}
           {open.target === "current-words" && (
-            asking && chosenTheme
+            <CurrentWordsPanel rooms={rooms} childId={childId} backTo={interior.id} />
+          )}
+          {open.target === "theme-game" && (
+            chosenTheme
               ? <QuestionPanel
                   tray={collection.trays.find(tray => tray.themeId === chosenTheme) ?? null}
                   childId={childId!}
@@ -123,17 +208,21 @@ export function InteriorPage() {
                     .flatMap(tray => tray.words)}
                   onEarned={() => { void collection.refresh(); }}
                 />
-              : <CurrentWordsPanel rooms={rooms} childId={childId} backTo={interior.id} />
+              : <p className="panel-empty">
+                  揀咗條片先。去戲院大堂接待處同職員講聲就得。
+                </p>
           )}
           {open.target === "past-words" && <PastWordsPanel rooms={rooms} />}
           {open.target === "tickets" && (
-            <BoxOfficePanel trays={collection.trays} childId={childId!} />
+            <BoxOfficePanel trays={collection.trays} past={pastFilms} childId={childId!} />
           )}
           {open.target === "screen" && (
             <ScreeningPanel
-              tray={collection.trays.find(tray => tray.themeId === chosenTheme) ?? null}
+              tray={showing}
               childId={childId!}
               videoPath={rooms.find(room => room.lesson?.themeId === chosenTheme)?.lesson?.videoPath ?? null}
+              // 2 號廳 only ever replays, and so does a theme already forged.
+              rewatch={roomId === "cinema-hall-2" || Boolean(showing?.owned)}
             />
           )}
 
@@ -150,7 +239,9 @@ export function InteriorPage() {
               line differs. */}
           {open.kind === "seat" && <SeatPanel spot={open} holding={holding} />}
           {open.kind === "treat" && (
-            <TreatsPanel holding={holding} onEat={setHolding} />
+            open.target === "snacks"
+              ? <SnacksPanel holding={holding} onEat={setHolding} />
+              : <TreatsPanel holding={holding} onEat={setHolding} />
           )}
           {open.kind === "soon" && <SoonPanel spot={open} />}
         </InteriorPanel>

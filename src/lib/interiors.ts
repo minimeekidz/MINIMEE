@@ -42,6 +42,23 @@ export interface InteriorSpot {
   note?: string;
 }
 
+/**
+ * A blank rectangle in the art that the app fills in.
+ *
+ * Em drew these on purpose — 「月度海報及影片畫面都已經保留可動態替換嘅框位」
+ * — so the cinema's marquee, its three posters and both screens are painted
+ * empty and the month's actual themes go into them. It is the difference
+ * between a lobby that advertises this month and a lobby that is a picture of
+ * a lobby.
+ *
+ * Rect is normalised over the art, same as a spot's position.
+ */
+export interface InteriorFrame {
+  id: string;
+  kind: "marquee" | "poster" | "screen" | "board";
+  x: number; y: number; w: number; h: number;
+}
+
 export interface Interior {
   id: string;
   name: string;
@@ -55,6 +72,8 @@ export interface Interior {
   /** Where leaving goes back to, and which side the door is drawn on. */
   back: { kind: "zone" | "room"; target: string; side: "left" | "right" | "bottom" };
   spots: InteriorSpot[];
+  /** Blank rectangles in the art for the app to fill. */
+  frames?: InteriorFrame[];
   /** 碼頭市集's rooms sit behind the parent PIN. */
   parentsOnly?: boolean;
 }
@@ -96,43 +115,130 @@ export const INTERIORS: Record<string, Interior> = {
   },
 
   // --- Hero Studio ---------------------------------------------------------
+  //
+  // Em's new art (2026-08-16), and the room is the junction of the whole
+  // product: 「Hero Studio 最亦是一個主要的通道入口，因為由 Hero Studio 進去
+  // 後，去右邊區是 MEE 圖書館，去左邊區是戲院大堂」.
+  //
+  // She painted the signs on, so the doors are not a guess: a film reel over
+  // the left arch, an open book over the right, and a big star on the door
+  // back out to 小鎮中心. The teaching board and the octagonal table in the
+  // middle are the two things you come here to do — 「做當期學習主題的小遊戲、
+  // 詞彙認讀學習等」 — one each, rather than one spot doing both.
   "studio": {
     id: "studio",
     name: "Hero Studio",
     art: "/assets/world/studio.webp",
+    artNight: "/assets/world/studio-night.webp",
     back: { kind: "zone", target: "town-centre", side: "bottom" },
     spots: [
-      { id: "current-words", label: "答問題", x: 0.50, y: 0.62, kind: "panel", target: "current-words", hint: "睇完片就嚟呢度" },
-      { id: "to-cinema", label: "戲院大堂", x: 0.16, y: 0.36, kind: "room", target: "cinema-lobby", hint: "睇片" },
-      { id: "to-library", label: "MEE 圖書館", x: 0.85, y: 0.36, kind: "room", target: "library", hint: "重溫舊詞語" },
+      { id: "current-words", label: "教學板", x: 0.505, y: 0.300, kind: "panel", target: "current-words", hint: "今期學嘅字" },
+      { id: "theme-game", label: "小遊戲枱", x: 0.475, y: 0.545, kind: "panel", target: "theme-game", hint: "睇完片就嚟呢度" },
+      { id: "to-cinema", label: "戲院大堂", x: 0.155, y: 0.320, kind: "room", target: "cinema-lobby", hint: "睇片" },
+      { id: "to-library", label: "MEE 圖書館", x: 0.845, y: 0.320, kind: "room", target: "library", hint: "重溫舊詞語" },
+      { id: "seat-red", label: "紅色圓凳", x: 0.278, y: 0.675, kind: "seat", target: "red",
+        note: "紅色圓凳啱啱好望正塊教學板。個枱面暖暖地，好似有人啱啱先玩完。" },
+      { id: "seat-blue", label: "藍色圓凳", x: 0.700, y: 0.675, kind: "seat", target: "blue",
+        note: "坐呢邊望得到窗外嘅海同燈塔。日光斜斜咁照落地板。" },
+    ],
+    frames: [
+      // The cream panel and the four small windows beside it. Blank in the
+      // art on purpose — this month's words go here.
+      { id: "board", kind: "board", x: 0.328, y: 0.268, w: 0.345, h: 0.068 },
     ],
   },
+
+  // --- MEE 圖書館 -----------------------------------------------------------
+  // 「重溫過去主題字詞的地方，小童圖書區、小布偶椅子、卡通豆袋沙發、舒適安靜
+  // 的環境」. The long table with the blank card frames is the reading desk;
+  // everything soft in the room can be sat on.
   "library": {
     id: "library",
     name: "MEE 圖書館",
     art: "/assets/world/library.webp",
+    artNight: "/assets/world/library-night.webp",
     back: { kind: "room", target: "studio", side: "bottom" },
     spots: [
-      { id: "past-words", label: "過往詞語重溫", x: 0.50, y: 0.55, kind: "panel", target: "past-words", hint: "由頭睇返" },
+      { id: "past-words", label: "重溫枱", x: 0.500, y: 0.500, kind: "panel", target: "past-words", hint: "由頭睇返" },
+      { id: "seat-doll", label: "小布偶椅", x: 0.385, y: 0.625, kind: "seat", target: "doll",
+        note: "花花形嘅小椅仔，啱啱好夠你一個人坐。成間圖書館靜到聽到自己揭書。" },
+      { id: "seat-bean", label: "豆袋沙發", x: 0.125, y: 0.735, kind: "seat", target: "bean",
+        note: "成個人陷入豆袋度，郁一郁就沙沙聲。舉高本書就唔想放低。" },
+      { id: "seat-reading", label: "小童圖書區", x: 0.310, y: 0.390, kind: "seat", target: "reading",
+        note: "地台上面鋪滿軟墊，成排書就喺你頭頂。呢個角落嘅陽光最好。" },
+    ],
+    frames: [
+      { id: "board", kind: "board", x: 0.778, y: 0.188, w: 0.190, h: 0.095 },
     ],
   },
+
+  // --- 戲院大堂 -------------------------------------------------------------
+  //
+  // 「戲院海報顯示當月主題的學習主題影片海報（3張），接待處（購買戲飛）是選擇
+  // 影片的地方，無論是當月影片／過去的影片，所有影片都會在這邊選擇播放」.
+  //
+  // Two auditoriums lead off the right-hand wall: 1 號廳 plays the month's
+  // themes, 2 號廳 the ones already finished. That split is the reason the
+  // lobby lists both — a child who wants to watch something again should not
+  // have to pretend they have not finished it.
   "cinema-lobby": {
     id: "cinema-lobby",
     name: "戲院大堂",
     art: "/assets/world/cinema-lobby.webp",
     back: { kind: "room", target: "studio", side: "bottom" },
     spots: [
-      { id: "tickets", label: "接待處", x: 0.36, y: 0.58, kind: "panel", target: "tickets", hint: "同職員揀套片" },
-      { id: "to-hall", label: "入場", x: 0.64, y: 0.52, kind: "room", target: "cinema-hall", hint: "行入去睇" },
+      { id: "tickets", label: "接待處", x: 0.365, y: 0.378, kind: "panel", target: "tickets", hint: "同職員揀套片" },
+      { id: "to-hall", label: "1 號廳", x: 0.685, y: 0.320, kind: "room", target: "cinema-hall", hint: "當期影片" },
+      { id: "to-hall-2", label: "2 號廳", x: 0.870, y: 0.320, kind: "room", target: "cinema-hall-2", hint: "重溫舊片" },
+      { id: "snacks", label: "小食部", x: 0.800, y: 0.560, kind: "treat", target: "snacks", hint: "爆谷同飲品" },
+      { id: "seat-red", label: "紅色梳化", x: 0.185, y: 0.700, kind: "seat", target: "red",
+        note: "紅絲絨梳化好深，坐入去成個人陷咗落去。等開場最啱坐呢張。" },
+      { id: "seat-blue", label: "藍色梳化", x: 0.625, y: 0.725, kind: "seat", target: "blue",
+        note: "望住入場門嗰邊。有人行過都見到，好似真係喺戲院等緊入場咁。" },
+    ],
+    frames: [
+      { id: "marquee", kind: "marquee", x: 0.160, y: 0.140, w: 0.410, h: 0.042 },
+      { id: "poster-1", kind: "poster", x: 0.207, y: 0.203, w: 0.100, h: 0.150 },
+      { id: "poster-2", kind: "poster", x: 0.317, y: 0.203, w: 0.103, h: 0.150 },
+      { id: "poster-3", kind: "poster", x: 0.437, y: 0.203, w: 0.103, h: 0.150 },
     ],
   },
+
+  // --- 戲院 1 號廳 ----------------------------------------------------------
+  // 「播放當期主題影片」.
   "cinema-hall": {
     id: "cinema-hall",
-    name: "戲院",
+    name: "戲院 1 號廳",
     art: "/assets/world/cinema-hall.webp",
     back: { kind: "room", target: "cinema-lobby", side: "bottom" },
+    frames: [
+      { id: "screen", kind: "screen", x: 0.245, y: 0.117, w: 0.512, h: 0.298 },
+    ],
     spots: [
-      { id: "screen", label: "銀幕", x: 0.50, y: 0.28, kind: "panel", target: "screen", hint: "睇片" },
+      { id: "screen", label: "銀幕", x: 0.500, y: 0.265, kind: "panel", target: "screen", hint: "睇片" },
+      { id: "seat-sofa", label: "後排梳化", x: 0.115, y: 0.800, kind: "seat", target: "sofa",
+        note: "後排靠牆嗰張梳化，攬枕堆到成堆。成間廳得你一個，慢慢揀位。" },
+    ],
+  },
+
+  // --- 戲院 2 號廳 ----------------------------------------------------------
+  // 「播放過往主題影片」. Same room, cooler light, and the point of it is that
+  // a finished theme stays watchable — a child who wants a film again should
+  // not have to pretend they have not finished it.
+  "cinema-hall-2": {
+    id: "cinema-hall-2",
+    name: "戲院 2 號廳",
+    art: "/assets/world/cinema-hall-2.webp",
+    back: { kind: "room", target: "cinema-lobby", side: "bottom" },
+    frames: [
+      { id: "screen", kind: "screen", x: 0.240, y: 0.170, w: 0.518, h: 0.230 },
+    ],
+    spots: [
+      { id: "screen", label: "銀幕", x: 0.500, y: 0.285, kind: "panel", target: "screen", hint: "重溫舊片" },
+      { id: "seat-left", label: "左邊梳化", x: 0.140, y: 0.655, kind: "seat", target: "left",
+        note: "紫色梳化，坐低就望正塊幕。天花嘅星星喺暗位度一閃一閃。" },
+      { id: "seat-right", label: "右邊梳化", x: 0.860, y: 0.655, kind: "seat", target: "right",
+        note: "呢邊有個位擺飲品。坐低之後成間廳靜咗落嚟。" },
     ],
   },
 

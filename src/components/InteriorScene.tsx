@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
-import type { Interior, InteriorSpot } from "../lib/interiors";
+import type { Interior, InteriorFrame, InteriorSpot } from "../lib/interiors";
 import { isDaytime } from "../lib/world";
 
 // A room, drawn as one picture with the things you came for marked on it.
@@ -20,11 +20,19 @@ export interface InteriorSceneProps {
   onSpot: (spot: InteriorSpot) => void;
   onBack: () => void;
   backLabel: string;
+  /**
+   * What goes in each blank rectangle Em painted — the cinema marquee, its
+   * three posters, the screens. Returning null leaves the frame empty, which
+   * is what an unset month should look like rather than a placeholder.
+   */
+  renderFrame?: (frame: InteriorFrame) => ReactNode;
   /** The open panel, drawn over the scene. */
   children?: ReactNode;
 }
 
-export function InteriorScene({ interior, onSpot, onBack, backLabel, children }: InteriorSceneProps) {
+export function InteriorScene({
+  interior, onSpot, onBack, backLabel, renderFrame, children,
+}: InteriorSceneProps) {
   // Markers fade in after the art so the room reads as a place first and a
   // menu second.
   const [ready, setReady] = useState(false);
@@ -49,6 +57,22 @@ export function InteriorScene({ interior, onSpot, onBack, backLabel, children }:
           alt=""
           onLoad={() => setReady(true)}
         />
+
+        {/* The dynamic rectangles go under the markers: a poster is part of
+            the wall, not something floating in front of it. */}
+        {ready && renderFrame && interior.frames?.map(frame => {
+          const content = renderFrame(frame);
+          return content === null || content === undefined ? null : (
+            <div
+              key={frame.id}
+              className={`interior-frame ${frame.kind}`}
+              style={{
+                left: `${frame.x * 100}%`, top: `${frame.y * 100}%`,
+                width: `${frame.w * 100}%`, height: `${frame.h * 100}%`,
+              }}
+            >{content}</div>
+          );
+        })}
 
         {ready && interior.spots.map(spot => (
           <button

@@ -27,6 +27,7 @@ import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/Col
 import { NoticeBoardPanel } from "./components/interior/HomePanels";
 import { EVERYDAY_ACTS, STAGE_FESTIVALS, StagePanel } from "./components/interior/StagePanel";
 import { TreatsPanel } from "./components/interior/RoomMoments";
+import { pastFilmsFrom } from "./components/interior/CinemaFlow";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 import {
   bandFor, buildRounds, clausesOf, difficultyFor, FAMILIES, GAME_MODES,
@@ -1408,6 +1409,69 @@ describe("MINIMEE route shells", () => {
     const real = screen.getByText("新主題開放").closest(".notice-section");
     expect(fun).not.toBe(real);
     expect(fun).toHaveClass("fun");
+  });
+
+  it("routes the cinema through two halls and keeps the lobby's frames blank-able", () => {
+    const lobby = INTERIORS["cinema-lobby"];
+    const studio = INTERIORS["studio"];
+
+    // 「由 Hero Studio 進去後，去右邊區是 MEE 圖書館，去左邊區是戲院大堂」.
+    // Em painted the signs on the doors, so these are read off the art rather
+    // than assigned: a film reel on the left arch, an open book on the right.
+    const doors = studio.spots.filter(spot => spot.kind === "room");
+    expect(doors.map(door => door.target).sort()).toEqual(["cinema-lobby", "library"]);
+    const cinemaDoor = doors.find(door => door.target === "cinema-lobby")!;
+    const libraryDoor = doors.find(door => door.target === "library")!;
+    expect(cinemaDoor.x).toBeLessThan(0.5);
+    expect(libraryDoor.x).toBeGreaterThan(0.5);
+
+    // 「還會經過短走廊前往下個場地『戲院1號廳』…『戲院2號廳』」.
+    const halls = lobby.spots.filter(spot => spot.kind === "room").map(spot => spot.target);
+    expect(halls.sort()).toEqual(["cinema-hall", "cinema-hall-2"]);
+    expect(INTERIORS["cinema-hall-2"]).toBeDefined();
+    // Both halls come back out to the lobby, never to the studio: 原位入口
+    // 原位出口 means the door you leave by is the door you came in through.
+    for (const hall of ["cinema-hall", "cinema-hall-2"]) {
+      expect(INTERIORS[hall].back.target).toBe("cinema-lobby");
+    }
+
+    // 「月度海報及影片畫面都已經保留可動態替換嘅框位」 — three posters and a
+    // marquee in the lobby, a screen in each hall.
+    const kinds = (id: string) => (INTERIORS[id].frames ?? []).map(frame => frame.kind);
+    expect(kinds("cinema-lobby").filter(kind => kind === "poster")).toHaveLength(3);
+    expect(kinds("cinema-lobby")).toContain("marquee");
+    expect(kinds("cinema-hall")).toEqual(["screen"]);
+    expect(kinds("cinema-hall-2")).toEqual(["screen"]);
+
+    // Every frame has to be a rectangle that fits on the picture.
+    for (const interior of Object.values(INTERIORS)) {
+      for (const frame of interior.frames ?? []) {
+        expect(frame.w, `${interior.id}/${frame.id}`).toBeGreaterThan(0);
+        expect(frame.h, `${interior.id}/${frame.id}`).toBeGreaterThan(0);
+        expect(frame.x + frame.w, `${interior.id}/${frame.id}`).toBeLessThanOrEqual(1);
+        expect(frame.y + frame.h, `${interior.id}/${frame.id}`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it("sends this month's films to 1 號廳 and everything older to 2 號廳", () => {
+    // 「無論是當月影片／過去的影片，所有影片都會在這邊選擇播放」 — so the
+    // split is which hall, never whether a film is offered at all.
+    const trays = [
+      { themeId: "t-01", theme: "交通工具" }, { themeId: "t-02", theme: "海洋" },
+    ] as unknown as Parameters<typeof pastFilmsFrom>[1];
+
+    const past = pastFilmsFrom([
+      { themeId: "t-01", theme: "交通工具", words: ["巴士"] },   // on the wall
+      { themeId: "t-09", theme: "農場", words: ["牛", "羊"] },   // older
+      { themeId: "t-09", theme: "農場", words: ["雞"] },         // same theme twice
+      { themeId: null, theme: "舊課文", words: ["占位"] },        // pre-catalogue
+    ], trays);
+
+    // One entry, deduped, and nothing this month leaks into the rewatch list.
+    expect(past).toHaveLength(1);
+    expect(past[0].themeId).toBe("t-09");
+    expect(past.some(film => film.themeId === "t-01")).toBe(false);
   });
 
   it("gives 我的小屋 and Buddy Café the things Em put in them", () => {

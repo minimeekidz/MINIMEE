@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import type { InteriorSpot } from "../../lib/interiors";
 import type { NewsItem } from "./HomePanels";
@@ -48,11 +47,31 @@ export const TREATS = [
   { id: "juice", label: "鮮橙汁", emoji: "🍊", line: "凍到杯身有水珠，飲一啖成個人精神返。" },
 ];
 
-export function TreatsPanel({ holding, onEat }: {
+/** 戲院小食部. 「小食部、爆谷、飲品」 — the cinema's own case. */
+export const SNACKS = [
+  { id: "popcorn", label: "爆谷", emoji: "🍿", line: "一大筒，成隻手插落去都摸唔到底。仲係暖嘅。" },
+  { id: "pretzel", label: "扭紋餅", emoji: "🥨", line: "咸咸脆脆，一路睇一路咬啱晒。" },
+  { id: "candy", label: "彩色糖", emoji: "🍬", line: "透明樽入面五顏六色，揀邊隻都好似最好食。" },
+  { id: "soda", label: "汽水", emoji: "🥤", line: "開蓋嗰下嘶一聲，泡泡衝到杯口。" },
+  { id: "icecream", label: "雪糕杯", emoji: "🍨", line: "凍到手指有少少痺。要快啲食，唔係就溶。" },
+];
+
+export function SnacksPanel(props: { holding: string | null; onEat: (label: string) => void }) {
+  return <TreatsPanel {...props} menu={SNACKS}
+    intro="小食部亮住燈，爆谷香到成個大堂都聞到。入場前買定啲嘢？"
+    free="全部免費 —— 入場都唔使錢，何況爆谷。" />;
+}
+
+export function TreatsPanel({ holding, onEat, menu = TREATS, intro, free }: {
   holding: string | null;
   onEat: (label: string) => void;
+  /** Which case this is. The café's cabinet by default, the cinema's counter
+   *  when the lobby asks — same behaviour, different things drawn in it. */
+  menu?: typeof TREATS;
+  intro?: string;
+  free?: string;
 }) {
-  const picked = TREATS.find(treat => treat.label === holding);
+  const picked = menu.find(treat => treat.label === holding);
 
   return (
     <div className="room-moment">
@@ -65,7 +84,7 @@ export function TreatsPanel({ holding, onEat }: {
               invented for its own sake. */}
           <p className="panel-note">想食第二樣就再揀過。</p>
           <div className="treat-row">
-            {TREATS.filter(treat => treat.id !== picked.id).map(treat => (
+            {menu.filter(treat => treat.id !== picked.id).map(treat => (
               <button key={treat.id} type="button" className="treat"
                 onClick={() => onEat(treat.label)}>
                 <span aria-hidden>{treat.emoji}</span>{treat.label}
@@ -75,16 +94,16 @@ export function TreatsPanel({ holding, onEat }: {
         </>
       ) : (
         <>
-          <p>櫃入面排到滿滿都係。今日想食邊樣？</p>
+          <p>{intro ?? "櫃入面排到滿滿都係。今日想食邊樣？"}</p>
           <div className="treat-row">
-            {TREATS.map(treat => (
+            {menu.map(treat => (
               <button key={treat.id} type="button" className="treat"
                 onClick={() => onEat(treat.label)}>
                 <span aria-hidden>{treat.emoji}</span>{treat.label}
               </button>
             ))}
           </div>
-          <p className="panel-note">全部免費 —— 呢度唔使錢，淨係食住玩。</p>
+          <p className="panel-note">{free ?? "全部免費 —— 呢度唔使錢，淨係食住玩。"}</p>
         </>
       )}
     </div>
