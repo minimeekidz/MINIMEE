@@ -1042,6 +1042,18 @@ forever, and the uploads ran 25-27 MB a batch against ~3 MB converted.
 - Demo affection was addable on every tap and is now once a day per pet,
   matching what the server has always enforced for real cards.
 
+### The deploy can fail on secrets — and did
+
+`wrangler-action` uploads its `secrets:` list **before** running the
+command, and Cloudflare refuses to modify a secret while the Worker's
+newest version is not the deployed one (**error 10215**). Once the Worker
+drifts into that state, every run dies on credentials that have not
+changed, and the code never ships.
+
+The workflow now deploys first and refreshes secrets afterwards with
+`continue-on-error`. If a deploy ever fails again, read the failing step
+name before assuming the build broke — twice it was this.
+
 ### Still open for Em
 
 - **Backgrounds with large pets painted in.** The child is drawn at 18% of
