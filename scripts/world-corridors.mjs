@@ -78,24 +78,36 @@ export const CORRIDORS = {
       { x: 0.91, y: 0.13, r: 0.065 }, { x: 0.93, y: 0.10, r: 0.06 },
     ],
   ],
+  // 小鎮廣場 — redrawn for Em's new art (2026-08-16). One big paved square
+  // with the notice board in the middle, a stage in the upper left, the
+  // village arch on the right and the park path on the left. Deliberately
+  // the roomiest map in the world: this is where the pets wander, and a
+  // narrow square makes them shuffle on the spot.
   "town-square-day": [
-    [
-      { x: 0.45, y: 0.99, r: 0.16 }, { x: 0.44, y: 0.90, r: 0.18 },
-      { x: 0.43, y: 0.80, r: 0.21 }, { x: 0.42, y: 0.70, r: 0.24 },
-      { x: 0.42, y: 0.60, r: 0.24 }, { x: 0.43, y: 0.51, r: 0.23 },
-      { x: 0.45, y: 0.45, r: 0.20 },
+    [ // the square itself
+      { x: 0.48, y: 0.68, r: 0.30 }, { x: 0.42, y: 0.55, r: 0.26 },
+      { x: 0.56, y: 0.55, r: 0.26 }, { x: 0.48, y: 0.45, r: 0.24 },
+      { x: 0.40, y: 0.36, r: 0.20 }, { x: 0.58, y: 0.36, r: 0.20 },
+      { x: 0.48, y: 0.30, r: 0.18 },
     ],
-    [ // left arm, out to the 散步公園 gate
-      { x: 0.20, y: 0.62, r: 0.14 }, { x: 0.12, y: 0.65, r: 0.11 },
-      { x: 0.06, y: 0.68, r: 0.09 },
+    [ // in from the bottom edge
+      { x: 0.47, y: 0.99, r: 0.14 }, { x: 0.47, y: 0.93, r: 0.14 },
+      { x: 0.47, y: 0.87, r: 0.15 },
     ],
-    [ // right, through the stone arch to 小屋區入口
-      { x: 0.66, y: 0.50, r: 0.10 }, { x: 0.74, y: 0.47, r: 0.08 },
-      { x: 0.81, y: 0.44, r: 0.06 }, { x: 0.86, y: 0.42, r: 0.05 },
+    [ // up-left to the stage steps
+      { x: 0.40, y: 0.36, r: 0.16 }, { x: 0.34, y: 0.31, r: 0.13 },
+      { x: 0.29, y: 0.27, r: 0.10 }, { x: 0.27, y: 0.25, r: 0.08 },
+    ],
+    [ // right to the village arch
+      { x: 0.60, y: 0.33, r: 0.15 }, { x: 0.68, y: 0.27, r: 0.12 },
+      { x: 0.74, y: 0.22, r: 0.10 }, { x: 0.79, y: 0.18, r: 0.085 },
+    ],
+    [ // left to the park path
+      { x: 0.34, y: 0.48, r: 0.16 }, { x: 0.26, y: 0.50, r: 0.13 },
+      { x: 0.18, y: 0.52, r: 0.11 }, { x: 0.11, y: 0.54, r: 0.09 },
+      { x: 0.08, y: 0.55, r: 0.08 },
     ],
   ],
-
-  // 散步公園 — one S-curve from the bottom edge to the wooden gate.
   "seaside-park-day": [
     [
       { x: 0.42, y: 0.99, r: 0.14 }, { x: 0.44, y: 0.91, r: 0.13 },

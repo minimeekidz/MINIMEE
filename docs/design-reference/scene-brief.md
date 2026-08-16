@@ -123,31 +123,72 @@ ABSOLUTELY NO people, NO animals, NO characters of any kind.
 
 ---
 
-### 2. 小鎮廣場（`小鎮廣場_日.webp` / `_夜.webp`）
+### 2. 小鎮廣場 ✅ 已定案（Em 2026-08-16）
 
-寵物聚腳、公告板。
+寵物聚腳、公告板，同埋**一個真係可以企上去嘅小舞台**。
+Em：「公告板去左中央，亦外左上位置亦設計了一個可要真實企上去的舞台，
+之後如果有節慶／活動時都可以係到有d野做下」。
 
-| # | 要有咩 | 擺喺 |
-|---|---|---|
-| 1 | **公告板**（木牌／告示板） | (0.46, 0.47) |
-| 2 | → 小鎮中心 路口 | (0.45, 0.98) 底部 |
-| 3 | → 散步公園 路口 | (0.07, 0.68) 左邊 |
-| 4 | → 小屋區入口 路口 | (0.86, 0.42) 右邊 |
+| # | 要有咩 | 標誌 | 座標 |
+|---|---|---|---|
+| 1 | **小舞台**（有台階、可以企上去） | 木台／彩旗 | **(0.27, 0.245)** 上左 |
+| 2 | **公告板**（木牌／告示板） | 木牌 | **(0.50, 0.470)** 正中 |
+| 3 | → 小屋區入口 | 拱門 + 小屋牌 | (0.79, 0.170) 右上 |
+| 4 | → 散步公園 | 小路 | (0.08, 0.550) 左邊 |
+| 5 | → 小鎮中心 | 主路 | (0.47, 0.980) 底部中央 |
 
 **要有空地**，因為呢度係寵物行來行去嘅地方 —— 中間留一大片行得到嘅廣場。
+呢張圖行得到嘅面積係 43.7%，係全部場景入面最闊嘅一張，啱。
+
+**舞台要點畫：** 唔好畫成一個純裝飾嘅平台。要有**睇得出嘅台階**（前面或者側面），
+台面要平、要夠大（起碼佔畫面 0.10 × 0.08），因為個仔真係會行上去企喺台中間。
+台後面可以有背景板／彩旗／小燈串，但**唔好放人、唔好放動物**。
+
+**四個檔案**（同一個構圖，位置一模一樣）：
+
+```
+小鎮廣場_日.webp           941 × 1672
+小鎮廣場_夜.webp           941 × 1672
+小鎮廣場_日_wide.webp     1672 × 941   ← 電腦用
+小鎮廣場_夜_wide.webp     1672 × 941
+```
 
 **Prompt：**
 
 ```
 Top-down 45-degree pixel art game map, vertical 9:16 portrait, an open town
-plaza paved with pale stone. A wooden notice board with a small roof stands
-in the middle of the plaza. Three road openings lead off: one at the bottom
-edge, one on the left side, one on the upper right. Large open walkable
-paving in the centre. Flat consistent scale, sky no more than the top fifth.
-Fountain, benches, flower planters, bunting, market awnings around the edges.
-Warm daylight. Detailed pixel art, high contrast between pale paving and
-surrounding greenery. ABSOLUTELY NO people, NO animals, NO characters.
+plaza paved with pale stone. A small wooden performance stage with visible
+front steps and a flat empty platform stands in the upper left, backed by
+bunting and string lights. A wooden notice board with a small roof stands in
+the exact middle of the plaza. Three road openings lead off: one at the
+bottom edge, one on the left side, and a stone arch with a little house sign
+on the upper right. Large open walkable paving in the centre. Flat consistent
+scale from foreground to background, sky no more than the top fifth of the
+image. Fountain, benches, flower planters, market awnings around the edges.
+Warm daylight. Detailed pixel art, clean readable shapes, high contrast
+between pale paving and surrounding greenery.
+ABSOLUTELY NO people, NO animals, NO characters of any kind.
 ```
+
+夜版：同一段，`Warm daylight` 改成
+`Night, deep blue-purple sky, glowing street lamps, the stage lit by warm
+string lights`。
+
+**個台程式做咗啲乜（已經寫好）：**
+
+- 行到台前面 → 提示「上 小舞台」→ 撳一下就開個台面板。
+- **平日**：空台任你上，四樣嘢做 —— 唱歌／跳舞／講故仔／扮鬼扮馬。
+  做完全場小寵物拍手。**冇獎品**，因為 Em 講過唔可以有第二種貨幣。
+- **節慶**：日子由天文台（`hk-almanac`）嘅農曆日期決定，唔使人手開關 ——
+  正月初一、五月初五、八月十五。
+  - 農曆新年 🧧 → 講拜年說話 → 攞 `SP-005` 農曆新年卡
+  - 中秋節 🏮 → 提燈籠／唱月光光／分月餅／猜燈謎 → 攞 `SP-007` 中秋卡
+  - 端午節 🐲 → 有表演冇卡（卡冊入面仲未有端午卡）。
+    **如果 Em 想加端午卡**：出一張圖，落 `card_catalog`，
+    再喺 `claim_occasion_cards` 加多一行就得。
+- 節日卡一年淨係攞得一次（`grant_card` 本身係 idempotent），
+  而且**淨係企上台先攞到** —— 其他地方 call `claim_occasion_cards`
+  係唔會報今日係咩節，所以節日卡冇第二條路入。
 
 ---
 

@@ -80,6 +80,7 @@ export interface GameWorldProps {
   onEnterStall?: (stallId: string) => void;
   /** The 公告板, which opens in place rather than leading anywhere. */
   onReadBoard?: () => void;
+  onTakeStage?: () => void;
   /** Zone to open in, when coming back out of a building. */
   startZone?: string | null;
   onExit?: () => void;
@@ -87,7 +88,7 @@ export interface GameWorldProps {
 
 export function GameWorld({
   heroId, doneRooms = [], returningFrom, cardId = null, startZone = null,
-  onEnterRoom, onEnterStall, onReadBoard, onExit,
+  onEnterRoom, onEnterStall, onReadBoard, onTakeStage, onExit,
 }: GameWorldProps) {
   const hero = findHero(heroId);
 
@@ -375,6 +376,10 @@ export function GameWorld({
   const travel = useCallback((spot: Hotspot) => {
     if (spot.kind === "door") { onEnterRoom(spot.target); return; }
     if (spot.kind === "board") { onReadBoard?.(); return; }
+    // The stage. Em: 「如果有節慶／活動時都可以係到有d野做下」 — so it is a
+    // real place to stand, and what is on it comes from the almanac rather
+    // than from a schedule anybody has to maintain.
+    if (spot.kind === "stage") { onTakeStage?.(); return; }
     if (spot.kind === "stall") { onEnterStall?.(spot.target); return; }
     // 碼頭市集 asks for the 船飛 first. A child holding the phone must not be
     // able to walk into the account, the money or the privacy switches.
@@ -387,7 +392,7 @@ export function GameWorld({
     arriveFrom.current = { zone: zone.id };
     setFading(true);
     window.setTimeout(() => { setZoneId(spot.target); setFading(false); }, 420);
-  }, [onEnterRoom, onEnterStall, onReadBoard, zone.id]);
+  }, [onEnterRoom, onEnterStall, onReadBoard, onTakeStage, zone.id]);
 
   useEffect(() => { travelRef.current = travel; }, [travel]);
   useEffect(() => { petRef.current = nearPet; }, [nearPet]);
@@ -442,6 +447,7 @@ export function GameWorld({
         >
           <span>{
             spot.kind === "gate" ? "➜"
+              : spot.kind === "stage" ? "🎪"
               : spot.kind === "board" ? "🗞"
               : spot.kind === "stall" ? "🛎"
               : doneRooms.includes(spot.target) ? "✓" : "▲"
@@ -501,6 +507,7 @@ export function GameWorld({
     {near
       ? <button className="world-action" onClick={() => travel(near)}>
           {near.kind === "door" ? `入去 ${near.label}`
+            : near.kind === "stage" ? `上 ${near.label}`
             : near.kind === "board" ? `睇 ${near.label}`
             : near.kind === "stall" ? `去 ${near.label}`
             : near.label}

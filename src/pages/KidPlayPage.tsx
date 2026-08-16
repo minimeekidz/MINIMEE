@@ -8,6 +8,7 @@ import { useRooms } from "../lib/rooms";
 import { INTERIORS, stallRoute, WHARF_STALLS } from "../lib/interiors";
 import { InteriorPanel } from "../components/InteriorScene";
 import { NoticeBoardPanel } from "../components/interior/HomePanels";
+import { StagePanel } from "../components/interior/StagePanel";
 import { useTownNews } from "../lib/townNews";
 
 // MEE 世界. Children never have their own login (ops doc section 2), so this
@@ -29,6 +30,7 @@ export function KidPlayPage() {
   // out where they went in rather than in the middle of town.
   const startZone = params.get("zone");
   const [board, setBoard] = useState(false);
+  const [stage, setStage] = useState(false);
   const { news } = useTownNews();
   const child = children.find(candidate => candidate.id === childId);
 
@@ -85,11 +87,22 @@ export function KidPlayPage() {
         if (stall) navigate(stallRoute(stall, child.id));
       }}
       onReadBoard={() => setBoard(true)}
+      onTakeStage={() => setStage(true)}
       onExit={() => navigate(`/parent/children/${child.id}`)}
     />
     {board && (
       <InteriorPanel title="公告板" onClose={() => setBoard(false)}>
         <NoticeBoardPanel news={news} />
+      </InteriorPanel>
+    )}
+    {stage && (
+      <InteriorPanel title="小舞台" onClose={() => setStage(false)}>
+        <StagePanel
+          heroId={card.heroId}
+          nickname={child.nickname}
+          childId={child.id}
+          kidCardId={card.id}
+        />
       </InteriorPanel>
     )}
   </>;

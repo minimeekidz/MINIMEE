@@ -12,6 +12,7 @@ export function PixelWorldPage() {
     onEnterRoom={() => navigate("/register")}
     onEnterStall={() => navigate("/register")}
     onReadBoard={() => navigate("/register")}
+    onTakeStage={() => navigate("/register")}
     onExit={() => navigate("/")}
   />;
 }

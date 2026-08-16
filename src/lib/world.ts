@@ -27,7 +27,7 @@ import { WALK_MASKS, type WalkMask } from "./walkmask";
 // and 最新消息 live behind one, and they are kept apart there: a parent who
 // cannot tell a made-up pet story from a real announcement stops trusting
 // both.
-export type HotspotKind = "door" | "gate" | "board" | "stall";
+export type HotspotKind = "door" | "gate" | "board" | "stall" | "stage";
 
 export interface Hotspot {
   id: string;
@@ -113,13 +113,20 @@ export const ZONES: Record<string, Zone> = {
     name: "小鎮廣場",
     day: "/assets/world/town-square-day.webp",
     night: "/assets/world/town-square-night.webp",
+    dayWide: "/assets/world/town-square-day-wide.webp",
+    nightWide: "/assets/world/town-square-night-wide.webp",
     mask: "town-square",
-    spawn: { x: 0.440, y: 0.800 },
+    spawn: { x: 0.470, y: 0.860 },
+    // Em's new art (2026-08-16). The notice board moved to the middle of the
+    // square, and there is now a real stage in the upper left — 「如果有節慶／
+    // 活動時都可以係到有d野做下」. The arch on the right carries a little
+    // house sign, which is what makes it read as the way to 小屋區入口.
     hotspots: [
-      { id: "b-board", kind: "board", label: "公告板", x: 0.460, y: 0.470, target: "notice-board" },
-      { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.450, y: 0.980, target: "town-centre" },
-      { id: "g-park", kind: "gate", label: "散步公園", x: 0.070, y: 0.680, target: "seaside-park" },
-      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.860, y: 0.420, target: "village-gate" },
+      { id: "b-stage", kind: "stage", label: "小舞台", x: 0.270, y: 0.245, target: "stage" },
+      { id: "b-board", kind: "board", label: "公告板", x: 0.500, y: 0.470, target: "notice-board" },
+      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.790, y: 0.170, target: "village-gate" },
+      { id: "g-park", kind: "gate", label: "散步公園", x: 0.080, y: 0.550, target: "seaside-park" },
+      { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.470, y: 0.980, target: "town-centre" },
     ],
   },
 
