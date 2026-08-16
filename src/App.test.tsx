@@ -28,6 +28,7 @@ import { NoticeBoardPanel } from "./components/interior/HomePanels";
 import { EVERYDAY_ACTS, STAGE_FESTIVALS, StagePanel } from "./components/interior/StagePanel";
 import { TreatsPanel } from "./components/interior/RoomMoments";
 import { pastFilmsFrom } from "./components/interior/CinemaFlow";
+import { configProblem } from "./lib/supabase";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 import {
   bandFor, buildRounds, clausesOf, difficultyFor, FAMILIES, GAME_MODES,
@@ -98,7 +99,10 @@ const billing = vi.hoisted(() => ({
   writes: [] as Array<{ table: string; patch: unknown }>,
 }));
 
-vi.mock("./lib/supabase", () => {
+vi.mock("./lib/supabase", async importOriginal => {
+  // Only the client is faked. `configProblem` is pure and is the thing the
+  // login form now depends on to say what is wrong, so it stays real.
+  const actual = await importOriginal<typeof import("./lib/supabase")>();
   const rowsFor = (table: string) =>
     table === "theme_entitlements" ? billing.entitlements
       : table === "ai_video_jobs" ? billing.jobs
@@ -132,6 +136,9 @@ vi.mock("./lib/supabase", () => {
   };
 
   return {
+    configProblem: actual.configProblem,
+    supabaseSetupError: null,
+    initializeSupabase: vi.fn(),
     supabase: {
       auth: { resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }) },
       rpc: vi.fn((name: string) => Promise.resolve(
@@ -1409,6 +1416,22 @@ describe("MINIMEE route shells", () => {
     const real = screen.getByText("新主題開放").closest(".notice-section");
     expect(fun).not.toBe(real);
     expect(fun).toHaveClass("fun");
+  });
+
+  it("names what is actually wrong with the Supabase config", () => {
+    // 「Supabase環境變數尚未載入，請重新部署後再試」 was advice that did not
+    // work: the deploy was fine, one of the two values was not, and the
+    // message could not tell anybody which. These are the three states worth
+    // distinguishing because each is fixed in a different place.
+    expect(configProblem({ url: "https://x.supabase.co", publishableKey: "k" })).toBeNull();
+    expect(configProblem({ publishableKey: "k" })).toMatch(/URL/);
+    expect(configProblem({ url: "https://x.supabase.co" })).toMatch(/publishable/);
+    // The one that actually looks like a working config until you read it:
+    // the project ref stored with the scheme left off.
+    expect(configProblem({ url: "cjsfpsbtohwgqwgtcjef.supabase.co", publishableKey: "k" }))
+      .toMatch(/https:\/\//);
+    // Whitespace around a pasted secret is not a problem worth reporting.
+    expect(configProblem({ url: " https://x.supabase.co ", publishableKey: " k " })).toBeNull();
   });
 
   it("routes the cinema through two halls and keeps the lobby's frames blank-able", () => {

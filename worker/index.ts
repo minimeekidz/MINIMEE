@@ -10,15 +10,22 @@ function supabaseConfigResponse(env: Env): Response {
   const url = env.VITE_SUPABASE_URL?.trim();
   const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
 
-  if (!url || !publishableKey) {
+  // A value that is present but malformed fails exactly like a missing one on
+  // the login form, and is fixed somewhere completely different — most often
+  // the project ref got stored with the https:// left off. Reporting the shape
+  // costs nothing (the URL is public) and turns a mystery into a one-liner.
+  const problems = [
+    !url && "VITE_SUPABASE_URL missing",
+    !publishableKey && "VITE_SUPABASE_PUBLISHABLE_KEY missing",
+    url && !url.startsWith("https://") && "VITE_SUPABASE_URL is not an https:// URL",
+  ].filter(Boolean);
+
+  if (problems.length > 0) {
     return Response.json(
       {
         error: "Supabase public configuration is unavailable.",
         configVersion: CONFIG_VERSION,
-        missing: [
-          !url && "VITE_SUPABASE_URL",
-          !publishableKey && "VITE_SUPABASE_PUBLISHABLE_KEY",
-        ].filter(Boolean),
+        missing: problems,
       },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
