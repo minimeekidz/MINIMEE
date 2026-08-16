@@ -1189,6 +1189,12 @@ footer div { display: flex; gap: 20px; }
   animation: spot-pulse 2.2s ease-in-out infinite;
 }
 @keyframes spot-pulse { 50% { transform: scale(1.18); } }
+/* Seats, treats and not-yet-built things are furniture you can touch, not
+   the reason you came in, so they sit still while the real functions pulse. */
+.interior-spot.seat .spot-pin,
+.interior-spot.treat .spot-pin,
+.interior-spot.soon .spot-pin { animation: none; background: rgba(255,244,224,.94); }
+.interior-spot.soon .spot-pin { background: rgba(255,244,224,.6); }
 .spot-label {
   display: grid; justify-items: center; gap: 1px;
   padding: 6px 12px; border-radius: 999px;
@@ -1335,6 +1341,21 @@ footer div { display: flex; gap: 20px; }
 .stage-act.on { background: var(--accent, #f2a65a); color: #fff; }
 .stage-act:disabled { opacity: .55; cursor: default; }
 .stage-clap { margin: 0; text-align: center; font-size: 12px; line-height: 1.7; }
+
+/* 房入面嘅小動作 —— 坐低、食嘢、望下未整好嘅嘢。全部冇獎，淨係一句說話。 */
+.room-moment { display: grid; gap: 12px; justify-items: center; text-align: center; }
+.room-moment p { margin: 0; font-size: 12px; line-height: 1.8; }
+.room-moment-extra { color: var(--muted); }
+.room-moment.soon svg { width: 26px; height: 26px; opacity: .7; }
+.treat-eaten { font-size: 42px; line-height: 1; }
+.treat-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.treat {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border-radius: 999px; cursor: pointer;
+  border: 2px solid var(--paper-edge, #e2cfa8); background: #fff;
+  font: inherit; font-size: 12px; font-weight: 800;
+}
+.treat span { font-size: 16px; }
 
 .notice-board { display: grid; gap: 18px; }
 .notice-section { padding: 12px; border-radius: 14px; border: 2px solid var(--paper-edge, #e2cfa8); background: #fff; }

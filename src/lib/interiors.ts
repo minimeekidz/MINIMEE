@@ -16,7 +16,13 @@ export type SpotKind =
   /** Walks into another interior — the 珍藏館 wings, the 戲院 behind its lobby. */
   | "room"
   /** Leaves the world for an existing page (the parent services, the card). */
-  | "route";
+  | "route"
+  /** Somewhere to sit. Costs nothing, earns nothing, says what you can see. */
+  | "seat"
+  /** Something to eat or drink. Same rule as a seat. */
+  | "treat"
+  /** Drawn in the art, not built yet. Says so rather than doing nothing. */
+  | "soon";
 
 export interface InteriorSpot {
   id: string;
@@ -28,12 +34,24 @@ export interface InteriorSpot {
   target: string;
   /** Shown under the label on the marker, one short line. */
   hint?: string;
+  /**
+   * The line a seat, a treat, or a not-yet-built thing shows when tapped.
+   * Lives on the spot so the room owns its own words — the same reason the
+   * park's benches carry theirs.
+   */
+  note?: string;
 }
 
 export interface Interior {
   id: string;
   name: string;
   art: string;
+  /**
+   * The same room after dark. Em paints both; a lit café at midnight is the
+   * kind of small wrongness a child notices without being able to name it.
+   * Rooms without a night cut just stay on `art`.
+   */
+  artNight?: string;
   /** Where leaving goes back to, and which side the door is drawn on. */
   back: { kind: "zone" | "room"; target: string; side: "left" | "right" | "bottom" };
   spots: InteriorSpot[];
@@ -119,27 +137,61 @@ export const INTERIORS: Record<string, Interior> = {
   },
 
   // --- Buddy Café ----------------------------------------------------------
-  // 「Buddy Cafe係掃好友QRCode的功能入口，入到去唔洗行」.
+  //
+  // Em's new art (2026-08-16), and it answers the two functions she named by
+  // itself. 「1是讓小朋友與小朋友之間互掃 qrcode 加好友及同意加入好友的」 is
+  // the round table in the middle: two handheld consoles facing each other
+  // across a little divider, which is exactly two children swapping codes.
+  // 「2是可以看小寵物的最新消息／趣聞」 is the pinned board on the upper
+  // right wall, with the paw and the star and the heart above it.
+  //
+  // The rest is what makes it a café rather than a menu: 「舒適又有不同活動及
+  // 坐位進食（有坐下的互動鍵）、吸引的甜點及飲品（有進食的互動鍵）」. Three
+  // places to sit, one counter to order from, and none of them pay anything —
+  // same rule as the park benches and the 廣場 stage.
   "cafe": {
     id: "cafe",
     name: "Buddy Café",
     art: "/assets/world/cafe.webp",
+    artNight: "/assets/world/cafe-night.webp",
     back: { kind: "zone", target: "town-centre", side: "bottom" },
     spots: [
-      { id: "friend-scan", label: "好友掃 code", x: 0.45, y: 0.50, kind: "panel", target: "friend-scan", hint: "加返個新朋友" },
+      { id: "friend-scan", label: "換好友 code", x: 0.470, y: 0.455, kind: "panel", target: "friend-scan", hint: "面對面坐低換" },
+      { id: "pet-news", label: "小寵物消息板", x: 0.800, y: 0.140, kind: "panel", target: "pet-news", hint: "小鎮最新趣聞" },
+      { id: "treats", label: "甜品櫃", x: 0.150, y: 0.310, kind: "treat", target: "treats", hint: "揀樣嘢食" },
+      { id: "seat-booth", label: "靠窗卡座", x: 0.500, y: 0.275, kind: "seat", target: "booth",
+        note: "坐入綠色嘅卡座，窗外望到成個海港同燈塔。太陽曬到張枱暖暖地。" },
+      { id: "seat-sofa", label: "紅色梳化", x: 0.855, y: 0.480, kind: "seat", target: "sofa",
+        note: "梳化好軟，攬枕堆到頸咁高。隔籬張細枱插住一支花。" },
+      { id: "seat-cushions", label: "地墊角落", x: 0.170, y: 0.660, kind: "seat", target: "cushions",
+        note: "一堆彩色軟墊喺地氈上面。坐低就唔想起身，成間 café 嘅聲都變咗細細聲。" },
     ],
   },
 
   // --- 我的小屋 -------------------------------------------------------------
+  //
+  // Em's new art (2026-08-16): a child's attic room with the sea and a
+  // lighthouse out the arched window. Every position below is a thing she
+  // actually drew, and each of her four functions has a piece of furniture:
+  //
+  //   貼紙       — the craft table on the left, covered in sticker sheets and
+  //                a blank card frame
+  //   我張卡     — the writing desk on the right, with the open book and the
+  //                lit mirror
+  //   好友冊     — the big clasped book on the floor cushion
+  //   角色造型   — the wardrobe and the tall mirror, 「之後開放的新功能」
   "my-home": {
     id: "my-home",
     name: "我的小屋",
     art: "/assets/world/my-home.webp",
+    artNight: "/assets/world/my-home-night.webp",
     back: { kind: "zone", target: "village-gate", side: "bottom" },
     spots: [
-      { id: "about-me", label: "關於我", x: 0.30, y: 0.55, kind: "panel", target: "about-me", hint: "我張卡" },
-      { id: "update-card", label: "更新我的卡片", x: 0.80, y: 0.62, kind: "panel", target: "update-card", hint: "貼紙同分享" },
-      { id: "friends", label: "我的好友冊", x: 0.16, y: 0.76, kind: "panel", target: "friends", hint: "見過邊個" },
+      { id: "update-card", label: "貼紙枱", x: 0.185, y: 0.470, kind: "panel", target: "update-card", hint: "整靚我張卡" },
+      { id: "about-me", label: "我張卡", x: 0.740, y: 0.505, kind: "panel", target: "about-me", hint: "睇下寫咗啲乜" },
+      { id: "friends", label: "我的好友冊", x: 0.195, y: 0.700, kind: "panel", target: "friends", hint: "見過邊個" },
+      { id: "looks", label: "衣櫃同鏡", x: 0.850, y: 0.255, kind: "soon", target: "looks", hint: "換造型 · 未開放",
+        note: "衣櫃入面掛住幾套仲未做好嘅衫。之後可以喺呢度換角色造型 —— 而家住住先。" },
     ],
   },
 };
