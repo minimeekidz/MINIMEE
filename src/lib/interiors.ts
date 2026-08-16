@@ -84,7 +84,7 @@ export const INTERIORS: Record<string, Interior> = {
     art: "/assets/world/studio.webp",
     back: { kind: "zone", target: "town-centre", side: "bottom" },
     spots: [
-      { id: "current-words", label: "今期詞語", x: 0.50, y: 0.62, kind: "panel", target: "current-words", hint: "今個主題學緊" },
+      { id: "current-words", label: "答問題", x: 0.50, y: 0.62, kind: "panel", target: "current-words", hint: "睇完片就嚟呢度" },
       { id: "to-cinema", label: "戲院大堂", x: 0.16, y: 0.36, kind: "room", target: "cinema-lobby", hint: "睇片" },
       { id: "to-library", label: "MEE 圖書館", x: 0.85, y: 0.36, kind: "room", target: "library", hint: "重溫舊詞語" },
     ],
@@ -104,7 +104,7 @@ export const INTERIORS: Record<string, Interior> = {
     art: "/assets/world/cinema-lobby.webp",
     back: { kind: "room", target: "studio", side: "bottom" },
     spots: [
-      { id: "tickets", label: "買飛", x: 0.36, y: 0.58, kind: "panel", target: "tickets", hint: "揀套片" },
+      { id: "tickets", label: "接待處", x: 0.36, y: 0.58, kind: "panel", target: "tickets", hint: "同職員揀套片" },
       { id: "to-hall", label: "入場", x: 0.64, y: 0.52, kind: "room", target: "cinema-hall", hint: "行入去睇" },
     ],
   },
@@ -114,7 +114,7 @@ export const INTERIORS: Record<string, Interior> = {
     art: "/assets/world/cinema-hall.webp",
     back: { kind: "room", target: "cinema-lobby", side: "bottom" },
     spots: [
-      { id: "screen", label: "所有影片", x: 0.50, y: 0.28, kind: "panel", target: "screen", hint: "播放" },
+      { id: "screen", label: "銀幕", x: 0.50, y: 0.28, kind: "panel", target: "screen", hint: "睇片" },
     ],
   },
 
