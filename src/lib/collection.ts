@@ -20,10 +20,20 @@ import type { GameMode } from "./games";
 // with two of its four pieces lit until they come back to it.
 
 /**
- * Active theme trays on the 拼合室 wall. A hard maximum, not a minimum — six
- * is the rule even where the art has nine frames.
+ * Stations on the 拼合室 wall.
+ *
+ * Three, and Em set both the number and its consequence when she described
+ * the room: 「準確保留 3 組卡冊、每組 4 盞寶石進度燈…有 3 組（3 個主題），
+ * 不過主題一過就無得草返轉頭，只能係 library／戲院睇返，但就無得草果個主題
+ * 的卡了」.
+ *
+ * It used to be six — three new themes plus room for unfinished ones to carry
+ * over. That is now gone on purpose: the wall holds this month's three, and a
+ * theme that rolls off stays watchable in the cinema and readable in the
+ * library but stops being collectable. Worth saying plainly because it is the
+ * one rule here that can cost a child a card they were partway through.
  */
-export const TRAY_SLOTS = 6;
+export const TRAY_SLOTS = 3;
 /** Cards to a book in the 卡冊 art. */
 export const CARDS_PER_BOOK = 6;
 
@@ -140,6 +150,17 @@ export function useCollection(kidCardId: string | null): Collection {
   }, [kidCardId, refresh]);
 
   return { cards, trays, loading, refresh };
+}
+
+/**
+ * The three themes on the 拼合室 wall right now.
+ *
+ * `active_trays` still returns older rows marked `carryover`; they are inert
+ * under the three-station rule, and filtering here rather than deleting them
+ * means turning the rule back on is a one-line change instead of a migration.
+ */
+export function currentTrays(trays: ThemeTray[]): ThemeTray[] {
+  return trays.filter(tray => tray.status === "current").slice(0, TRAY_SLOTS);
 }
 
 /** Themes to a book. Three themes, each as a 普/閃 pair. */

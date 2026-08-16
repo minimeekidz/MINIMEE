@@ -5,11 +5,15 @@ import { InteriorPanel, InteriorScene } from "../components/InteriorScene";
 import { WorldLoading } from "../components/WorldLoading";
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
-import { useCollection } from "../lib/collection";
-import { useRooms } from "../lib/rooms";
+import { currentTrays, useCollection } from "../lib/collection";
+import { FRAGMENTS_PER_CARD, useRooms } from "../lib/rooms";
 import { useTownNews } from "../lib/townNews";
+import { useStickerWall } from "../lib/stickerStore";
+import { StickerWall } from "../components/profile/StickerWall";
 import { ZONES } from "../lib/world";
-import { AllCardsPanel, BooksPanel, TraysPanel } from "../components/interior/CollectionPanels";
+import {
+  AllCardsPanel, BooksPanel, SpecialsPanel, TraysPanel,
+} from "../components/interior/CollectionPanels";
 import { CurrentWordsPanel, PastWordsPanel } from "../components/interior/StudioPanels";
 import {
   BoxOfficePanel, pastFilmsFrom, QuestionPanel, ScreeningPanel,
@@ -70,6 +74,7 @@ export function InteriorPage() {
   const collection = useCollection(card?.id ?? null);
   const { rooms } = useRooms(card?.id ?? null);
   const { news } = useTownNews();
+  const wall = useStickerWall(card?.id ?? null);
 
   if (!interior || !childId) {
     return <main className="interior-scene"><p className="panel-empty">搵唔到呢間房。</p></main>;
@@ -95,6 +100,10 @@ export function InteriorPage() {
       status: "carryover" as const, earned: 4, targetCode: "", bookNo: 0, slotNo: 0,
       owned: true, mode: "sentence" as const, vo: "", question: "", answerPattern: "",
     } : null);
+
+  // The three stations on the 拼合室 wall: this month's themes, in their
+  // configured order.
+  const wallTrays = currentTrays(collection.trays);
 
   const backTo = interior.back.kind === "zone"
     ? `/parent/children/${childId}/play?zone=${interior.back.target}&from=${interior.id}`
@@ -131,6 +140,18 @@ export function InteriorPage() {
           <span className="poster-name">{tray.theme}</span>
           <span className="poster-mark">{tray.owned ? "✓" : `${tray.earned}/4`}</span>
         </button>
+      );
+    }
+
+    if (frame.kind === "tray") {
+      const tray = wallTrays[Number(frame.id.slice(5)) - 1];
+      if (!tray) return null;
+      return (
+        <span className="tray-gems" title={tray.theme}>
+          {Array.from({ length: FRAGMENTS_PER_CARD }, (_, piece) => (
+            <i key={piece} className={piece < tray.earned ? "gem lit" : "gem"} aria-hidden />
+          ))}
+        </span>
       );
     }
 
@@ -179,12 +200,24 @@ export function InteriorPage() {
         <InteriorPanel title={open.label} onClose={() => setOpen(null)}>
           {open.target === "all-cards" && <AllCardsPanel cards={collection.cards} />}
           {open.target === "books" && <BooksPanel cards={collection.cards} />}
-          {open.target === "trays" && (
+          {/* One mount, one theme. The room has three and each is tapped on
+              its own, so opening all three at once would put the wall inside
+              the wall. */}
+          {open.target.startsWith("tray-") && (
             <TraysPanel
-              trays={collection.trays}
+              trays={wallTrays.slice(Number(open.target.slice(5)) - 1, Number(open.target.slice(5)))}
               kidCardId={card?.id ?? null}
               onForged={() => void collection.refresh()}
+              width={1}
             />
+          )}
+          {open.target === "specials" && <SpecialsPanel cards={collection.cards} />}
+          {open.target === "stickers" && (
+            wall.stickers.length > 0
+              ? <StickerWall title="我儲落嘅貼紙" stickers={wall.stickers} />
+              : <p className="panel-empty">
+                  抽屜仲係空嘅。喺我的小屋張貼紙枱度揀，貼落自我介紹卡就會收埋喺呢度。
+                </p>
           )}
 
           {/* Em split these: 「做當期學習主題的小遊戲、詞彙認讀學習等」. The

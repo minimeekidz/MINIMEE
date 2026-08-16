@@ -23,7 +23,7 @@ import themeSeed from "./data/activeTheme.seed.v1.json";
 import themeBook from "./data/themeBook.json";
 import { checkParentPin, closeParentGate, openParentGate, parentGateOpen } from "./lib/parentGate";
 import { classifyWeather, festivalFor, lunarDayNumber, parseLunar } from "./lib/almanac";
-import { AllCardsPanel, BooksPanel, TraysPanel } from "./components/interior/CollectionPanels";
+import { AllCardsPanel, BooksPanel, TraysPanel, turn } from "./components/interior/CollectionPanels";
 import { NoticeBoardPanel } from "./components/interior/HomePanels";
 import { EVERYDAY_ACTS, STAGE_FESTIVALS, StagePanel } from "./components/interior/StagePanel";
 import { TreatsPanel } from "./components/interior/RoomMoments";
@@ -1173,13 +1173,18 @@ describe("MINIMEE route shells", () => {
       targetMeeCard: { cardId: string; bookNumber: number; slotNumber: number };
     }>;
 
-    expect(seed).toHaveLength(TRAY_SLOTS);
+    // The wall is three wide now — Em: 「有 3 組（3 個主題）」— and it is the
+    // `current` rows that fill it. The older `carryover` rows are still in the
+    // seed and are inert on purpose: under the new rule a theme that rolls off
+    // stops being collectable rather than lingering on the wall.
+    const current = seed.filter(row => row.status === "current");
+    expect(current).toHaveLength(TRAY_SLOTS);
 
     // One theme per tray, one tray per theme, and the display order is the
     // configured one rather than anything sorted.
     expect(seed.map(row => row.traySlot)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(seed.map(row => row.displayOrder)).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(new Set(seed.map(row => row.themeId)).size).toBe(TRAY_SLOTS);
+    expect(new Set(seed.map(row => row.themeId)).size).toBe(seed.length);
     // Alphabetical order is NOT the product order: sorting the names would
     // move 軌道交通 away from tray 1.
     const alphabetical = [...seed.map(row => row.themeNameZh)].sort();
@@ -1189,7 +1194,7 @@ describe("MINIMEE route shells", () => {
     for (const row of seed) expect(row.words, row.themeId).toHaveLength(4);
 
     // Each theme's card is distinct, and sits where the catalog puts it.
-    expect(new Set(seed.map(row => row.targetMeeCard.cardId)).size).toBe(TRAY_SLOTS);
+    expect(new Set(seed.map(row => row.targetMeeCard.cardId)).size).toBe(seed.length);
     const first = seed.find(row => row.themeId === "theme-01")!;
     expect(first.themeNameZh).toBe("軌道交通");
     expect(first.targetMeeCard.cardId).toBe("MEE-019");
@@ -1432,6 +1437,51 @@ describe("MINIMEE route shells", () => {
       .toMatch(/https:\/\//);
     // Whitespace around a pasted secret is not a problem worth reporting.
     expect(configProblem({ url: " https://x.supabase.co ", publishableKey: " k " })).toBeNull();
+  });
+
+  it("builds the 珍藏館 as three stations, two portals and a carousel", () => {
+    const hall = INTERIORS["album-hall"];
+    const fragments = INTERIORS["fragment-room"];
+
+    // 「保留左、右兩個功能入口」, and Em drew which is which: the left portal
+    // is tiled like a jigsaw, the right one has books radiating out of it.
+    const wings = hall.spots.filter(spot => spot.kind === "room");
+    expect(wings.map(wing => wing.target).sort()).toEqual(["album-books", "fragment-room"]);
+    expect(wings.find(w => w.target === "fragment-room")!.x).toBeLessThan(0.5);
+    expect(wings.find(w => w.target === "album-books")!.x).toBeGreaterThan(0.5);
+    // Both wings come back out to the hall.
+    for (const wing of wings) expect(INTERIORS[wing.target].back.target).toBe("album-hall");
+
+    // 「展示哂收有珍藏的地方…生日卡、貼紙」— the chest and the drawer are real
+    // views of real data, not scenery with a button on it.
+    expect(hall.spots.map(spot => spot.target)).toEqual(
+      expect.arrayContaining(["all-cards", "specials", "stickers"]));
+
+    // 「準確保留 3 組卡冊、每組 4 盞寶石進度燈」 — three mounts, three gem
+    // rows, and the wall is three wide rather than the six it used to be.
+    expect(TRAY_SLOTS).toBe(3);
+    expect(fragments.spots.filter(spot => spot.target.startsWith("tray-"))).toHaveLength(3);
+    const gems = (fragments.frames ?? []).filter(frame => frame.kind === "tray");
+    expect(gems).toHaveLength(3);
+    // Left to right, no two overlapping — they are three separate stations.
+    const ordered = [...gems].sort((a, b) => a.x - b.x);
+    expect(ordered.map(frame => frame.id)).toEqual(["tray-1", "tray-2", "tray-3"]);
+    for (let i = 1; i < ordered.length; i++) {
+      expect(ordered[i].x, ordered[i].id).toBeGreaterThan(ordered[i - 1].x + ordered[i - 1].w);
+    }
+  });
+
+  it("turns the 卡冊 carousel without running out of ends", () => {
+    // 「支援現有 12＋2 本及日後擴充，冇畫死數量」 — so turning counts the books
+    // it is given, and wraps, because a cylinder has no first or last.
+    const books = [{ no: 1 }, { no: 2 }, { no: 3 }];
+    expect(turn(books, 1, 1)).toBe(2);
+    expect(turn(books, 3, 1)).toBe(1);
+    expect(turn(books, 1, -1)).toBe(3);
+    // And it still works on a shelf of a different size.
+    const many = Array.from({ length: 14 }, (_, index) => ({ no: index + 1 }));
+    expect(turn(many, 14, 1)).toBe(1);
+    expect(turn(many, 1, -1)).toBe(14);
   });
 
   it("routes the cinema through two halls and keeps the lobby's frames blank-able", () => {
