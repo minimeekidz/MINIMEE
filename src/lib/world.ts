@@ -163,19 +163,23 @@ export const ZONES: Record<string, Zone> = {
     name: "碼頭市集",
     day: "/assets/world/wharf-market-day.webp",
     night: "/assets/world/wharf-market-night.webp",
+    dayWide: "/assets/world/wharf-market-day-wide.webp",
+    nightWide: "/assets/world/wharf-market-night-wide.webp",
     mask: "wharf-market",
     parentsOnly: true,
-    spawn: { x: 0.470, y: 0.850 },
+    spawn: { x: 0.470, y: 0.870 },
+    // Read off Em's art (2026-08-16) by the sign over each stall: cards,
+    // a person, coins, umbrella-and-lock, and the harbour-master's booth
+    // with the megaphone. The old five sat in a huddle around the middle —
+    // 付款 and 失物 were 0.04 apart, close enough that a thumb could not
+    // choose between them.
     hotspots: [
+      { id: "s-card", kind: "stall", label: "管理自我介紹卡", x: 0.230, y: 0.360, target: "card-desk" },
+      { id: "s-lost", kind: "stall", label: "認領失物區", x: 0.770, y: 0.320, target: "lost" },
+      { id: "s-new-child", kind: "stall", label: "新增孩子檔案", x: 0.470, y: 0.550, target: "new-child" },
+      { id: "s-pay", kind: "stall", label: "付款訂閱", x: 0.780, y: 0.550, target: "harbour" },
+      { id: "s-security", kind: "stall", label: "保安", x: 0.480, y: 0.225, target: "security" },
       { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.470, y: 0.980, target: "town-centre" },
-      // The five counters Em labelled on the annotated map. Each opens a page
-      // that already exists — the market is a way in, not a new set of
-      // screens for the same jobs.
-      { id: "s-card-desk", kind: "stall", label: "管理自我介紹卡", x: 0.260, y: 0.600, target: "card-desk" },
-      { id: "s-new-child", kind: "stall", label: "新增孩子檔案", x: 0.470, y: 0.500, target: "new-child" },
-      { id: "s-harbour", kind: "stall", label: "付款訂閱", x: 0.680, y: 0.600, target: "harbour" },
-      { id: "s-lost", kind: "stall", label: "認領失物區", x: 0.720, y: 0.630, target: "lost" },
-      { id: "s-security", kind: "stall", label: "保安", x: 0.470, y: 0.720, target: "security" },
     ],
   },
 };

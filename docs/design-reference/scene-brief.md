@@ -198,36 +198,34 @@ ABSOLUTELY NO people, NO animals, NO characters.
 
 ---
 
-### 5. 碼頭市集（`碼頭市集_日.webp` / `_夜.webp`）
+### 5. 碼頭市集 ✅ 已定案（Em 2026-08-16）
 
-**家長專區。** 五個攤檔，每個都係一個功能。
+**家長專區。** 四個攤檔 ＋ 一個保安亭 = 五個可撳功能站，圍住一個石板廣場。
 
-| # | 攤檔 | 擺喺 | 賣咩 |
+| # | 站 | 招牌 | 座標 |
 |---|---|---|---|
-| 1 | 管理自我介紹卡 | (0.26, 0.60) | 卡片攤 |
-| 2 | 新增孩子檔案 | (0.47, 0.50) | 登記處 |
-| 3 | 付款訂閱 | (0.68, 0.60) | 收銀／票務 |
-| 4 | 認領失物區 | (0.72, 0.63) | 失物招領 |
-| 5 | 保安 | (0.47, 0.72) | 保安亭 |
-| 6 | → 小鎮中心 路口 | (0.47, 0.98) | 底部 |
+| 1 | 管理自我介紹卡 | 🃏 卡片 · 紅白條紋篷 | (0.230, 0.360) 左 |
+| 2 | 認領失物區 | ☂️🔑🔒 · 紫白條紋篷 | (0.770, 0.320) 右上 |
+| 3 | 新增孩子檔案 | 👤 人像 · 藍白條紋篷 | (0.470, 0.550) 中 |
+| 4 | 付款訂閱 | 💰 錢幣＋收銀機 · 綠白條紋篷 | (0.780, 0.550) 右 |
+| 5 | 保安亭 | 🛡️ 盾＋大聲公 · 碼頭口 | (0.480, 0.225) 上中 |
+| 6 | → 小鎮中心 | 主路 | (0.470, 0.980) 底部 |
 
-⚠️ **五個攤檔要分得開、望落去唔同款**。3 同 4 好近（0.68 / 0.72），
-畫嗰陣要拉開少少，唔好兩個攤黐埋一齊。
+四個站分佔四角、篷色全部唔同、招牌一睇就知係咩 —— 呢個係之前最擔心嗰樣
+（舊座標有兩個站爭 0.04，撳落去分唔開），而家解決咗。
 
-**呢張最需要 NPC** —— 五個攤主。你畫空攤，我擺人。
-
-**Prompt：**
+**四個檔案：**
 
 ```
-Top-down 45-degree pixel art game map, vertical 9:16 portrait, a harbour
-market on a wooden pier. FIVE clearly separated market stalls with different
-awning colours and different goods on the counters, spread across the middle
-of the image with walking space between them, plus a small security booth. A
-pale plank walkway runs from the bottom edge up between the stalls. Boats and
-sea in the background. Flat consistent scale, sky no more than the top fifth.
-Warm daylight. Detailed pixel art. The stalls are EMPTY — no stallholders.
-ABSOLUTELY NO people, NO animals, NO characters.
+碼頭市集_日.webp           941 × 1672
+碼頭市集_夜.webp           941 × 1672
+碼頭市集_日_wide.webp     1672 × 941
+碼頭市集_夜_wide.webp     1672 × 941
 ```
+
+**呢張最需要 NPC** —— 四個攤主 ＋ 一個保安。你畫咗空攤，我擺人：
+`stall-card.webp`、`stall-lost.webp`、`stall-child.webp`、`stall-pay.webp`、
+`stall-security.webp`。
 
 ---
 

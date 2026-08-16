@@ -143,16 +143,36 @@ export const CORRIDORS = {
   ],
 
   // 碼頭市集 — the compass plaza and the steps down to the exit.
+  // 碼頭市集 — redrawn for Em's new art (2026-08-16). Five stalls spread
+  // around a cobbled quay: cards on the left, lost property on the right,
+  // registration in the middle, payment to its right, and the harbour
+  // master's booth at the top by the pier. The old chain assumed all five
+  // huddled around the centre.
   "wharf-market-day": [
-    [
-      { x: 0.47, y: 0.99, r: 0.10 }, { x: 0.47, y: 0.90, r: 0.10 },
-      { x: 0.47, y: 0.81, r: 0.10 }, { x: 0.47, y: 0.72, r: 0.11 },
-      { x: 0.48, y: 0.63, r: 0.13 }, { x: 0.48, y: 0.55, r: 0.14 },
-      { x: 0.47, y: 0.48, r: 0.12 },
+    [ // the open quay, most of the lower half
+      { x: 0.47, y: 0.78, r: 0.24 }, { x: 0.40, y: 0.70, r: 0.22 },
+      { x: 0.55, y: 0.70, r: 0.22 }, { x: 0.47, y: 0.64, r: 0.21 },
     ],
-    [ // in front of the stalls, left and right
-      { x: 0.32, y: 0.58, r: 0.09 }, { x: 0.24, y: 0.60, r: 0.07 },
-      { x: 0.64, y: 0.58, r: 0.09 }, { x: 0.71, y: 0.62, r: 0.08 },
+    [ // in from the bottom edge
+      { x: 0.47, y: 0.99, r: 0.13 }, { x: 0.47, y: 0.93, r: 0.13 },
+      { x: 0.47, y: 0.87, r: 0.14 },
+    ],
+    [ // up the middle, past registration to the harbour master
+      { x: 0.47, y: 0.62, r: 0.15 }, { x: 0.47, y: 0.56, r: 0.12 },
+      { x: 0.48, y: 0.49, r: 0.11 }, { x: 0.48, y: 0.42, r: 0.10 },
+      { x: 0.48, y: 0.35, r: 0.09 }, { x: 0.48, y: 0.29, r: 0.08 },
+      { x: 0.48, y: 0.24, r: 0.075 },
+    ],
+    [ // left along the front of the card stall
+      { x: 0.42, y: 0.60, r: 0.14 }, { x: 0.35, y: 0.55, r: 0.12 },
+      { x: 0.29, y: 0.49, r: 0.10 }, { x: 0.25, y: 0.43, r: 0.09 },
+      { x: 0.23, y: 0.38, r: 0.08 },
+    ],
+    [ // right to payment, then on to lost property
+      { x: 0.55, y: 0.62, r: 0.14 }, { x: 0.63, y: 0.59, r: 0.12 },
+      { x: 0.71, y: 0.57, r: 0.11 }, { x: 0.78, y: 0.56, r: 0.10 },
+      { x: 0.79, y: 0.49, r: 0.09 }, { x: 0.78, y: 0.42, r: 0.09 },
+      { x: 0.77, y: 0.35, r: 0.08 },
     ],
   ],
 };
