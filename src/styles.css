@@ -668,6 +668,10 @@ footer div { display: flex; gap: 20px; }
 .world-marker span { display: grid; place-items: center; width: 30px; height: 30px; margin: 0 auto; border: 3px solid #14213D; border-radius: 50%; background: var(--brand-gold); color: #14213D; font-size: 13px; font-weight: 900; animation: marker-bob 1.5s steps(2) infinite; }
 .world-marker.gate span { background: var(--brand-blue); color: #fff4e0; border-radius: 6px; }
 .world-marker.done span { background: var(--green); color: white; animation: none; }
+/* Seats and closed cottages are scenery you can touch, not destinations, so
+   they sit still while the doors and gates keep bobbing for attention. */
+.world-marker.seat span,
+.world-marker.cottage span { background: rgba(255,244,224,.94); animation: none; }
 .world-marker small { display: inline-block; margin-top: 4px; padding: 2px 7px; border: 2px solid #14213D; border-radius: 4px; background: rgba(255,244,224,.94); color: #14213D; font-size: 9px; font-weight: 900; white-space: nowrap; }
 @keyframes marker-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 
@@ -695,6 +699,34 @@ footer div { display: flex; gap: 20px; }
 /* The action button names its keyboard shortcut, so walking in with the keys
    and then going in does not mean reaching for the mouse. */
 .world-action small { display: block; margin-top: 3px; font-size: 9px; font-weight: 800; opacity: .72; }
+
+/* 坐低 —— 公園啲長椅同野餐墊。冇坐低嘅 sprite，所以矮少少當坐咗。 */
+.world-hero.sitting { animation: none; }
+.world-seated {
+  position: absolute; left: 50%; bottom: 11%; transform: translateX(-50%);
+  display: grid; justify-items: center; gap: 10px;
+  width: min(420px, 82vw); z-index: 130;
+}
+.world-seated p {
+  margin: 0; padding: 11px 16px; border: 3px solid #14213D; border-radius: 10px;
+  background: rgba(255,244,224,.95); color: #14213D;
+  font-size: 12px; font-weight: 800; line-height: 1.75; text-align: center;
+}
+.world-seated .world-action { position: static; transform: none; animation: none; }
+
+/* 小寵物嘅屋 —— 入唔到，但要話返你知係邊個嘅屋。 */
+.world-peek {
+  position: absolute; left: 50%; bottom: 13%; transform: translateX(-50%);
+  display: grid; justify-items: center; gap: 5px; cursor: pointer;
+  width: min(400px, 80vw); padding: 13px 18px;
+  border: 4px solid #14213D; border-radius: 10px;
+  background: rgba(255,244,224,.96); color: #14213D;
+  font: inherit; text-align: center; z-index: 140;
+  box-shadow: 0 6px 0 rgba(13,16,32,.5);
+}
+.world-peek strong { font-size: 14px; font-weight: 900; }
+.world-peek span { font-size: 12px; font-weight: 700; line-height: 1.75; }
+.world-peek small { font-size: 9px; font-weight: 800; opacity: .68; }
 
 /* ---- v2: sticker packs on the self-introduction card ---- */
 .editor-help { margin: 0 0 4px; color: var(--muted); font-size: 10px; line-height: 1.6; }

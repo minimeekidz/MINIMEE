@@ -27,7 +27,8 @@ import { WALK_MASKS, type WalkMask } from "./walkmask";
 // and 最新消息 live behind one, and they are kept apart there: a parent who
 // cannot tell a made-up pet story from a real announcement stops trusting
 // both.
-export type HotspotKind = "door" | "gate" | "board" | "stall" | "stage";
+export type HotspotKind =
+  | "door" | "gate" | "board" | "stall" | "stage" | "seat" | "cottage";
 
 export interface Hotspot {
   id: string;
@@ -38,6 +39,12 @@ export interface Hotspot {
   y: number;
   /** A room id for a door, a zone id for a gate. */
   target: string;
+  /**
+   * A line for the things that are not doors: what a child sees sitting on
+   * this bench, or why this cottage will not open. Kept on the hotspot rather
+   * than in the component so the scene owns its own words.
+   */
+  note?: string;
 }
 
 export interface Zone {
@@ -54,13 +61,21 @@ export interface Zone {
    * letterboxing it breaks the illusion of standing somewhere — so the wide
    * screen gets the wide painting.
    *
-   * The hotspots and the walk mask stay in the portrait cut's coordinates.
-   * Both paintings hold the same buildings in the same relative places, so
-   * the same fractions land on the same doors.
+   * The catch, and it is the whole reason no zone sets these yet: the
+   * hotspots and the walk mask live in the portrait cut's coordinates, so a
+   * wide cut only works when it is the *same painting* framed wider — same
+   * camera, more left and right, nothing moved or redrawn. The 16:9 files
+   * delivered so far are separate renders of the same scene: measured against
+   * the portrait, 小屋區入口's paw-print arch sits at y 0.643 in one and
+   * 0.574 in the other, and the buildings are at a different scale. Point a
+   * zone at one of those and every door marker lands on grass.
+   *
+   * So the files ship, unwired, and these fields wait for a wide cut that is
+   * a crop rather than a re-render.
    */
   dayWide?: string;
   nightWide?: string;
-  /** Only 小屋區入口 has dawn art; everywhere else goes straight day/night. */
+  /** Dawn art, when a scene has a 清晨 cut. Nothing has one right now. */
   dawn?: string;
   /** 碼頭市集 is the parents' entrance and asks for the parent PIN. */
   parentsOnly?: boolean;
@@ -84,8 +99,6 @@ export const ZONES: Record<string, Zone> = {
     name: "小鎮中心",
     day: "/assets/world/town-centre-day.webp",
     night: "/assets/world/town-centre-night.webp",
-    dayWide: "/assets/world/town-centre-day-wide.webp",
-    nightWide: "/assets/world/town-centre-night-wide.webp",
     mask: "town-centre",
     spawn: { x: 0.470, y: 0.760 },
     // Five doors around one plaza, read off the art by the sign over each:
@@ -113,8 +126,6 @@ export const ZONES: Record<string, Zone> = {
     name: "小鎮廣場",
     day: "/assets/world/town-square-day.webp",
     night: "/assets/world/town-square-night.webp",
-    dayWide: "/assets/world/town-square-day-wide.webp",
-    nightWide: "/assets/world/town-square-night-wide.webp",
     mask: "town-square",
     spawn: { x: 0.470, y: 0.860 },
     // Em's new art (2026-08-16). The notice board moved to the middle of the
@@ -130,35 +141,73 @@ export const ZONES: Record<string, Zone> = {
     ],
   },
 
-  // 散步公園 — a seaside walk. Two gates and nothing to enter: the point of
-  // it is the walk itself and the pets who like it here.
+  // 散步公園 — a seaside walk. Nothing to enter and nothing to earn: it is
+  // the one place in the town that is only for being in.
+  //
+  // Em's new art (2026-08-16). The path forks around a stream, and the things
+  // scattered along it are the point — 「公園長椅及野餐墊是可以有『坐下』嘅
+  // 互動」. Five places to sit, each on its own patch of grass off the path,
+  // because a bench you have to leave the path for is a bench you chose.
   "seaside-park": {
     id: "seaside-park",
     name: "散步公園",
     day: "/assets/world/seaside-park-day.webp",
     night: "/assets/world/seaside-park-night.webp",
     mask: "seaside-park",
-    spawn: { x: 0.460, y: 0.870 },
+    spawn: { x: 0.490, y: 0.840 },
     hotspots: [
-      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.420, y: 0.980, target: "town-square" },
-      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.780, y: 0.280, target: "village-gate" },
+      { id: "s-picnic", kind: "seat", label: "野餐墊", x: 0.220, y: 0.410, target: "picnic",
+        note: "坐喺野餐墊上面，籃入面有三文治同果汁。海風吹過嚟，凍凍地好舒服。" },
+      { id: "s-bench-mid", kind: "seat", label: "長椅", x: 0.255, y: 0.495, target: "bench-mid",
+        note: "坐低，望住條石仔路。有隻蝴蝶停咗喺你隔籬張凳背度。" },
+      { id: "s-swing", kind: "seat", label: "鞦韆椅", x: 0.185, y: 0.752, target: "swing",
+        note: "鞦韆椅慢慢咁擺。頭頂啲玫瑰花同彩帶跟住風一齊郁。" },
+      { id: "s-bench-sea", kind: "seat", label: "海邊長椅", x: 0.585, y: 0.164, target: "bench-sea",
+        note: "海就喺石欄後面。遠處有幾隻白色帆船，慢到好似冇郁過咁。" },
+      { id: "s-bench-map", kind: "seat", label: "地圖旁長椅", x: 0.720, y: 0.282, target: "bench-map",
+        note: "隔籬塊板畫住成個公園嘅地圖。你搵到自己而家坐緊嘅位置。" },
+      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.845, y: 0.045, target: "village-gate" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.470, y: 0.980, target: "town-square" },
     ],
   },
 
-  // 小屋區入口 — the child's own front door, and the only zone with a dawn
-  // variant.
+  // 小屋區入口 — the child's own front door, behind a paw-print arch.
+  //
+  // Em's new art (2026-08-16). Six cottages; the big terracotta-roofed one on
+  // the left is 我的小屋 and the other five belong to the pets —「其餘係小寵物
+  // 的家，不能進入（暫時，有機會遲d開放）」. They are hotspots anyway rather
+  // than scenery: a child will tap a front door whether or not it opens, and
+  // a tap that says whose house it is reads as a place, while a tap that does
+  // nothing reads as broken.
+  //
+  // The dawn cut is gone. The old one was a different scene entirely (a canal
+  // town with a lighthouse), so keeping it would have put these doorways over
+  // an unrelated painting for 90 minutes every morning. It comes back the day
+  // there is a 清晨 cut of this village.
   "village-gate": {
     id: "village-gate",
     name: "小屋區入口",
     day: "/assets/world/village-gate-day.webp",
     night: "/assets/world/village-gate-night.webp",
-    dawn: "/assets/world/village-gate-dawn.webp",
     mask: "village-gate",
-    spawn: { x: 0.420, y: 0.850 },
+    spawn: { x: 0.500, y: 0.585 },
     hotspots: [
-      { id: "d-home", kind: "door", label: "我的小屋", x: 0.180, y: 0.630, target: "my-home" },
-      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.440, y: 0.980, target: "town-square" },
-      { id: "g-park", kind: "gate", label: "散步公園", x: 0.845, y: 0.355, target: "seaside-park" },
+      // The teal door with a paw print on it, at the foot of the wooden steps.
+      // The same paw is carved over the arch, which is what marks this as the
+      // child's own house rather than one more cottage.
+      { id: "d-home", kind: "door", label: "我的小屋", x: 0.290, y: 0.528, target: "my-home" },
+      { id: "c-tower", kind: "cottage", label: "紫色小塔", x: 0.280, y: 0.226, target: "tower",
+        note: "紫色屋頂嗰間細細間，門口有粒星。屋主而家唔喺屋企。" },
+      { id: "c-shell", kind: "cottage", label: "貝殼小屋", x: 0.535, y: 0.195, target: "shell",
+        note: "個屋頂好似隻大貝殼。窗簾拉埋咗，好似瞓緊覺咁。" },
+      { id: "c-clock", kind: "cottage", label: "時鐘木屋", x: 0.740, y: 0.195, target: "clock",
+        note: "門上面掛住個綠色時鐘。信箱塞住幾封未拆嘅信。" },
+      { id: "c-green", kind: "cottage", label: "玻璃花房", x: 0.770, y: 0.358, target: "greenhouse",
+        note: "成間屋都係玻璃，入面種滿盆栽，霧氣蒙住睇唔清楚。" },
+      { id: "c-blue", kind: "cottage", label: "藍頂小屋", x: 0.820, y: 0.550, target: "blue",
+        note: "藍色屋頂，門口泊咗架單車。似係啱啱出咗門。" },
+      { id: "g-park", kind: "gate", label: "散步公園", x: 0.945, y: 0.180, target: "seaside-park" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.490, y: 0.980, target: "town-square" },
     ],
   },
 
@@ -170,8 +219,6 @@ export const ZONES: Record<string, Zone> = {
     name: "碼頭市集",
     day: "/assets/world/wharf-market-day.webp",
     night: "/assets/world/wharf-market-night.webp",
-    dayWide: "/assets/world/wharf-market-day-wide.webp",
-    nightWide: "/assets/world/wharf-market-night-wide.webp",
     mask: "wharf-market",
     parentsOnly: true,
     spawn: { x: 0.470, y: 0.870 },

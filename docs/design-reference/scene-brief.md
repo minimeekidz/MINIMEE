@@ -67,6 +67,28 @@
 
 ---
 
+### ⚠️ 16:9 嘅問題（要睇）
+
+你每張場景都交四個檔，多謝 —— 但係**啲 16:9 而家用唔到**，唔係我唔想用。
+
+程式入面每個門口、每個出口、邊度行得到，全部都係用 9:16 嗰張圖嘅
+「橫向百分之幾、縱向百分之幾」記低。要一套座標同時啱兩張圖，
+兩張圖就要係**同一幅畫**，只係打橫嗰張見多啲左右、少啲上下。
+
+而家收到嘅 16:9 係**重新生成過**嘅：同一個場景、同一啲建築，但係鏡頭同比例
+唔同咗。我度過小屋區入口嗰個腳印拱門 —— 9:16 入面喺 y = 0.643，
+16:9 入面喺 y = 0.574，而且成間屋大細都唔同。用嗰張嘅話，
+每一個門口嘅標記都會跌咗落草地度。
+
+**要點先用得到：** 出 16:9 嘅時候唔好重新生成，**直接由 9:16 嗰張裁**（或者
+反過來，由一張更大嘅原圖裁出兩個比例）—— 鏡頭唔郁、建築唔郁、只係見多啲
+左右。咁我一改就即刻用得。
+
+而家做緊嘅安全網：闊螢幕會用 9:16 嗰張，鏡頭自動裁 —— 電腦上面見到嘅係
+裁咗少少嘅小鎮，唔係一片白。四個 16:9 檔案我都已經放咗上 GitHub，等緊。
+
+---
+
 ## 第二部分：逐張圖
 
 座標寫成 `(x, y)`，`(0,0)` 係左上角，`(1,1)` 係右下角。
@@ -97,7 +119,7 @@
 ```
 小鎮中心_日.webp           941 × 1672
 小鎮中心_夜.webp           941 × 1672
-小鎮中心_日_wide.webp     1672 × 941   ← 電腦用
+小鎮中心_日_wide.webp     1672 × 941   ← 未收到；收到都要係裁嘅，見上面「16:9 嘅問題」
 小鎮中心_夜_wide.webp     1672 × 941
 ```
 
@@ -149,7 +171,7 @@ Em：「公告板去左中央，亦外左上位置亦設計了一個可要真實
 ```
 小鎮廣場_日.webp           941 × 1672
 小鎮廣場_夜.webp           941 × 1672
-小鎮廣場_日_wide.webp     1672 × 941   ← 電腦用
+小鎮廣場_日_wide.webp     1672 × 941   ← 未收到；收到都要係裁嘅，見上面「16:9 嘅問題」
 小鎮廣場_夜_wide.webp     1672 × 941
 ```
 
@@ -192,50 +214,115 @@ string lights`。
 
 ---
 
-### 3. 散步公園（`散步公園_日.webp` / `_夜.webp`）
+### 3. 散步公園 ✅ 已定案（Em 2026-08-16）
 
-穿過型 —— 兩個出口，冇門。**你啱啱嗰張海邊小鎮好啱做呢張。**
+穿過型 —— 兩個出口，冇門。全個小鎮**淨係得呢度冇嘢要做**：唔使答題、
+唔會派卡、冇任務。呢個係特登嘅，一個乜都要交功課嘅小鎮唔會有人想留低。
 
-| # | 要有咩 | 擺喺 |
-|---|---|---|
-| 1 | → 小鎮廣場 路口 | (0.42, 0.98) 底部 |
-| 2 | → 小屋區入口 路口 | (0.78, 0.28) 右上 |
+| # | 要有咩 | 標誌 | 座標 |
+|---|---|---|---|
+| 1 | **野餐墊**（可以坐） | 紅白格仔＋野餐籃 | **(0.220, 0.410)** 左中 |
+| 2 | **長椅**（可以坐） | 木長櫈 | **(0.255, 0.495)** 左中偏下 |
+| 3 | **鞦韆椅**（可以坐） | 玫瑰花架＋彩帶 | **(0.185, 0.752)** 左下 |
+| 4 | **海邊長椅**（可以坐） | 石欄旁 | **(0.585, 0.164)** 上中 |
+| 5 | **地圖旁長椅**（可以坐） | 公園地圖板旁 | **(0.720, 0.282)** 右上 |
+| 6 | → 小屋區入口 | 沿海小路 | (0.845, 0.045) 右上角 |
+| 7 | → 小鎮廣場 | 主路 | (0.470, 0.980) 底部 |
+
+**「坐下」係點運作：** 行到張櫈／張墊前面 → 提示「坐低 · 長椅」→ 撳一下，
+小朋友就企定喺嗰度，畫面出一句嗰個位置望到啲乜（海面嘅帆船、停喺凳背嘅蝴蝶、
+隨風擺嘅彩帶）。**冇獎品**，同小舞台一樣 —— Em 講過唔可以有第二種貨幣。
+行任何一步（撳地下、撳方向掣、撳鍵盤）就自動企返起身，唔使搵掣撳。
+
+出圖要求：五個坐嘅位置**都要離開條路少少、坐喺草地上**。呢個唔係美術偏好 ——
+要行離條路先坐到，張櫈先似係自己揀嘅，唔係順路撞到。
+
+**四個檔案：**
+
+```
+散步公園_日_9x16.webp     941 × 1672   ← 而家程式用緊呢個
+散步公園_夜_9x16.webp     941 × 1672   ← 而家程式用緊呢個
+散步公園_日_16x9.webp    1672 × 941    ← 收咗，但未用得（見下面「16:9 嘅問題」）
+散步公園_夜_16x9.webp    1672 × 941
+```
 
 **Prompt：**
 
 ```
 Top-down 45-degree pixel art game map, vertical 9:16 portrait, a seaside
-walking park. A pale winding path enters at the bottom edge and leaves at the
-upper right. Trees, flower beds, benches, lamp posts, a low stone wall along
-the sea on one side. Flat consistent scale, sky no more than the top fifth.
-Warm daylight, blue sea. Detailed pixel art, the path clearly lighter than
-the grass. ABSOLUTELY NO people, NO animals, NO characters.
+walking park. A pale winding path enters at the bottom edge, curves up the
+middle and leaves at the upper right corner. A low stone sea wall runs along
+the top left with open blue sea beyond it. Scattered on the grass beside the
+path: a red-and-white checked picnic blanket with a basket, three wooden
+benches, a swing seat under a rose-covered pergola, a drinking fountain, a
+small park map board, a little stone bridge over a narrow stream, a bicycle
+rack. Flat consistent scale from foreground to background, sky and sea no
+more than the top fifth. Warm daylight. Detailed pixel art, the path clearly
+lighter than the grass. ABSOLUTELY NO people, NO animals, NO characters.
 ```
+
+夜版：`Warm daylight` → `Night, deep blue sky, glowing lamp posts and string
+lights along the sea wall, moonlight on the water`。
 
 ---
 
-### 4. 小屋區入口（`小屋區入口_日` / `_夜` / `_清晨`）
+### 4. 小屋區入口 ✅ 已定案（Em 2026-08-16）
 
-**三個版本**（多咗清晨，5–7 點限定）。
+小朋友自己間屋，同五間小寵物嘅屋，圍住一個石板前庭。入口係一個**刻住腳印**
+嘅木拱門 —— 同小朋友嗰道門上面嗰個腳印係同一個，就係咁認得邊間係自己。
 
-| # | 要有咩 | 擺喺 |
-|---|---|---|
-| 1 | **我的小屋** 門 | (0.18, 0.63) 左邊，一間得意細屋 |
-| 2 | → 小鎮廣場 路口 | (0.44, 0.98) 底部 |
-| 3 | → 散步公園 路口 | (0.845, 0.355) 右上 |
+| # | 建築／出口 | 標誌 | 座標 |
+|---|---|---|---|
+| 1 | **我的小屋**（唯一入得） | 🐾 藍綠色門＋木樓梯 · 紅瓦大屋 | **(0.290, 0.528)** 左中 |
+| 2 | 紫色小塔（小寵物屋） | ⭐ 紫屋頂 | (0.280, 0.226) 左上 |
+| 3 | 貝殼小屋（小寵物屋） | 🐚 粉紅貝殼屋頂 | (0.535, 0.195) 上中 |
+| 4 | 時鐘木屋（小寵物屋） | 🕐 綠色時鐘 | (0.740, 0.195) 右上 |
+| 5 | 玻璃花房（小寵物屋） | 🌿 全玻璃 | (0.770, 0.358) 右中 |
+| 6 | 藍頂小屋（小寵物屋） | 🚲 藍屋頂＋單車 | (0.820, 0.550) 右 |
+| 7 | → 散步公園 | 沿海小路 | (0.945, 0.180) 右邊 |
+| 8 | → 小鎮廣場 | 腳印拱門下面嘅主路 | (0.490, 0.980) 底部 |
+
+Em：「最大明突出果間係通往我的小屋（小朋友房），其餘係小寵物的家，
+**不能進入**（暫時，有機會遲d開放）」。
+
+**五間入唔到嘅屋照樣係可以撳嘅。** 撳落去會話返你知係邊個嘅屋、
+點解而家入唔到（屋主唔喺屋企、窗簾拉埋咗、信箱塞住信…）。
+撳咗乜都冇發生嘅話，小朋友只會當係壞咗。日後要開放邊一間，
+只需要喺 `world.ts` 將嗰個 hotspot 由 `cottage` 改成 `door`。
+
+**四個檔案：**
+
+```
+小屋區入口_日_9x16.webp     941 × 1672   ← 而家程式用緊呢個
+小屋區入口_夜_9x16.webp     941 × 1672   ← 而家程式用緊呢個
+小屋區入口_日_16x9.webp    1672 × 941    ← 收咗，但未用得
+小屋區入口_夜_16x9.webp    1672 × 941
+```
+
+**清晨版暫時冇咗。** 舊嗰張清晨圖畫嘅係另一個地方（有燈塔嘅運河小鎮），
+同呢條村完全冇關係 —— 再擺住嘅話，每朝 5–7 點就會變成啲門浮喺一張唔啱嘅
+畫上面。你幾時畫返一張**呢條村嘅清晨版**，我一擺返落去就得。
 
 **Prompt：**
 
 ```
-Top-down 45-degree pixel art game map, vertical 9:16 portrait, entrance to a
-village of small cottages. One cute cottage with a clearly visible painted
-front door on the left side. A pale path enters at the bottom edge and leaves
-at the upper right. A wooden village gate or arch. Flat consistent scale, sky
-no more than the top fifth. Warm daylight. Detailed pixel art, clear path.
-ABSOLUTELY NO people, NO animals, NO characters.
+Top-down 45-degree pixel art game map, vertical 9:16 portrait, the entrance
+to a village of small storybook cottages on a seaside hill. A wooden arch
+carved with a paw print stands over the path in the lower middle, strung with
+bunting. Behind it a wide pale stone forecourt, with six cottages around it:
+one large terracotta-roofed house on the left with a teal front door marked
+with the same paw print and wooden steps down to the forecourt, a small
+purple-roofed tower upper left, a pink shell-roofed cottage upper middle, a
+timbered cottage with a green clock upper right, a glass greenhouse on the
+right, a blue-roofed cottage lower right. Stepping stones through the grass
+to the tower and the greenhouse. A path leaves at the bottom edge and another
+at the right edge. Flat consistent scale from foreground to background, sky
+and sea no more than the top fifth. Warm daylight. Detailed pixel art, clear
+readable front doors. ABSOLUTELY NO people, NO animals, NO characters.
 ```
 
-清晨版：`Warm daylight` → `Early dawn, soft pink and gold light, low mist, long soft shadows`。
+夜版：`Warm daylight` → `Night, deep blue sky, moon over the sea, warm light
+in every cottage window, glowing lanterns on the arch`。
 
 ---
 
@@ -260,7 +347,7 @@ ABSOLUTELY NO people, NO animals, NO characters.
 ```
 碼頭市集_日.webp           941 × 1672
 碼頭市集_夜.webp           941 × 1672
-碼頭市集_日_wide.webp     1672 × 941
+碼頭市集_日_wide.webp     1672 × 941   ← 未收到；收到都要係裁嘅，見上面「16:9 嘅問題」
 碼頭市集_夜_wide.webp     1672 × 941
 ```
 
@@ -348,6 +435,7 @@ Single character only, no background, no scenery.
 - [ ] 走道同兩邊顏色對比夠大？
 - [ ] 日夜兩版建築位置一模一樣？
 - [ ] 門大概 1/10 圖高（主角係 1/16）？
+- [ ] 16:9 嗰兩張係由同一幅畫**裁**出嚟，唔係重新生成？
 
 ---
 
