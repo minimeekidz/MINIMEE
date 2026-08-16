@@ -26,12 +26,33 @@ jobs:
 
       - run: npm run build
 
+      # Deploy first, secrets second, and in two steps rather than one.
+      #
+      # wrangler-action uploads the `secrets:` list *before* it runs the
+      # command, and Cloudflare refuses to modify a secret while the Worker's
+      # newest version is not the deployed one (error 10215). Once the Worker
+      # drifted into that state every run died on the secrets step and the
+      # code never shipped — a deploy failing over credentials that had not
+      # changed since the last successful one.
+      #
+      # Deploying first satisfies the precondition. The secrets step is then
+      # a top-up that cannot block a release: they only change when Em rotates
+      # them, and a stale value is a bad config endpoint, while a blocked
+      # deploy is the whole site frozen.
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+
+      - name: Refresh runtime secrets
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: --version
           secrets: |
             VITE_SUPABASE_URL
             VITE_SUPABASE_PUBLISHABLE_KEY
