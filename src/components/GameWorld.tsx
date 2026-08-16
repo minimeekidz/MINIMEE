@@ -7,8 +7,9 @@ import { useFullscreen } from "../lib/fullscreen";
 import { checkParentPin, openParentGate, parentGateOpen } from "../lib/parentGate";
 import { PetEncounter } from "./PetEncounter";
 import {
-  arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, ROOM_ZONE, START_ZONE,
-  zoneAspect, zoneBackground, ZONES, type Hotspot, type Zone,
+  arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, prefersWide,
+  ROOM_ZONE, START_ZONE, zoneAspect, zoneBackgroundLayers, ZONES,
+  type Hotspot, type Zone,
 } from "../lib/world";
 
 // The world screen. The map is bigger than the window and the camera follows
@@ -432,7 +433,10 @@ export function GameWorld({
       className="world-stage"
       onPointerDown={walkTo}
       style={{
-        backgroundImage: `url(${zoneBackground(zone, undefined, viewport.w > viewport.h)})`,
+        backgroundImage: zoneBackgroundLayers(zone, undefined, prefersWide(viewport.w, viewport.h))
+          .map(art => `url(${art})`).join(", "),
+        // One value covers both layers: CSS repeats the list when it is
+        // shorter than the number of backgrounds.
         backgroundSize: `${map.w}px ${map.h}px`,
         backgroundPosition: `${-camera.x}px ${-camera.y}px`,
       }}
