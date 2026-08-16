@@ -10,7 +10,9 @@ import { useRooms } from "../lib/rooms";
 import { useTownNews } from "../lib/townNews";
 import { ZONES } from "../lib/world";
 import { AllCardsPanel, BooksPanel, TraysPanel } from "../components/interior/CollectionPanels";
-import { CurrentWordsPanel, PastWordsPanel, TicketsPanel } from "../components/interior/StudioPanels";
+import { CurrentWordsPanel, PastWordsPanel } from "../components/interior/StudioPanels";
+import { BoxOfficePanel, QuestionPanel, ScreeningPanel } from "../components/interior/CinemaFlow";
+import { ageFrom } from "../lib/age";
 import {
   AboutMePanel, FriendScanPanel, FriendsBookPanel, NoticeBoardPanel, UpdateCardPanel,
 } from "../components/interior/HomePanels";
@@ -28,14 +30,26 @@ export function InteriorPage() {
   const { id: childId, roomId } = useParams();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  // Buying a ticket in the lobby carries the choice into the hall, so the
-  // screen shows what the child picked rather than a list all over again.
-  const chosenFilm = params.get("film");
+  // The chosen theme rides in the URL from the box office to the hall to the
+  // question room, so backing out or refreshing lands in the same film rather
+  // than at the start of the queue.
+  const chosenTheme = params.get("theme");
+  const asking = params.get("ask") === "1";
   const { children } = useFamily();
   const child = children.find(candidate => candidate.id === childId);
 
   const [card, setCard] = useState<EditableCard | null>(null);
   const [open, setOpen] = useState<InteriorSpot | null>(null);
+  // Arriving from the box office or from the film opens the right thing by
+  // itself. A child who has just chosen a film should not have to find the
+  // screen, and one sent out to answer should not have to find the desk.
+  useEffect(() => {
+    if (!chosenTheme) return;
+    const spot = INTERIORS[roomId ?? ""]?.spots.find(candidate =>
+      (roomId === "cinema-hall" && candidate.target === "screen")
+      || (roomId === "studio" && asking && candidate.target === "current-words"));
+    if (spot) setOpen(spot);
+  }, [chosenTheme, asking, roomId]);
   const [arrived, setArrived] = useState(false);
 
   useEffect(() => {
@@ -88,18 +102,31 @@ export function InteriorPage() {
             />
           )}
 
-          {open.target === "current-words" && <CurrentWordsPanel rooms={rooms} childId={childId} backTo={interior.id} />}
+          {open.target === "current-words" && (
+            asking && chosenTheme
+              ? <QuestionPanel
+                  tray={collection.trays.find(tray => tray.themeId === chosenTheme) ?? null}
+                  childId={childId!}
+                  kidCardId={card?.id ?? null}
+                  level={child?.birth_year
+                    ? ageFrom(null, child.birth_year)?.years ?? null
+                    : child?.age_group ?? null}
+                  foreignWords={collection.trays
+                    .filter(tray => tray.themeId !== chosenTheme)
+                    .flatMap(tray => tray.words)}
+                  onEarned={() => { void collection.refresh(); }}
+                />
+              : <CurrentWordsPanel rooms={rooms} childId={childId} backTo={interior.id} />
+          )}
           {open.target === "past-words" && <PastWordsPanel rooms={rooms} />}
           {open.target === "tickets" && (
-            <TicketsPanel
-              rooms={rooms}
-              onPick={roomKey => navigate(`/parent/children/${childId}/inside/cinema-hall?film=${roomKey}`)}
-            />
+            <BoxOfficePanel trays={collection.trays} childId={childId!} />
           )}
           {open.target === "screen" && (
-            <TicketsPanel
-              rooms={chosenFilm ? rooms.filter(room => room.id === chosenFilm) : rooms}
-              onPick={roomKey => navigate(`/parent/children/${childId}/room/${roomKey}?back=${interior.id}`)}
+            <ScreeningPanel
+              tray={collection.trays.find(tray => tray.themeId === chosenTheme) ?? null}
+              childId={childId!}
+              videoPath={rooms.find(room => room.lesson?.themeId === chosenTheme)?.lesson?.videoPath ?? null}
             />
           )}
 

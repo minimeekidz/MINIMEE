@@ -223,6 +223,23 @@ export function themeProgress(cards: CollectedCard[]): { owned: number; total: n
   };
 }
 
+/**
+ * One round of a theme finished, one fragment.
+ *
+ * Which round it counts as is the server's decision, not this call's — a
+ * browser asking for round four first still gets the round it has reached,
+ * and a replayed round cannot mint a second fragment.
+ */
+export async function awardThemeFragment(
+  kidCardId: string, themeId: string,
+): Promise<number> {
+  if (!supabase) return 0;
+  const { data } = await supabase.rpc("award_theme_fragment", {
+    p_kid_card_id: kidCardId, p_theme_id: themeId,
+  });
+  return typeof data === "number" ? data : 0;
+}
+
 export interface ForgedCard { code: string; name: string; rarity: string; art: string }
 
 /**

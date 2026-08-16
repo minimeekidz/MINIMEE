@@ -165,7 +165,7 @@ export function TraysPanel({ trays, kidCardId, onForged }: {
           <div>
             <strong>砌好喇！</strong>
             {won.length > 1
-              ? <p>{won[0].name} —— <em>年繳雙版本，普通版同閃耀版一齊到手 ✨</em></p>
+              ? <p>{won[0].name} —— <em>年繳雙版本，常規版同閃耀版一齊到手 ✨</em></p>
               : <p>{won[0].name}{won[0].rarity === "flash" && <em> · 閃卡！</em>}</p>}
           </div>
         </div>
