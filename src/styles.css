@@ -1273,6 +1273,37 @@ footer div { display: flex; gap: 20px; }
 .home-panel p { margin: 0; }
 .tape-button.ghost { background: rgba(160,130,90,.22); }
 
+/* 小舞台 —— 廣場左上嗰個台。平日空台任你上，節慶就有嘢做。 */
+.stage-panel { display: grid; gap: 14px; }
+.stage-floor {
+  position: relative; display: grid; place-items: center;
+  min-height: 168px; padding: 18px; border-radius: 16px;
+  border: 2px solid var(--paper-edge, #e2cfa8);
+  background: linear-gradient(#f6e7c8, #d9b98a);
+  overflow: hidden;
+}
+.stage-floor.festive { background: linear-gradient(#ffe9d0, #f0b98e); }
+.stage-prop { position: absolute; top: 10px; right: 14px; font-size: 30px; }
+.stage-hero { height: 118px; width: auto; image-rendering: pixelated; }
+.stage-bubble {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+  padding: 5px 12px; border-radius: 999px; background: #fff;
+  border: 2px solid var(--paper-edge, #e2cfa8);
+  font-size: 12px; font-weight: 800; white-space: nowrap;
+}
+.stage-cue { margin: 0; font-size: 12px; line-height: 1.7; }
+.stage-cue strong { display: block; }
+.stage-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.stage-act {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border-radius: 999px; cursor: pointer;
+  border: 2px solid var(--paper-edge, #e2cfa8); background: #fff;
+  font: inherit; font-size: 12px; font-weight: 800;
+}
+.stage-act.on { background: var(--accent, #f2a65a); color: #fff; }
+.stage-act:disabled { opacity: .55; cursor: default; }
+.stage-clap { margin: 0; text-align: center; font-size: 12px; line-height: 1.7; }
+
 .notice-board { display: grid; gap: 18px; }
 .notice-section { padding: 12px; border-radius: 14px; border: 2px solid var(--paper-edge, #e2cfa8); background: #fff; }
 .notice-section header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
