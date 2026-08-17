@@ -4,6 +4,7 @@ import { Play, Sparkles, Ticket } from "lucide-react";
 import { ThemeGame } from "../ThemeGame";
 import { signedLessonVideo } from "../../lib/rooms";
 import { awardThemeFragment, type ThemeTray } from "../../lib/collection";
+import { posterFor } from "../../lib/posters";
 
 // 戲院 → Studio, the one loop the whole product runs on.
 //
@@ -50,6 +51,19 @@ export function pastFilmsFrom(
   return out;
 }
 
+/**
+ * The theme's poster on its ticket.
+ *
+ * The lobby wall shows the same image cropped into Em's painted frames, which
+ * are much narrower than a poster; this is where a child actually chooses, so
+ * here it gets the whole picture.
+ */
+function TicketPoster({ themeId }: { themeId: string }) {
+  const art = posterFor(themeId);
+  if (!art) return null;
+  return <img className="ticket-poster" src={art} alt="" loading="lazy" />;
+}
+
 /** Ask the receptionist, pick a film. */
 export function BoxOfficePanel({ trays, past = [], childId }: {
   trays: ThemeTray[]; past?: PastFilm[]; childId: string;
@@ -88,6 +102,7 @@ export function BoxOfficePanel({ trays, past = [], childId }: {
                 onClick={() => hall("cinema-hall", tray.themeId)}
               >
                 <Ticket size={17} />
+                <TicketPoster themeId={tray.themeId} />
                 <strong>{tray.theme}</strong>
                 <small>{tray.words.join("・")}</small>
                 <em>{tray.earned} / 4 塊碎片</em>
@@ -111,6 +126,7 @@ export function BoxOfficePanel({ trays, past = [], childId }: {
                 className="ticket done"
                 onClick={() => hall("cinema-hall", tray.themeId)}
               >
+                <TicketPoster themeId={tray.themeId} />
                 <strong>{tray.theme}</strong>
                 <small>{tray.words.join("・")}</small>
                 <em>已砌成卡 ✓</em>
@@ -131,6 +147,7 @@ export function BoxOfficePanel({ trays, past = [], childId }: {
                 className="ticket past"
                 onClick={() => hall("cinema-hall-2", film.themeId)}
               >
+                <TicketPoster themeId={film.themeId} />
                 <strong>{film.theme}</strong>
                 <small>{film.words.join("・")}</small>
                 <em>重溫</em>

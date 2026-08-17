@@ -601,12 +601,10 @@ Buddy Cafe_夜_16x9.webp    1672 × 941
 | ⚠️ 位置 | **腳底要貼近圖片底邊** —— 下面留白會令佢浮喺半空 |
 | 放邊 | `public/assets/uploads/NPC/` |
 
-**先做呢幾隻：**
+**完整清單（12 隻，連職責同角色描述）搬咗去
+[`npc-and-vo-brief.md`](./npc-and-vo-brief.md)** —— 嗰份仲有埋 VO 錄音清單。
 
-1. `usher.webp` —— 戲院職員（**最急**，接待處而家空咗個位）
-2. `stall-card.webp` / `stall-child.webp` / `stall-pay.webp` /
-   `stall-lost.webp` / `stall-security.webp` —— 碼頭五個攤主
-3. 廣場閒人一兩隻做氣氛
+一句總結：`usher.webp`（戲院職員）最急，接待處而家空咗個位。
 
 **NPC prompt 範本：**
 

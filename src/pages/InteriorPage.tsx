@@ -6,6 +6,7 @@ import { WorldLoading } from "../components/WorldLoading";
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
 import { currentTrays, useCollection } from "../lib/collection";
+import { posterFor } from "../lib/posters";
 import { FRAGMENTS_PER_CARD, useRooms } from "../lib/rooms";
 import { useTownNews } from "../lib/townNews";
 import { useStickerWall } from "../lib/stickerStore";
@@ -118,8 +119,7 @@ export function InteriorPage() {
   // bug.
   function renderFrame(frame: InteriorFrame) {
     if (frame.kind === "marquee") {
-      const names = collection.trays.filter(tray => tray.status === "current")
-        .map(tray => tray.theme);
+      const names = wallTrays.map(tray => tray.theme);
       if (names.length === 0) return null;
       return <span className="marquee-text">本月上映 · {names.join("・")}</span>;
     }
@@ -128,8 +128,9 @@ export function InteriorPage() {
       // Poster 1, 2, 3 in the order the releases are configured, so the wall
       // does not reshuffle itself when a child finishes one.
       const index = Number(frame.id.split("-")[1]) - 1;
-      const tray = collection.trays.filter(t => t.status === "current")[index];
+      const tray = wallTrays[index];
       if (!tray) return null;
+      const art = posterFor(tray.themeId);
       return (
         <button
           type="button"
@@ -137,6 +138,7 @@ export function InteriorPage() {
           onClick={() => navigate(
             `/parent/children/${childId}/inside/cinema-hall?theme=${tray.themeId}`)}
         >
+          {art && <img src={art} alt="" loading="lazy" />}
           <span className="poster-name">{tray.theme}</span>
           <span className="poster-mark">{tray.owned ? "✓" : `${tray.earned}/4`}</span>
         </button>
