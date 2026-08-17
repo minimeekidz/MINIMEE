@@ -6,6 +6,7 @@ import { usePetFriends } from "../lib/petStore";
 import { useFullscreen } from "../lib/fullscreen";
 import { checkParentPin, openParentGate, parentGateOpen } from "../lib/parentGate";
 import { PetEncounter } from "./PetEncounter";
+import { babbleMuted, setBabbleMuted } from "../lib/babble";
 import {
   arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, prefersWide,
   ROOM_ZONE, START_ZONE, zoneAspect, zoneBackgroundLayers, ZONES,
@@ -115,6 +116,7 @@ export function GameWorld({
   const [moving, setMoving] = useState(false);
   const [fading, setFading] = useState(false);
   const [near, setNear] = useState<Hotspot | null>(null);
+  const [quiet, setQuiet] = useState(babbleMuted);
   // Sitting down. Em: 「公園長椅及野餐墊是可以有『坐下』的互動」. It is a
   // state rather than an animation because there is no sitting sprite yet —
   // the child stops where the seat is, the scene says what they can see from
@@ -524,6 +526,14 @@ export function GameWorld({
     <div className="world-hud">
       <span className="world-place">{zone.name}</span>
       <span className="world-time">{daytime ? "☀ 日頭" : "🌙 夜晚"}</span>
+      {/* 靜音. The whole town babbles, so one toggle covers every character —
+          and it is remembered, because a parent who turns it off on a bus
+          means it. */}
+      <button
+        className="world-exit ghost"
+        onClick={() => { setBabbleMuted(!quiet); setQuiet(!quiet); }}
+        aria-label={quiet ? "開返聲音" : "靜音"}
+      >{quiet ? "🔇" : "🔊"}</button>
       {fullscreen.supported && <button
         className="world-exit ghost"
         onClick={fullscreen.toggle}

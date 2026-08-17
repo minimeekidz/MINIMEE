@@ -1380,6 +1380,13 @@ footer div { display: flex; gap: 20px; }
 .board-words em { font-style: normal; font-size: clamp(7px, 1.3vw, 11px); font-weight: 800; opacity: .85; }
 
 .ticket.done, .ticket.past { opacity: .82; }
+
+/* 六歲以下建議家長陪同 —— 邀請，唔係警告。 */
+.theme-game-guardian {
+  margin: 0 0 10px; padding: 8px 12px; border-radius: 10px;
+  background: rgba(160,130,90,.14); color: var(--ink, #3a2a12);
+  font-size: 11px; font-weight: 800; line-height: 1.7; text-align: center;
+}
 .ticket-poster {
   display: block; width: 100%; max-width: 120px; aspect-ratio: 2 / 3;
   object-fit: cover; border-radius: 8px; margin: 4px auto 6px;
