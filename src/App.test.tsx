@@ -29,6 +29,8 @@ import { EVERYDAY_ACTS, STAGE_FESTIVALS, StagePanel } from "./components/interio
 import { TreatsPanel } from "./components/interior/RoomMoments";
 import { pastFilmsFrom } from "./components/interior/CinemaFlow";
 import { configProblem } from "./lib/supabase";
+import { posterFor } from "./lib/posters";
+import posterIndex from "./data/posterIndex.json";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 import {
   bandFor, buildRounds, clausesOf, difficultyFor, FAMILIES, GAME_MODES,
@@ -1437,6 +1439,30 @@ describe("MINIMEE route shells", () => {
       .toMatch(/https:\/\//);
     // Whitespace around a pasted secret is not a problem worth reporting.
     expect(configProblem({ url: " https://x.supabase.co ", publishableKey: " k " })).toBeNull();
+  });
+
+  it("has a poster on disk for every one of the 36 themes", () => {
+    // The lobby leaves a frame empty when a poster is missing, which is the
+    // right thing on screen and invisible in review — so the check lives here
+    // instead. Em ships all 36 up front; this is what notices when one does
+    // not make it out of the zip.
+    const book = themeBook as { themes: Array<{ themeId: string }> };
+    // posterIndex.json is written from the folder itself by
+    // scripts/index-posters.mjs, so this compares the catalogue against what
+    // actually shipped rather than against a hand-kept list.
+    const onDisk = new Set(posterIndex.themeIds);
+
+    for (const theme of book.themes) {
+      expect(posterFor(theme.themeId), theme.themeId)
+        .toBe(`/assets/posters/${theme.themeId}.webp`);
+      expect(onDisk.has(theme.themeId), `missing poster ${theme.themeId}`).toBe(true);
+    }
+    expect(onDisk.size).toBe(36);
+
+    // A theme id that is not one of the 36 asks for nothing rather than for a
+    // file called undefined.webp.
+    expect(posterFor(null)).toBeNull();
+    expect(posterFor("not-a-theme")).toBeNull();
   });
 
   it("builds the 珍藏館 as three stations, two portals and a carousel", () => {
