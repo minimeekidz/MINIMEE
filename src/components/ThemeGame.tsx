@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Sparkles, Timer, X } from "lucide-react";
 import { stickerFor } from "../lib/stickers";
 import {
-  FAMILIES, isCorrect, roundAt, ROUNDS_PER_THEME,
+  bandFor, FAMILIES, isCorrect, roundAt, ROUNDS_PER_THEME,
   type AgeBand, type Round, type ThemeGameSource,
 } from "../lib/games";
 
@@ -54,6 +54,16 @@ export function ThemeGame({ source, earned, age, plays, foreignWords, onComplete
 
   return (
     <section className="theme-game">
+      {/* 「如果六歲以下嘅小朋友未識認讀所有字詞的話，建議有家長陪同學習」.
+          Shown to the youngest band only, and worded as an invitation rather
+          than a warning — a 4-year-old who cannot read yet is not doing
+          anything wrong, and the parent is the missing piece rather than a
+          supervisor. */}
+      {bandFor(age) === "3-5" && (
+        <p className="theme-game-guardian">
+          呢個年齡建議家長陪住一齊玩 —— 幫佢讀出啲字，佢揀。
+        </p>
+      )}
       <header className="theme-game-head">
         <span className="theme-game-badge">{family.nameZh}</span>
         <small>{family.domain}</small>

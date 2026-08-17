@@ -5,6 +5,8 @@ import { ThemeGame } from "../ThemeGame";
 import { signedLessonVideo } from "../../lib/rooms";
 import { awardThemeFragment, type ThemeTray } from "../../lib/collection";
 import { posterFor } from "../../lib/posters";
+import { npcPortrait, speak } from "../../lib/babble";
+import { isDaytime } from "../../lib/world";
 
 // 戲院 → Studio, the one loop the whole product runs on.
 //
@@ -74,19 +76,27 @@ export function BoxOfficePanel({ trays, past = [], childId }: {
   const hall = (room: string, themeId: string) =>
     navigate(`/parent/children/${childId}/inside/${room}?theme=${themeId}`);
 
+  const greeting = showing.length > 0
+    ? "歡迎返嚟！你今日想睇邊一條學習影片呀？"
+    : "今期嘅片你都睇晒喇，好叻！想重溫舊片就入 2 號廳。";
+  // The usher babbles it. Nothing is recorded per line — the shape of the
+  // sentence is what plays, so changing this text changes the sound too.
+  useEffect(() => { void speak("usher", greeting); }, [greeting]);
+
   return (
     <div className="box-office">
       <div className="npc-line">
-        <img src="/assets/pets/usher.webp" alt="" onError={event => {
-          // The usher has no portrait yet. Hiding the image rather than
+        {/* Whoever is on shift. Em drew a 早更 and a 晚更 for every post, and
+            the world already knows which half of the day it is — so coming
+            back after dinner puts somebody else behind the desk. */}
+        <img src={npcPortrait("usher", isDaytime())} alt="" onError={event => {
+          // That shift has not been drawn yet. Hiding the image rather than
           // showing a broken one keeps the bubble looking deliberate.
           (event.currentTarget as HTMLImageElement).style.display = "none";
         }} />
         <p>
           <strong>戲院職員</strong>
-          {showing.length > 0
-            ? "歡迎返嚟！你今日想睇邊一條學習影片呀？"
-            : "今期嘅片你都睇晒喇，好叻！想重溫舊片就入 2 號廳。"}
+          {greeting}
         </p>
       </div>
 

@@ -30,6 +30,9 @@ import { TreatsPanel } from "./components/interior/RoomMoments";
 import { pastFilmsFrom } from "./components/interior/CinemaFlow";
 import { configProblem } from "./lib/supabase";
 import { posterFor } from "./lib/posters";
+import {
+  babbleFor, blipCount, NPC_POSTS, npcPortrait, SYLLABLES_PER_KIT,
+} from "./lib/babble";
 import posterIndex from "./data/posterIndex.json";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 import {
@@ -1439,6 +1442,50 @@ describe("MINIMEE route shells", () => {
       .toMatch(/https:\/\//);
     // Whitespace around a pasted secret is not a problem worth reporting.
     expect(configProblem({ url: " https://x.supabase.co ", publishableKey: " k " })).toBeNull();
+  });
+
+  it("shapes a character line into babble rather than recording it", () => {
+    // Em: 「完全不知道是什麼語言，只會用語氣音調語速快慢等等去演繹出來…
+    // 每一句講嘢嘅時候都剩係得幾聲語氣嘅聲音」. So a line is shaped, not
+    // recorded — which is the only reason 34 characters can each sound like
+    // themselves off two dozen clips.
+    expect(blipCount("好！")).toBe(3);                    // floor: shorter still reads as speech
+    expect(blipCount("歡迎返嚟！你今日想睇邊一條學習影片呀？")).toBeLessThanOrEqual(10);
+    // Punctuation is not spoken, so two lines of the same words babble alike.
+    expect(blipCount("你好嗎")).toBe(blipCount("你好嗎？？？"));
+
+    // The same character always sounds like the same character, and two
+    // different ones generally do not.
+    const a = babbleFor("milk-cat", "今日天氣好好呀");
+    expect(babbleFor("milk-cat", "今日天氣好好呀")).toEqual(a);
+    expect(babbleFor("usher", "今日天氣好好呀").pitch).not.toBe(a.pitch);
+
+    // Pitch stays in a range that reads as "another animal" rather than as a
+    // broken tape.
+    for (const id of ["usher", "milk-cat", "sun-sheep", "wave-penguin", "bun-hamster"]) {
+      const shape = babbleFor(id, "你好");
+      expect(shape.pitch, id).toBeGreaterThanOrEqual(0.85);
+      expect(shape.pitch, id).toBeLessThanOrEqual(1.18);
+      expect(shape.blips.every(index => index >= 0 && index < SYLLABLES_PER_KIT)).toBe(true);
+    }
+
+    // A question lifts at the end and an exclamation hurries — that is the
+    // whole of tone in a language nobody speaks.
+    expect(babbleFor("usher", "係咪呀？").rising).toBe(true);
+    expect(babbleFor("usher", "係咪呀。").rising).toBe(false);
+    expect(babbleFor("usher", "好嘢！").gap)
+      .toBeLessThan(babbleFor("usher", "好嘢。").gap);
+  });
+
+  it("changes who is behind the counter at dusk", () => {
+    // 「早更／晚更」 — Em drew two characters for each of the eight posts, and
+    // the world already knows which half of the day it is.
+    expect(NPC_POSTS).toHaveLength(8);
+    for (const post of NPC_POSTS) {
+      expect(npcPortrait(post, true)).toBe(`/assets/uploads/NPC/${post}-day.webp`);
+      expect(npcPortrait(post, false)).toBe(`/assets/uploads/NPC/${post}-night.webp`);
+    }
+    expect(npcPortrait("usher", true)).not.toBe(npcPortrait("usher", false));
   });
 
   it("has a poster on disk for every one of the 36 themes", () => {

@@ -7,6 +7,7 @@ import {
 import { profileFor, quizLine } from "../lib/petBible";
 import { actionVo } from "../data/petActionVo";
 import { eventLines, headlineEvent } from "../lib/petEvents";
+import { speak } from "../lib/babble";
 import {
   givePetCard, petQuizFor, recordQuiz, rollMystery, visitPet,
   type PetGiftCard, type PetQuiz,
@@ -61,6 +62,11 @@ export function PetEncounter({
   const context = useMemo(() => ({ petId: pet.id, childBirthday }), [pet.id, childBirthday]);
   const occasionLines = useMemo(() => eventLines(context), [context]);
   const headline = useMemo(() => headlineEvent(context), [context]);
+
+  // The pet says it out loud — as nonsense. Em: 「完全不知道是什麼語言，只會
+  // 用語氣音調語速快慢等等去演繹」. The words on screen stay real; the sound
+  // under them is the character, not the sentence.
+  useEffect(() => { if (bubble) void speak(pet.id, bubble); }, [bubble, pet.id]);
 
   const visited = (usedToday[`${pet.id}:visit`] ?? 0) > 0;
   // The demo has no card, so no server to enforce 「一日一點」 — and without
