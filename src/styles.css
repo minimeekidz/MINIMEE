@@ -1381,6 +1381,17 @@ footer div { display: flex; gap: 20px; }
 
 .ticket.done, .ticket.past { opacity: .82; }
 
+/* 閒人 —— 企定唔郁，撳到，冇任務。 */
+.world-npc.idle { cursor: pointer; background: none; border: 0; padding: 0; }
+.world-npc.idle img { image-rendering: auto; filter: drop-shadow(0 4px 0 rgba(13,16,32,.35)); }
+.world-npc.idle:active img { translate: 0 2px; }
+
+/* 房入面嘅職員頭像。 */
+.room-host { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.room-host img { width: 54px; height: 54px; object-fit: contain; object-position: bottom; }
+.room-host p { margin: 0; font-size: 12px; line-height: 1.7; }
+.room-host strong { display: block; font-size: 11px; opacity: .75; }
+
 /* 六歲以下建議家長陪同 —— 邀請，唔係警告。 */
 .theme-game-guardian {
   margin: 0 0 10px; padding: 8px 12px; border-radius: 10px;

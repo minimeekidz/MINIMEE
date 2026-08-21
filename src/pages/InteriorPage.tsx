@@ -24,7 +24,7 @@ import {
   AboutMePanel, FriendScanPanel, FriendsBookPanel, NoticeBoardPanel, UpdateCardPanel,
 } from "../components/interior/HomePanels";
 import {
-  PetNewsPanel, SeatPanel, SnacksPanel, SoonPanel, TreatsPanel,
+  PetNewsPanel, RoomHost, SeatPanel, SnacksPanel, SoonPanel, TreatsPanel,
 } from "../components/interior/RoomMoments";
 
 // One page for every building in the world.
@@ -227,7 +227,11 @@ export function InteriorPage() {
               game. One spot doing both meant a child sent out of the film to
               answer landed on a vocabulary list. */}
           {open.target === "current-words" && (
-            <CurrentWordsPanel rooms={rooms} childId={childId} backTo={interior.id} />
+            <>
+              <RoomHost post="studio-words" name="導師"
+                line="今期呢四個字，慢慢讀一次俾我聽？" />
+              <CurrentWordsPanel rooms={rooms} childId={childId} backTo={interior.id} />
+            </>
           )}
           {open.target === "theme-game" && (
             chosenTheme
@@ -247,7 +251,13 @@ export function InteriorPage() {
                   揀咗條片先。去戲院大堂接待處同職員講聲就得。
                 </p>
           )}
-          {open.target === "past-words" && <PastWordsPanel rooms={rooms} />}
+          {open.target === "past-words" && (
+            <>
+              <RoomHost post="librarian" name="管理員"
+                line="想搵返邊個主題？舊嘅字全部都收埋喺呢度。" />
+              <PastWordsPanel rooms={rooms} />
+            </>
+          )}
           {open.target === "tickets" && (
             <BoxOfficePanel trays={collection.trays} past={pastFilms} childId={childId!} />
           )}
@@ -276,7 +286,8 @@ export function InteriorPage() {
           {open.kind === "treat" && (
             open.target === "snacks"
               ? <SnacksPanel holding={holding} onEat={setHolding} />
-              : <TreatsPanel holding={holding} onEat={setHolding} />
+              : <TreatsPanel holding={holding} onEat={setHolding}
+                  host={{ post: "cafe", name: "店員", line: "今日想食啲乜？我啱啱焗好嘅。" }} />
           )}
           {open.kind === "soon" && <SoonPanel spot={open} />}
         </InteriorPanel>
