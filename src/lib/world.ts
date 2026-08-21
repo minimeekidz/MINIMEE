@@ -91,52 +91,49 @@ export interface Zone {
 }
 
 export const ZONES: Record<string, Zone> = {
-  // 小鎮中心 — the hub. Three doors (Buddy Café, Hero Studio, MEE 珍藏館) and
-  // two gates (碼頭市集, 小鎮廣場), which is exactly what the signpost in the
-  // art promises.
+  // 小鎮中心 — the hub, and the first thing anybody sees.
+  //
+  // Read off the art that actually ships. An earlier pass positioned five
+  // doors around a compass plaza, from art that was described in chat but
+  // never landed as a file — so every marker sat on scenery. This painting
+  // has three shopfronts up one climbing stone path, and that is what the
+  // hotspots now are.
+  //
+  // 戲院大堂 and 圖書館 are not on this street. They are reached from inside
+  // Hero Studio, which is where Em put their doors.
   "town-centre": {
     id: "town-centre",
     name: "小鎮中心",
     day: "/assets/world/town-centre-day.webp",
     night: "/assets/world/town-centre-night.webp",
     mask: "town-centre",
-    spawn: { x: 0.470, y: 0.760 },
-    // Five doors around one plaza, read off the art by the sign over each:
-    // marquee = cinema, star = studio, book = library, cup = cafe, card =
-    // album hall. Em's prose and her bullet list disagreed about which
-    // building sat where; the signs do not, so the signs win.
-    //
-    // 圖書館 and 戲院大堂 are reachable from Hero Studio as well. Em:
-    // 「只係小鎮中心都有多一個捷徑入口比佢地入去」— the town square is a
-    // shortcut into them, not a replacement for the studio's own doors.
+    spawn: { x: 0.450, y: 0.840 },
     hotspots: [
-      { id: "d-cinema", kind: "door", label: "戲院大堂", x: 0.200, y: 0.300, target: "cinema-lobby" },
-      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.500, y: 0.285, target: "studio" },
-      { id: "d-library", kind: "door", label: "MEE 圖書館", x: 0.790, y: 0.310, target: "library" },
-      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.210, y: 0.580, target: "cafe" },
-      { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.760, y: 0.600, target: "album-hall" },
-      { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.930, y: 0.105, target: "wharf-market" },
-      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.470, y: 0.980, target: "town-square" },
+      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.305, y: 0.270, target: "cafe" },
+      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.660, y: 0.505, target: "studio" },
+      { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.690, y: 0.855, target: "album-hall" },
+      { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.335, y: 0.130, target: "wharf-market" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.455, y: 0.980, target: "town-square" },
     ],
   },
 
   // 小鎮廣場 — where the pets gather, and where the notice board lives.
+  // Em's stage lives here too, on the raised round platform.
   "town-square": {
     id: "town-square",
     name: "小鎮廣場",
     day: "/assets/world/town-square-day.webp",
     night: "/assets/world/town-square-night.webp",
     mask: "town-square",
-    spawn: { x: 0.470, y: 0.860 },
-    // Em's new art (2026-08-16). The notice board moved to the middle of the
-    // square, and there is now a real stage in the upper left — 「如果有節慶／
-    // 活動時都可以係到有d野做下」. The arch on the right carries a little
-    // house sign, which is what makes it read as the way to 小屋區入口.
+    spawn: { x: 0.470, y: 0.840 },
+    // Read off the shipped painting: a big blank notice board across the
+    // top, a raised round wooden platform to its left that reads as a small
+    // stage, a stone arch on the right, and the road out at the bottom.
     hotspots: [
-      { id: "b-stage", kind: "stage", label: "小舞台", x: 0.270, y: 0.245, target: "stage" },
-      { id: "b-board", kind: "board", label: "公告板", x: 0.500, y: 0.470, target: "notice-board" },
-      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.790, y: 0.170, target: "village-gate" },
-      { id: "g-park", kind: "gate", label: "散步公園", x: 0.080, y: 0.550, target: "seaside-park" },
+      { id: "b-stage", kind: "stage", label: "小舞台", x: 0.355, y: 0.560, target: "stage" },
+      { id: "b-board", kind: "board", label: "公告板", x: 0.470, y: 0.455, target: "notice-board" },
+      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.845, y: 0.470, target: "village-gate" },
+      { id: "g-park", kind: "gate", label: "散步公園", x: 0.085, y: 0.600, target: "seaside-park" },
       { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.470, y: 0.980, target: "town-centre" },
     ],
   },
@@ -221,18 +218,18 @@ export const ZONES: Record<string, Zone> = {
     night: "/assets/world/wharf-market-night.webp",
     mask: "wharf-market",
     parentsOnly: true,
-    spawn: { x: 0.470, y: 0.870 },
-    // Read off Em's art (2026-08-16) by the sign over each stall: cards,
-    // a person, coins, umbrella-and-lock, and the harbour-master's booth
-    // with the megaphone. The old five sat in a huddle around the middle —
-    // 付款 and 失物 were 0.04 apart, close enough that a thumb could not
-    // choose between them.
+    spawn: { x: 0.470, y: 0.880 },
+    // Read off the shipped painting: a compass plaza with a stall on each
+    // side. Which stall is which comes from what is drawn on it — maps and
+    // card racks on the left, a striped market awning in the middle, the
+    // harbour-master's clock-and-wheel office on the right, a notice board
+    // beside it, and a quiet table under a parasol at the bottom.
     hotspots: [
-      { id: "s-card", kind: "stall", label: "管理自我介紹卡", x: 0.230, y: 0.360, target: "card-desk" },
-      { id: "s-lost", kind: "stall", label: "認領失物區", x: 0.770, y: 0.320, target: "lost" },
-      { id: "s-new-child", kind: "stall", label: "新增孩子檔案", x: 0.470, y: 0.550, target: "new-child" },
-      { id: "s-pay", kind: "stall", label: "付款訂閱", x: 0.780, y: 0.550, target: "harbour" },
-      { id: "s-security", kind: "stall", label: "保安", x: 0.480, y: 0.225, target: "security" },
+      { id: "s-card", kind: "stall", label: "管理自我介紹卡", x: 0.170, y: 0.545, target: "card-desk" },
+      { id: "s-new-child", kind: "stall", label: "新增孩子檔案", x: 0.435, y: 0.510, target: "new-child" },
+      { id: "s-security", kind: "stall", label: "保安", x: 0.760, y: 0.545, target: "security" },
+      { id: "s-lost", kind: "stall", label: "認領失物區", x: 0.880, y: 0.640, target: "lost" },
+      { id: "s-pay", kind: "stall", label: "付款訂閱", x: 0.830, y: 0.815, target: "harbour" },
       { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.470, y: 0.980, target: "town-centre" },
     ],
   },
