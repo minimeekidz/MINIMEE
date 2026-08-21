@@ -31,7 +31,9 @@ import { pastFilmsFrom } from "./components/interior/CinemaFlow";
 import { configProblem } from "./lib/supabase";
 import { posterFor } from "./lib/posters";
 import {
-  babbleFor, blipCount, NPC_POSTS, npcPortrait, SYLLABLES_PER_KIT,
+  AMBIENT_NPCS, ambientPortrait, babbleFor, blipCount, kitFor, NPC_POSTS,
+  npcPortrait, SYLLABLE_SHAPES, SYLLABLES_PER_KIT, VOICE_KIT_OVERRIDES,
+  VOICE_PRESETS,
 } from "./lib/babble";
 import posterIndex from "./data/posterIndex.json";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
@@ -1475,17 +1477,84 @@ describe("MINIMEE route shells", () => {
     expect(babbleFor("usher", "係咪呀。").rising).toBe(false);
     expect(babbleFor("usher", "好嘢！").gap)
       .toBeLessThan(babbleFor("usher", "好嘢。").gap);
+
+    // Nothing is recorded and nothing is fetched: the browser synthesises it,
+    // so every voice is a recipe rather than a folder of clips. Em asked for
+    // this after the first version wanted 24 recordings.
+    for (const kit of ["bright", "warm", "low", "soft"] as const) {
+      const preset = VOICE_PRESETS[kit];
+      expect(preset.baseHz, kit).toBeGreaterThan(150);
+      expect(preset.baseHz, kit).toBeLessThan(900);
+      expect(preset.duration, kit).toBeGreaterThan(0.05);
+      // Loud enough to hear over a room, quiet enough for a child's ear.
+      expect(preset.level, kit).toBeLessThanOrEqual(0.12);
+      // A low-pass on every voice, so the square and sawtooth kits do not
+      // come out harsh — the audience is four.
+      expect(preset.cutoffHz, kit).toBeLessThanOrEqual(4000);
+    }
+    // The four voices must actually differ, or casting them is theatre.
+    const bases = (["bright", "warm", "low", "soft"] as const)
+      .map(kit => VOICE_PRESETS[kit].baseHz);
+    expect(new Set(bases).size).toBe(4);
+
+    // Six syllable shapes, each a real pitch movement rather than a flat tone.
+    expect(SYLLABLE_SHAPES).toHaveLength(SYLLABLES_PER_KIT);
+    for (const shape of SYLLABLE_SHAPES) {
+      expect(shape.pitch).toBeGreaterThan(0.5);
+      expect(shape.pitch).toBeLessThan(2);
+      expect(shape.end).not.toBe(shape.pitch);
+    }
+
+    // Named staff are cast by hand rather than by hashing a costume, and the
+    // casting table only names posts that actually exist.
+    for (const id of Object.keys(VOICE_KIT_OVERRIDES)) {
+      const post = id.replace(/-(day|night)$/, "");
+      expect(NPC_POSTS as readonly string[], id).toContain(post);
+      expect(kitFor(id)).toBe(VOICE_KIT_OVERRIDES[id]);
+      // Every key is shift-specific, because the call sites pass a shift id —
+      // a bare post here would silently fall back to the hash.
+      expect(id, id).toMatch(/-(day|night)$/);
+    }
+    // 早更 and 晚更 are two different animals, so they must not share a voice.
+    for (const post of NPC_POSTS) {
+      const day = VOICE_KIT_OVERRIDES[`${post}-day`];
+      const night = VOICE_KIT_OVERRIDES[`${post}-night`];
+      if (day && night) expect(day, post).not.toBe(night);
+    }
   });
 
   it("changes who is behind the counter at dusk", () => {
-    // 「早更／晚更」 — Em drew two characters for each of the eight posts, and
-    // the world already knows which half of the day it is.
-    expect(NPC_POSTS).toHaveLength(8);
+    // 「早更／晚更」 — Em drew two characters for each staffed post, and the
+    // world already knows which half of the day it is.
+    expect(NPC_POSTS).toHaveLength(10);
+    expect(new Set(NPC_POSTS).size).toBe(NPC_POSTS.length);
     for (const post of NPC_POSTS) {
       expect(npcPortrait(post, true)).toBe(`/assets/uploads/NPC/${post}-day.webp`);
       expect(npcPortrait(post, false)).toBe(`/assets/uploads/NPC/${post}-night.webp`);
     }
     expect(npcPortrait("usher", true)).not.toBe(npcPortrait("usher", false));
+
+    // Hero Studio has two desks because the room has two functions, and Em
+    // drew a pair under each icon — a joystick over one, an "Aa" flashcard
+    // over the other.
+    expect(NPC_POSTS).toContain("studio-game");
+    expect(NPC_POSTS).toContain("studio-words");
+
+    // The idlers work differently: no shift, one file each, and every one of
+    // them stands in a zone that exists.
+    expect(AMBIENT_NPCS).toHaveLength(6);
+    for (const idler of AMBIENT_NPCS) {
+      expect(ZONES[idler.zone], idler.id).toBeDefined();
+      expect(isWalkable(ZONES[idler.zone], idler.x, idler.y), `${idler.id} off the path`).toBe(true);
+      expect(ambientPortrait(idler.id)).toBe(`/assets/uploads/NPC/idle-${idler.id}.webp`);
+    }
+    // And they do not pile on top of each other.
+    for (const a of AMBIENT_NPCS) {
+      for (const b of AMBIENT_NPCS) {
+        if (a.id >= b.id || a.zone !== b.zone) continue;
+        expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id}/${b.id}`).toBeGreaterThan(0.06);
+      }
+    }
   });
 
   it("has a poster on disk for every one of the 36 themes", () => {

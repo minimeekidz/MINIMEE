@@ -1,4 +1,7 @@
+import { useEffect } from "react";
 import { Sparkles } from "lucide-react";
+import { npcPortrait, speak } from "../../lib/babble";
+import { isDaytime } from "../../lib/world";
 import type { InteriorSpot } from "../../lib/interiors";
 import type { NewsItem } from "./HomePanels";
 
@@ -10,6 +13,31 @@ import type { NewsItem } from "./HomePanels";
 // handed out points for ordering a drink would be a shop, and a park bench
 // that paid for sitting would be a chore. What they give back is a line about
 // where you are, which is the whole reason a place feels like one.
+
+/**
+ * The staff member on duty, over a panel.
+ *
+ * Same rule as the usher: the portrait is chosen by shift, and a shift that
+ * has not been drawn hides itself rather than showing a broken image. The
+ * line is babbled, not read — see `babble.ts`.
+ */
+export function RoomHost({ post, name, line }: {
+  post: string; name: string; line: string;
+}) {
+  // The shift is part of the identity: 早更 and 晚更 are two different
+  // animals, so they are cast as two different voices. Passing the bare post
+  // here would quietly drop every hand-picked voice back to the hash.
+  const onDuty = `${post}-${isDaytime() ? "day" : "night"}`;
+  useEffect(() => { void speak(onDuty, line); }, [onDuty, line]);
+  return (
+    <div className="room-host">
+      <img src={npcPortrait(post, isDaytime())} alt="" onError={event => {
+        (event.currentTarget as HTMLImageElement).style.display = "none";
+      }} />
+      <p><strong>{name}</strong>{line}</p>
+    </div>
+  );
+}
 
 /** 坐低. Whatever the spot says you can see from there. */
 export function SeatPanel({ spot, holding }: {
@@ -62,9 +90,11 @@ export function SnacksPanel(props: { holding: string | null; onEat: (label: stri
     free="全部免費 —— 入場都唔使錢，何況爆谷。" />;
 }
 
-export function TreatsPanel({ holding, onEat, menu = TREATS, intro, free }: {
+export function TreatsPanel({ holding, onEat, menu = TREATS, intro, free, host }: {
   holding: string | null;
   onEat: (label: string) => void;
+  /** Whoever is behind this counter, when there is somebody. */
+  host?: { post: string; name: string; line: string };
   /** Which case this is. The café's cabinet by default, the cinema's counter
    *  when the lobby asks — same behaviour, different things drawn in it. */
   menu?: typeof TREATS;
@@ -75,6 +105,7 @@ export function TreatsPanel({ holding, onEat, menu = TREATS, intro, free }: {
 
   return (
     <div className="room-moment">
+      {host && <RoomHost post={host.post} name={host.name} line={host.line} />}
       {picked ? (
         <>
           <p className="treat-eaten"><span aria-hidden>{picked.emoji}</span></p>

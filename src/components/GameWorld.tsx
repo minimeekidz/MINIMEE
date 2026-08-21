@@ -6,7 +6,9 @@ import { usePetFriends } from "../lib/petStore";
 import { useFullscreen } from "../lib/fullscreen";
 import { checkParentPin, openParentGate, parentGateOpen } from "../lib/parentGate";
 import { PetEncounter } from "./PetEncounter";
-import { babbleMuted, setBabbleMuted } from "../lib/babble";
+import {
+  AMBIENT_NPCS, ambientPortrait, babbleMuted, IDLE_LINES, setBabbleMuted, speak,
+} from "../lib/babble";
 import {
   arrivalPoint, hotspotNear, isDaytime, isWalkable, nearestWalkable, prefersWide,
   ROOM_ZONE, START_ZONE, zoneAspect, zoneBackgroundLayers, ZONES,
@@ -117,6 +119,7 @@ export function GameWorld({
   const [fading, setFading] = useState(false);
   const [near, setNear] = useState<Hotspot | null>(null);
   const [quiet, setQuiet] = useState(babbleMuted);
+  const [chatter, setChatter] = useState<{ id: string; name: string; line: string } | null>(null);
   // Sitting down. Em: 「公園長椅及野餐墊是可以有『坐下』的互動」. It is a
   // state rather than an animation because there is no sitting sprite yet —
   // the child stops where the seat is, the scene says what they can see from
@@ -488,6 +491,35 @@ export function GameWorld({
         </div>
       ))}
 
+      {/* 閒人. They stand where Em put them and say a nothing when tapped —
+          no counter, no errand. A town where every character wants something
+          from you is a menu with fur on it. */}
+      {AMBIENT_NPCS.filter(idler => idler.zone === zone.id).map(idler => (
+        <button
+          key={idler.id}
+          className="world-npc idle"
+          style={{ ...place(idler.x, idler.y), zIndex: 3 + Math.round(idler.y * 100) }}
+          onClick={event => {
+            event.stopPropagation();
+            void speak(idler.id, IDLE_LINES[idler.id.length % IDLE_LINES.length]);
+            setChatter({ id: idler.id, name: idler.nameZh,
+              line: IDLE_LINES[idler.id.length % IDLE_LINES.length] });
+          }}
+        >
+          <img
+            src={ambientPortrait(idler.id)}
+            alt={idler.nameZh}
+            style={{ height: `${HERO_H * 0.9 * map.h}px` }}
+            onError={event => {
+              // Not drawn yet. Hiding the whole button rather than the image
+              // keeps an invisible tap target out of the square.
+              const button = (event.currentTarget as HTMLImageElement).closest("button");
+              if (button instanceof HTMLElement) button.style.display = "none";
+            }}
+          />
+        </button>
+      ))}
+
       {/* Each pet carries what it is daydreaming about. It is decoration, but
           it is the decoration that makes the town look inhabited rather than
           decorated with props. */}
@@ -576,6 +608,14 @@ export function GameWorld({
         <strong>{peek.label}</strong>
         <span>{peek.note}</span>
         <small>呢間屋暫時入唔到 · 撳一下收埋</small>
+      </button>
+    )}
+
+    {chatter && (
+      <button className="world-peek" onClick={() => setChatter(null)}>
+        <strong>{chatter.name}</strong>
+        <span>{chatter.line}</span>
+        <small>撳一下收埋</small>
       </button>
     )}
 

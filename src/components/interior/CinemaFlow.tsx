@@ -81,7 +81,10 @@ export function BoxOfficePanel({ trays, past = [], childId }: {
     : "今期嘅片你都睇晒喇，好叻！想重溫舊片就入 2 號廳。";
   // The usher babbles it. Nothing is recorded per line — the shape of the
   // sentence is what plays, so changing this text changes the sound too.
-  useEffect(() => { void speak("usher", greeting); }, [greeting]);
+  // Cast by shift, same as the portrait — the night usher is a different
+  // animal and has a voice of their own in the casting table.
+  const onDuty = `usher-${isDaytime() ? "day" : "night"}`;
+  useEffect(() => { void speak(onDuty, greeting); }, [onDuty, greeting]);
 
   return (
     <div className="box-office">

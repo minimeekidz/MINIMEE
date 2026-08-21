@@ -45,8 +45,12 @@ export const VOICE_KIT_OVERRIDES: Readonly<Record<string, VoiceKit>> = Object.fr
   "usher-night": "low",
   "librarian-day": "soft",
   "librarian-night": "warm",
-  "studio-day": "warm",
-  "studio-night": "bright",
+  "studio-game-day": "warm",
+  "studio-game-night": "bright",
+  "studio-words-day": "soft",
+  "studio-words-night": "low",
+  "cafe-day": "warm",
+  "cafe-night": "soft",
   "stall-card-day": "bright",
   "stall-card-night": "soft",
   "stall-child-day": "warm",
@@ -126,7 +130,7 @@ export function clipUrl(kit: VoiceKit, index: number): string {
 // ---------------------------------------------------------------------------
 // Free local playback
 
-interface VoicePreset {
+export interface VoicePreset {
   wave: OscillatorType;
   overtone: OscillatorType;
   baseHz: number;
@@ -136,7 +140,7 @@ interface VoicePreset {
   level: number;
 }
 
-const VOICE_PRESETS: Readonly<Record<VoiceKit, VoicePreset>> = Object.freeze({
+export const VOICE_PRESETS: Readonly<Record<VoiceKit, VoicePreset>> = Object.freeze({
   // Sparkly and alert — good for excitable, tiny or energetic characters.
   bright: { wave: "square", overtone: "sine", baseHz: 560, duration: 0.072, cutoffHz: 3300, overtoneMix: 0.22, level: 0.075 },
   // Rounded and friendly — the most conversational shop/studio voice.
@@ -147,7 +151,7 @@ const VOICE_PRESETS: Readonly<Record<VoiceKit, VoicePreset>> = Object.freeze({
   soft: { wave: "sine", overtone: "triangle", baseHz: 455, duration: 0.098, cutoffHz: 2100, overtoneMix: 0.16, level: 0.090 },
 });
 
-const SYLLABLE_SHAPES = Object.freeze([
+export const SYLLABLE_SHAPES = Object.freeze([
   { pitch: 1.00, end: 0.94, colour: 1.00 },
   { pitch: 1.13, end: 1.02, colour: 1.15 },
   { pitch: 0.91, end: 0.98, colour: 0.82 },
@@ -270,12 +274,53 @@ export async function speak(id: string, line: string): Promise<void> {
 // ---------------------------------------------------------------------------
 // NPC portraits
 
-/** The eight staffed posts, by the id used in filenames. */
+/**
+ * The staffed posts, by the id used in filenames. Each has a 早更 and a 晚更.
+ *
+ * Hero Studio is two posts rather than one, which is a reading of Em's own
+ * icons rather than an invention: the first pair she drew sits under a
+ * joystick (the game table) and the second under an "Aa" flashcard (the
+ * teaching board). The room has exactly those two functions, so it gets
+ * exactly those two desks.
+ */
 export const NPC_POSTS = [
-  "usher", "librarian", "studio", "stall-card",
-  "stall-child", "stall-pay", "stall-lost", "stall-security",
+  "usher", "librarian", "studio-game", "studio-words", "cafe",
+  "stall-card", "stall-child", "stall-pay", "stall-lost", "stall-security",
 ] as const;
 export type NpcPost = (typeof NPC_POSTS)[number];
+
+/**
+ * 閒人 — the ones who are not working.
+ *
+ * No shift and no counter: they stand where Em put them, they babble when
+ * tapped, and that is all they do. A town where every single character wants
+ * something from you is a menu with fur on it.
+ */
+export const AMBIENT_NPCS: Array<{
+  id: string; nameZh: string; zone: string; x: number; y: number;
+}> = [
+  { id: "deer", nameZh: "梅花鹿", zone: "town-square", x: 0.360, y: 0.560 },
+  { id: "koala", nameZh: "樹熊", zone: "town-square", x: 0.620, y: 0.520 },
+  { id: "frog", nameZh: "青蛙", zone: "town-square", x: 0.430, y: 0.720 },
+  { id: "ferret", nameZh: "雪貂", zone: "town-square", x: 0.560, y: 0.640 },
+  { id: "hamster", nameZh: "倉鼠", zone: "village-gate", x: 0.430, y: 0.600 },
+  { id: "guinea-pig", nameZh: "天竺鼠", zone: "village-gate", x: 0.585, y: 0.560 },
+];
+
+/** Where an idler's sprite lives. One file each — they do not change shift. */
+export function ambientPortrait(id: string): string {
+  return `/assets/uploads/NPC/idle-${id}.webp`;
+}
+
+/** A short nothing to say, picked from the id so it stays the same per idler. */
+export const IDLE_LINES = [
+  "今日天氣幾好喎。",
+  "你張卡儲到幾多張喇？",
+  "我啱啱睇完戲院嗰條新片。",
+  "呢度坐下幾舒服。",
+  "聽講廣場今晚有嘢玩。",
+  "嘿，你又嚟啦！",
+];
 
 /** Which portrait is on duty. */
 export function npcPortrait(post: NpcPost | string, daytime: boolean): string {
