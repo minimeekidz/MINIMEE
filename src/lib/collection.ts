@@ -75,6 +75,24 @@ export interface ThemeTray {
   vo: string;
   question: string;
   answerPattern: string;
+  /**
+   * The learning film, when one has been uploaded.
+   *
+   * It rides on the theme rather than on a room. The old model hung it off
+   * `room_lessons`, which is why the cinema could never find one: those rows
+   * were never linked to a theme, so every hall said 「呢條片仲未上載」 no
+   * matter what was in the bucket.
+   */
+  videoPath: string | null;
+}
+
+/** A theme that has rolled off the wall. 2 號廳's whole programme. */
+export interface PastTheme {
+  themeId: string;
+  theme: string;
+  words: string[];
+  videoPath: string | null;
+  retiredOn: string | null;
 }
 
 export interface Collection {
@@ -131,6 +149,7 @@ export function useCollection(kidCardId: string | null): Collection {
       vo: (row.vo as string) ?? "",
       question: (row.question as string) ?? "",
       answerPattern: (row.answer_pattern as string) ?? "",
+      videoPath: (row.video_path as string) ?? null,
     })));
     setLoading(false);
   }, [kidCardId]);
@@ -161,6 +180,31 @@ export function useCollection(kidCardId: string | null): Collection {
  */
 export function currentTrays(trays: ThemeTray[]): ThemeTray[] {
   return trays.filter(tray => tray.status === "current").slice(0, TRAY_SLOTS);
+}
+
+/**
+ * Themes that have rolled off the wall.
+ *
+ * Read from `theme_history()`, which is the retired half of the very table
+ * `rotate_themes` moves — so 2 號廳's programme and the month's rotation can
+ * never disagree. They keep their words and their film; what they lose is the
+ * ability to pay a fragment.
+ */
+export function usePastThemes(): PastTheme[] {
+  const [past, setPast] = useState<PastTheme[]>([]);
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.rpc("theme_history").then(({ data }) => {
+      setPast(((data ?? []) as Record<string, unknown>[]).map(row => ({
+        themeId: (row.theme_id as string) ?? "",
+        theme: (row.theme_name as string) ?? "",
+        words: Array.isArray(row.words) ? (row.words as string[]) : [],
+        videoPath: (row.video_path as string) ?? null,
+        retiredOn: (row.retired_on as string) ?? null,
+      })));
+    });
+  }, []);
+  return past;
 }
 
 /** Themes to a book. Three themes, each as a 普/閃 pair. */

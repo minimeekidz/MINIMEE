@@ -28,27 +28,33 @@ import { isDaytime } from "../../lib/world";
 // plays, harder each time.
 
 /** A film that is not one of this month's themes — 2 號廳's programme. */
-export interface PastFilm { themeId: string; theme: string; words: string[] }
+export interface PastFilm {
+  themeId: string; theme: string; words: string[]; videoPath?: string | null;
+}
 
 /**
- * Every film the child can watch, drawn from the two sources the cinema
- * actually has: the month's trays and the older lessons.
+ * Every film the child can watch that is not on this month's wall.
  *
  * 「無論是當月影片／過去的影片，所有影片都會在這邊選擇播放」— so the split is
  * by hall, not by whether something is offered at all. Anything on this
  * month's wall plays in 1 號廳; anything else plays in 2 號廳.
+ *
+ * The source is the retired half of `theme_releases`, the same table
+ * `rotate_themes` moves, so the rotation and the rewatch list can never
+ * disagree. It used to read `room_lessons` instead, whose rows were never
+ * linked to a theme — which is why 2 號廳 was always empty.
  */
 export function pastFilmsFrom(
-  lessons: Array<{ themeId: string | null; theme: string; words: string[] }>,
+  retired: Array<{ themeId: string; theme: string; words: string[]; videoPath?: string | null }>,
   trays: ThemeTray[],
 ): PastFilm[] {
   const current = new Set(trays.map(tray => tray.themeId));
   const seen = new Set<string>();
   const out: PastFilm[] = [];
-  for (const lesson of lessons) {
-    if (!lesson.themeId || current.has(lesson.themeId) || seen.has(lesson.themeId)) continue;
-    seen.add(lesson.themeId);
-    out.push({ themeId: lesson.themeId, theme: lesson.theme, words: lesson.words });
+  for (const theme of retired) {
+    if (!theme.themeId || current.has(theme.themeId) || seen.has(theme.themeId)) continue;
+    seen.add(theme.themeId);
+    out.push(theme);
   }
   return out;
 }

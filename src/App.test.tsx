@@ -1390,6 +1390,7 @@ describe("MINIMEE route shells", () => {
       words: ["小魚", "章魚", "鯊魚", "海龜"], status: "current" as const,
       earned, targetCode: "MEE-008", bookNo: 2, slotNo: 2, owned,
       mode: "make" as const, vo: "", question: "", answerPattern: "",
+      videoPath: null,
     });
 
     const ready = render(
@@ -1677,16 +1678,20 @@ describe("MINIMEE route shells", () => {
     ] as unknown as Parameters<typeof pastFilmsFrom>[1];
 
     const past = pastFilmsFrom([
-      { themeId: "t-01", theme: "交通工具", words: ["巴士"] },   // on the wall
-      { themeId: "t-09", theme: "農場", words: ["牛", "羊"] },   // older
-      { themeId: "t-09", theme: "農場", words: ["雞"] },         // same theme twice
-      { themeId: null, theme: "舊課文", words: ["占位"] },        // pre-catalogue
+      { themeId: "t-01", theme: "交通工具", words: ["巴士"], videoPath: "a.mp4" },
+      { themeId: "t-09", theme: "農場", words: ["牛", "羊"], videoPath: "b.mp4" },
+      { themeId: "t-09", theme: "農場", words: ["雞"], videoPath: "b.mp4" },
+      { themeId: "", theme: "壞資料", words: ["占位"], videoPath: null },
     ], trays);
 
     // One entry, deduped, and nothing this month leaks into the rewatch list.
     expect(past).toHaveLength(1);
     expect(past[0].themeId).toBe("t-09");
     expect(past.some(film => film.themeId === "t-01")).toBe(false);
+    // The film comes with it. 2 號廳 used to read `room_lessons`, whose rows
+    // were never linked to a theme — so the hall could never find a video and
+    // the rewatch list was always empty.
+    expect(past[0].videoPath).toBe("b.mp4");
   });
 
   it("gives 我的小屋 and Buddy Café the things Em put in them", () => {

@@ -5,7 +5,7 @@ import { InteriorPanel, InteriorScene } from "../components/InteriorScene";
 import { WorldLoading } from "../components/WorldLoading";
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
-import { currentTrays, useCollection } from "../lib/collection";
+import { currentTrays, useCollection, usePastThemes } from "../lib/collection";
 import { posterFor } from "../lib/posters";
 import { FRAGMENTS_PER_CARD, useRooms } from "../lib/rooms";
 import { useTownNews } from "../lib/townNews";
@@ -76,6 +76,7 @@ export function InteriorPage() {
   const { rooms } = useRooms(card?.id ?? null);
   const { news } = useTownNews();
   const wall = useStickerWall(card?.id ?? null);
+  const pastThemes = usePastThemes();
 
   if (!interior || !childId) {
     return <main className="interior-scene"><p className="panel-empty">搵唔到呢間房。</p></main>;
@@ -83,16 +84,7 @@ export function InteriorPage() {
 
   // Films that are not on this month's wall. 2 號廳's whole programme, and
   // the reason 「無論是當月影片／過去的影片」 is a promise the lobby can keep.
-  const pastFilms = pastFilmsFrom(
-    rooms.flatMap(room => room.lesson
-      ? [{
-          themeId: room.lesson.themeId,
-          theme: room.lesson.theme,
-          words: room.lesson.words.map(word => word.word),
-        }]
-      : []),
-    collection.trays,
-  );
+  const pastFilms = pastFilmsFrom(pastThemes, collection.trays);
   // The film this hall is showing: a tray in 1 號廳, an older lesson in 2 號廳.
   const past = pastFilms.find(film => film.themeId === chosenTheme);
   const showing = collection.trays.find(tray => tray.themeId === chosenTheme)
@@ -100,6 +92,7 @@ export function InteriorPage() {
       traySlot: 0, themeId: past.themeId, theme: past.theme, words: past.words,
       status: "carryover" as const, earned: 4, targetCode: "", bookNo: 0, slotNo: 0,
       owned: true, mode: "sentence" as const, vo: "", question: "", answerPattern: "",
+      videoPath: past.videoPath ?? null,
     } : null);
 
   // The three stations on the 拼合室 wall: this month's themes, in their
@@ -265,7 +258,7 @@ export function InteriorPage() {
             <ScreeningPanel
               tray={showing}
               childId={childId!}
-              videoPath={rooms.find(room => room.lesson?.themeId === chosenTheme)?.lesson?.videoPath ?? null}
+              videoPath={showing?.videoPath ?? null}
               // 2 號廳 only ever replays, and so does a theme already forged.
               rewatch={roomId === "cinema-hall-2" || Boolean(showing?.owned)}
             />
