@@ -1,0 +1,578 @@
+/* =====================================================================
+   MINIMEE — the RPG skin.
+
+   Em: 「全站layout大改版，RPG遊戲風格，統一風格，web design 要更用心！！」,
+   pointing at docs/design-reference/minime-profile-landing.png.
+
+   That picture already had a home in this codebase: 我的小屋 was built to it,
+   and everything it needs — cut paper, notebook rings, masking tape, wooden
+   buttons, a plank of a nav bar — lives under `.scrapbook-page` where it
+   cannot reach the rest of the site. So the parent dashboard, the public
+   pages and the admin console were still a violet SaaS product sitting behind
+   a wooden door, and walking from one to the other felt like leaving.
+
+   This file promotes that vocabulary to the whole product. It is a skin, not
+   a rewrite: the spec Em wrote says 「Keep the existing MINIMEE architecture.
+   Do not rebuild the site from scratch」, and almost every page here is built
+   from the same dozen class names, so restyling those restyles all of it.
+   Nothing below changes a route, a component or a query.
+
+   Loaded after styles.css, so it wins on equal specificity without !important.
+   ===================================================================== */
+
+:root {
+  /* The palette, read off the reference image. */
+  --wood-deep: #3d2817;
+  --wood: #6b4a2c;
+  --wood-light: #8a6b45;
+  --wood-edge: #a5825a;
+  --paper-cream: #fdf6e6;
+  --paper-warm: #f6e8cd;
+  --paper-edge: #e2cfa8;
+  --ink-warm: #4a3826;
+  --ink-soft: #8a7458;
+  --tape: rgba(233, 199, 138, .78);
+  --ribbon: #e08aa4;
+  --ribbon-dark: #b9607c;
+  --gold: #e6b64c;
+  --gold-dark: #a97d22;
+  --leaf: #6f9c5a;
+
+  /* The old names still resolve, so nothing that was not restyled breaks —
+     it just stops being violet. */
+  --ink: var(--ink-warm);
+  --muted: var(--ink-soft);
+  --violet: var(--wood);
+  --violet-dark: var(--wood-deep);
+  --lavender: var(--paper-warm);
+  --line: var(--paper-edge);
+  --paper: var(--paper-cream);
+  --brand-gold: var(--gold);
+  --shadow: 0 12px 30px rgba(40, 28, 16, .3);
+
+  color: var(--ink-warm);
+  background: var(--wood-deep);
+}
+
+/* The wood the whole product sits on. Three gradients rather than an image:
+   it costs nothing to download, and it tiles at any size. */
+body {
+  color: var(--ink-warm);
+  background-color: var(--wood-deep);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.13) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(90deg, rgba(255,225,180,.05) 0 1px, transparent 1px 27px),
+    linear-gradient(180deg, #4a3120, #2f1f13);
+  background-attachment: fixed;
+}
+
+p { color: var(--ink-soft); }
+
+/* --- the pieces every page is made of ------------------------------- */
+
+/* A wooden button with a lip under it, so it reads as a thing you press. */
+.button,
+.tape-button,
+.danger-button,
+.round-button {
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.button {
+  min-height: 46px;
+  padding: 0 22px;
+  border: 3px solid var(--wood);
+  background: linear-gradient(180deg, var(--gold) 0%, #d29a2f 100%);
+  color: #4a3010;
+  box-shadow: 0 4px 0 var(--gold-dark), 0 8px 16px rgba(40,28,16,.32);
+  text-shadow: 0 1px 0 rgba(255,240,200,.5);
+}
+.button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f2c765 0%, #dda63a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--gold-dark), 0 10px 18px rgba(40,28,16,.34);
+}
+.button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--gold-dark);
+}
+.button.secondary,
+.button.ghost {
+  background: linear-gradient(180deg, var(--paper-cream), var(--paper-warm));
+  color: var(--ink-warm);
+  box-shadow: 0 4px 0 rgba(120,94,60,.5), 0 8px 14px rgba(40,28,16,.24);
+  text-shadow: none;
+}
+.button.secondary:hover:not(:disabled),
+.button.ghost:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fffbf0, var(--paper-cream));
+}
+.button.small { min-height: 40px; padding: 0 17px; font-size: 13px; }
+.danger-button {
+  min-height: 44px; padding: 0 20px; border: 3px solid #7a3326;
+  background: linear-gradient(180deg, #d4614c, #b04434); color: #fff;
+  box-shadow: 0 4px 0 #7a3326;
+}
+
+/* A carved-out circle, like the two in the corners of Em's mock. */
+.icon-button {
+  width: 46px; height: 46px;
+  border: 3px solid var(--wood);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--paper-cream), var(--paper-warm));
+  color: var(--ink-warm);
+  box-shadow: 0 3px 0 rgba(120,94,60,.5);
+}
+.avatar {
+  border: 3px solid var(--wood);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--ribbon), var(--ribbon-dark));
+  color: #fff;
+  box-shadow: 0 3px 0 rgba(120,60,80,.45);
+}
+
+/* Labels are masking tape, not uppercase micro-copy on white. */
+.demo-badge, .eyebrow {
+  color: var(--ink-warm);
+  letter-spacing: .1em;
+}
+.demo-badge {
+  border: 0;
+  border-radius: 3px;
+  background: var(--tape);
+  box-shadow: 0 2px 0 rgba(150,115,60,.35);
+  transform: rotate(-1.2deg);
+}
+.status-pill {
+  border: 2px solid var(--paper-edge);
+  background: var(--paper-cream);
+  color: var(--ink-warm);
+  font-weight: 900;
+}
+.status-pill.green { border-color: #a9c79a; background: #eaf5e2; color: #35602a; }
+.status-pill.gold  { border-color: var(--gold); background: #fdf1d3; color: #7a5410; }
+.status-pill.blue  { border-color: #9dbfd6; background: #e6f2f9; color: #1d566f; }
+.status-pill.violet{ border-color: var(--paper-edge); background: var(--paper-warm); color: var(--ink-warm); }
+
+.brand { color: var(--paper-cream); }
+.brand-mark {
+  border-radius: 10px 10px 10px 3px;
+  border: 2px solid var(--wood-deep);
+  background: linear-gradient(180deg, var(--gold), #cf9a2c);
+  color: #4a3010;
+  box-shadow: 3px 3px 0 var(--wood-deep);
+}
+
+/* --- a sheet of notebook paper --------------------------------------
+   The one shape the whole reference image is built from: cut cream paper,
+   an irregular radius so no two corners match, a soft inner glow so the
+   surface is not flat, and ring holes punched down the left edge. */
+.auth-card,
+.setup-card,
+.checkout-card,
+.confirm-card,
+.state-card,
+.feature-card,
+.service-card,
+.section-block,
+.admin-block,
+.example-card,
+.child-friend-card,
+.subscription-state-card,
+.lost-public-card,
+.parent-pin-card,
+.integration-notice,
+.steps-grid article,
+.pricing-grid article,
+.metric-grid article,
+.service-story-grid article,
+.journey-list > div,
+.privacy-list article,
+.notification-list article,
+.album-grid article,
+.faq-list article,
+.kid-block {
+  position: relative;
+  border: 3px solid var(--paper-edge);
+  border-radius: 16px 20px 16px 22px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 40%),
+    var(--paper-cream);
+  color: var(--ink-warm);
+  box-shadow: 0 10px 22px rgba(40,28,16,.3), inset 0 0 0 5px rgba(255,255,255,.45);
+}
+.auth-card::before,
+.setup-card::before,
+.section-block::before,
+.admin-block::before,
+.kid-block::before {
+  content: ""; position: absolute; left: 9px; top: 20px; bottom: 20px; width: 8px;
+  background-image: radial-gradient(circle, rgba(120,94,60,.3) 42%, transparent 44%);
+  background-size: 8px 26px; background-repeat: repeat-y;
+  pointer-events: none;
+}
+.auth-card, .setup-card, .section-block, .admin-block, .kid-block { padding-left: 30px; }
+
+.state-card { border-style: dashed; background: rgba(253,246,230,.7); }
+.state-card strong, .feature-card strong { color: var(--ink-warm); }
+
+.feature-card, .service-card {
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.feature-card:hover, .service-card:hover {
+  transform: translateY(-3px) rotate(-.35deg);
+  box-shadow: 0 16px 28px rgba(40,28,16,.36), inset 0 0 0 5px rgba(255,255,255,.45);
+}
+.feature-icon {
+  border: 2px solid var(--paper-edge);
+  border-radius: 12px;
+  background: var(--paper-warm);
+  color: var(--wood);
+}
+
+/* Section headings become the wooden tab from the mock. */
+.section-block > h2:first-child,
+.admin-block > h2:first-child,
+.block-heading > h2,
+.section-heading > h2 {
+  display: inline-block;
+  margin-left: -6px;
+  padding: 5px 16px 5px 13px;
+  border-radius: 6px 13px 13px 6px;
+  background: linear-gradient(180deg, var(--wood-light), var(--wood));
+  color: #fff5e0;
+  font-size: 19px;
+  box-shadow: 0 3px 0 rgba(60,40,22,.42);
+  text-shadow: 0 1px 0 rgba(0,0,0,.28);
+}
+
+/* --- the parent and admin shell -------------------------------------- */
+
+.dashboard-shell { background: transparent; }
+
+/* A hanging wooden signboard rather than a dark sidebar. */
+.side-nav {
+  margin: 12px 0 12px 12px;
+  border: 4px solid var(--wood-deep);
+  border-radius: 18px;
+  height: calc(100vh - 24px);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.1) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #7a5533, #4e341d);
+  color: #ffeccd;
+  box-shadow: 0 14px 30px rgba(20,12,6,.5), inset 0 0 0 2px rgba(255,220,170,.13);
+}
+.surface-label { color: var(--gold); }
+.side-nav nav a {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  color: #eddcc0;
+  font-weight: 800;
+}
+.side-nav nav a:hover, .side-nav nav a.active {
+  border-color: var(--wood-edge);
+  background: linear-gradient(180deg, rgba(255,225,175,.24), rgba(255,225,175,.1));
+  color: #fff;
+}
+.secure-note { color: #e2ceac; }
+
+/* The working area is one big sheet of parchment on the wood. */
+.dashboard-main {
+  margin: 12px;
+  padding: 22px;
+  border: 4px solid var(--wood);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(255,255,255,.5), transparent 55%),
+    var(--paper-warm);
+  box-shadow: 0 16px 34px rgba(20,12,6,.42), inset 0 0 0 4px rgba(255,255,255,.4);
+}
+
+/* The page title on a ribbon, the way the child's name is in the mock. */
+.dashboard-header h1 {
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 7px 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--ribbon), var(--ribbon-dark));
+  color: #fff;
+  font-size: 24px;
+  box-shadow: 0 4px 0 rgba(120,60,80,.42);
+  text-shadow: 0 1px 0 rgba(0,0,0,.2);
+}
+
+/* --- the public pages ------------------------------------------------- */
+
+.public-page { background: transparent; }
+.public-header { color: var(--paper-cream); }
+.public-header nav { color: #e6d5b8; }
+.public-header nav a.active { color: var(--gold); }
+.hero-copy h1 { color: var(--paper-cream); letter-spacing: -.03em; text-shadow: 0 3px 0 rgba(30,18,10,.45); }
+.hero-copy h1 em { color: var(--gold); }
+.hero-copy > p { color: #e8d9bd; }
+.text-link { color: var(--gold); }
+.trust-row { color: #dcc9a8; }
+.trust-row svg { color: var(--gold); }
+.world-card {
+  border: 5px solid var(--wood);
+  border-radius: 26px;
+  box-shadow: 0 18px 40px rgba(20,12,6,.55);
+}
+.floating-card {
+  border: 3px solid var(--wood);
+  border-radius: 12px;
+  background: var(--paper-cream);
+  backdrop-filter: none;
+  color: var(--ink-warm);
+  box-shadow: 0 6px 0 rgba(120,94,60,.4);
+}
+.steps-section { background: transparent; }
+
+/* Anything sitting straight on the wood has to be cream, or it disappears.
+   This bit the pricing page first: a 60px heading in --ink on a dark plank is
+   invisible, and a heading you cannot read is worse than no heading. */
+.public-page > .content-page > h1,
+.public-page > .content-page > h2,
+.public-page > .content-page > p,
+.public-page > .content-page > .lead,
+.section-heading h2,
+.section-heading p,
+.steps-section > .section-heading p {
+  color: #fff5e0;
+}
+.public-page > .content-page > h1 { text-shadow: 0 3px 0 rgba(30,18,10,.45); }
+.public-page > .content-page > p,
+.public-page > .content-page > .lead,
+.section-heading p { color: #e0cfb0; }
+
+/* …and anything on paper stays warm brown. */
+.steps-grid article p, .pricing-grid article p, .faq-list p,
+.pricing-grid li, .faq-list summary { color: var(--ink-soft); }
+.pricing-grid h3, .faq-list summary, .steps-grid article strong { color: var(--ink-warm); }
+.steps-grid article > span { color: var(--wood); }
+
+/* Plans keep their art bleeding to the edge, so the ring holes would fall on
+   a photograph. They get the frame without the binding. */
+.pricing-grid article { overflow: hidden; }
+.pricing-grid article.featured {
+  border-color: var(--gold);
+  box-shadow: 0 16px 30px rgba(20,12,6,.45), inset 0 0 0 5px rgba(255,255,255,.45);
+}
+.faq-list details {
+  border: 3px solid var(--paper-edge); border-radius: 16px 20px 16px 22px;
+  background: var(--paper-cream);
+  box-shadow: 0 10px 22px rgba(40,28,16,.3), inset 0 0 0 5px rgba(255,255,255,.45);
+}
+.block-heading > a { color: var(--wood); }
+
+/* --- tables ----------------------------------------------------------- */
+
+.admin-table { border-radius: 14px; overflow: hidden; border: 3px solid var(--paper-edge); }
+.admin-table-head {
+  background: linear-gradient(180deg, var(--wood-light), var(--wood));
+  color: #fff5e0; font-weight: 900;
+}
+.admin-table-row { background: var(--paper-cream); color: var(--ink-warm); }
+.admin-table-row:nth-child(even) { background: var(--paper-warm); }
+
+/* --- forms ------------------------------------------------------------ */
+
+input, select, textarea {
+  border: 3px solid var(--paper-edge) !important;
+  border-radius: 12px !important;
+  background: #fffdf6 !important;
+  color: var(--ink-warm) !important;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(230,182,76,.32);
+}
+label { color: var(--ink-warm); }
+
+/* --- the bottom plank ------------------------------------------------- */
+/* Em's mock ends in a wooden nav bar with five chunky chips. The dock
+   already existed for 我的小屋; this makes it look like the drawing and gives
+   it to the rest of the app. */
+
+.scrapbook-dock {
+  gap: 6px;
+  border-top: 4px solid var(--wood-edge);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg, #7a5533 0%, #4a3120 100%);
+  box-shadow: 0 -8px 22px rgba(20,12,6,.45);
+}
+.dock-item {
+  padding: 6px 10px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  color: #ffeccd;
+}
+.dock-item:hover, .dock-item.active {
+  border-color: var(--wood-edge);
+  background: linear-gradient(180deg, rgba(255,228,180,.26), rgba(255,228,180,.08));
+}
+
+/* --- small screens ---------------------------------------------------- */
+
+@media (max-width: 899px) {
+  .side-nav { margin: 0; border-radius: 0; border-width: 0 0 4px 0; height: auto; }
+  .dashboard-main { margin: 8px; padding: 14px; border-radius: 16px; }
+  .dashboard-header h1 { font-size: 19px; padding: 6px 16px; }
+  .section-block > h2:first-child,
+  .admin-block > h2:first-child,
+  .block-heading > h2,
+  .section-heading > h2 { font-size: 16px; }
+}
+
+/* A child may have asked for less motion, and a page of paper that lifts and
+   tilts on every hover is exactly what that setting is for. */
+@media (prefers-reduced-motion: reduce) {
+  .button, .feature-card, .service-card { transition: none; }
+  .button:hover:not(:disabled),
+  .feature-card:hover, .service-card:hover { transform: none; }
+}
+
+/* --- page grounds ----------------------------------------------------
+   A few pages painted their own background before there was a wood to sit
+   on. They keep their layout and lose the lavender. */
+
+.auth-page,
+.dashboard-shell,
+.parent-pin-page,
+.lost-public-page,
+.setup-page {
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.13) 0 2px, transparent 2px 5px),
+    linear-gradient(180deg, #4a3120, #2f1f13);
+}
+.auth-page .brand, .auth-page .brand span { color: var(--paper-cream); }
+.auth-card { width: min(460px, 100%); padding: 34px 34px 34px 42px; }
+.auth-card h1 { color: var(--ink-warm); }
+.auth-card a, .auth-links a { color: var(--wood); font-weight: 800; }
+.lost-safe-icon { border: 2px solid var(--paper-edge); background: var(--paper-warm); color: var(--wood); }
+
+/* The plans sit on a cream table; give the table an edge so it reads as a
+   piece of furniture rather than a stray highlight. */
+.pricing-showcase {
+  border: 4px solid var(--wood);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255,255,255,.6), transparent 45%),
+    var(--paper-warm);
+  box-shadow: 0 16px 34px rgba(20,12,6,.42), inset 0 0 0 4px rgba(255,255,255,.4);
+}
+.pricing-note { color: var(--ink-soft); }
+
+/* 首頁 —— the one page a child lands on first. It had the shape already;
+   this gives it the wood, the rings and the gold. */
+.game-home { background: var(--wood-deep); }
+.game-home-paper {
+  padding-left: 30px;
+  border: 5px solid var(--wood);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 34%),
+    var(--paper-cream);
+  box-shadow: 0 18px 0 rgba(20,12,6,.35), 0 24px 44px rgba(20,12,6,.5),
+              inset 0 0 0 5px rgba(255,255,255,.45);
+}
+.game-home-paper::before {
+  content: ""; position: absolute; left: 11px; top: 26px; bottom: 26px; width: 8px;
+  background-image: radial-gradient(circle, rgba(120,94,60,.3) 42%, transparent 44%);
+  background-size: 8px 28px; background-repeat: repeat-y;
+  pointer-events: none;
+}
+.game-home-title h1 { color: var(--wood-deep); text-shadow: 2px 2px 0 rgba(230,182,76,.55); }
+.game-home-tape { background: var(--tape); border-color: rgba(120,94,60,.3); }
+.game-home-start {
+  border-color: var(--wood);
+  background: linear-gradient(180deg, var(--gold), #d29a2f);
+  color: #4a3010;
+  box-shadow: 0 7px 0 var(--gold-dark);
+}
+.game-home-place, .game-home-card { border-color: var(--wood); background: var(--paper-cream); }
+.game-home-tab { border-color: var(--wood); background: var(--paper-warm); color: var(--ink-warm); }
+.game-home-foot { border-top-color: var(--paper-edge); }
+.game-home-foot a { color: var(--wood); font-weight: 800; }
+
+/* --- last details ----------------------------------------------------- */
+
+/* Two buttons pushed to opposite ends of a wide sheet read as unrelated.
+   They are a pair — primary then secondary — so they sit together. */
+.subscription-actions { justify-content: flex-start; flex-wrap: wrap; }
+
+.integration-notice { border-color: var(--paper-edge); }
+.integration-notice svg { color: var(--wood); }
+
+/* Real paper is not a flat fill. Two nearly-invisible washes give it a grain
+   that shows up on a phone screen at arm's length and never gets in the way
+   of the text. */
+.auth-card, .setup-card, .section-block, .admin-block, .kid-block,
+.feature-card, .service-card, .state-card, .checkout-card, .confirm-card,
+.steps-grid article, .faq-list details, .game-home-paper, .dashboard-main {
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 38%),
+    repeating-linear-gradient(0deg, rgba(150,120,80,.045) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(150,120,80,.035) 0 1px, transparent 1px 4px);
+  background-color: var(--paper-cream);
+}
+.dashboard-main { background-color: var(--paper-warm); }
+
+/* The home page's binding was running the full height of a very tall sheet,
+   which reads as a decorative stripe rather than as rings. Rings belong at
+   the top, where a real notebook's are. */
+.game-home-paper::before { bottom: auto; height: 210px; }
+
+/* The town behind the front page was blurred nearly to a colour wash. It is
+   the first thing anybody sees of the product — let it be a place. */
+.game-home-sky { filter: blur(3px) brightness(.62) saturate(1.12); }
+
+/* --- two layout bugs the skin made visible ----------------------------- */
+
+/* 最愛 slots were sized by the artwork rather than by the column. A grid
+   item's automatic minimum is its content, so a 512px sticker pushed its own
+   slot to 215px inside a 174px column and then `aspect-ratio: 1` made it
+   279px tall — one favourite as big as the other three together. */
+/* `aspect-ratio` loses to an element's automatic minimum size, so a square
+   frame around a 512px sticker was neither square nor 174px — it was 166 by
+   215, and one favourite came out as tall as the other three together. Taking
+   the artwork out of the flow is what actually pins the frame. */
+.favourite-slot { min-width: 0; }
+.favourite-art {
+  position: relative; display: block; width: 100%; min-width: 0;
+  aspect-ratio: 1; overflow: hidden;
+}
+.favourite-art img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+}
+.favourite-art.wordonly { aspect-ratio: auto; display: grid; place-items: center; }
+
+/* The pet in the corner of the speech bubble sat on the last few characters
+   of what the child said. It keeps its corner; the words get the room. */
+.hero-bubble { padding-right: 58px; }
+.hero-companion { width: 46px; right: 4px; bottom: -12px; }
+
+/* The hero card was translucent, so on a dark scene the middle of it went
+   black behind the child's own portrait. Paper is paper. */
+.profile-hero {
+  border: 3px solid var(--paper-edge);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 40%),
+    var(--paper-cream);
+  box-shadow: 0 12px 26px rgba(40,28,16,.38), inset 0 0 0 5px rgba(255,255,255,.45);
+}
+
+/* Photo-led cards keep the artwork bleeding to the frame, so no ring holes
+   and no inner glow over the picture. */
+.service-story-grid article, .album-grid article, .pricing-grid article {
+  overflow: hidden;
+}
+.service-story-grid article > div { background: transparent; }
+.service-story-grid h2, .journey-list p { color: var(--ink-warm); }
+.service-story-grid p { color: var(--ink-soft); }
+.service-story-grid span, .journey-list span { color: var(--wood); }
+.journey-list > div { padding: 12px 16px; }
