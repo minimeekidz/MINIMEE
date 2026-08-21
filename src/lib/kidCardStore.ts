@@ -286,6 +286,19 @@ export async function saveCard(card: EditableCard): Promise<{ ok: boolean; error
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+/**
+ * 換造型. The wardrobe in 我的小屋 writes one column.
+ *
+ * Separate from `saveCard` because the child is doing this, not the parent:
+ * the editor form sends the whole card and would happily overwrite a tagline
+ * the parent is halfway through writing on another tab.
+ */
+export async function setHero(cardId: string, heroId: string): Promise<{ ok: boolean }> {
+  if (!supabase) return { ok: false };
+  const { error } = await supabase.from("kid_cards").update({ hero_id: heroId }).eq("id", cardId);
+  return { ok: !error };
+}
+
 export async function setPublished(cardId: string, published: boolean): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "Supabase is not configured" };
   const { error } = await supabase

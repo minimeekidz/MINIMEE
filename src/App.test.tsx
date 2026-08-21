@@ -15,6 +15,8 @@ import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
 import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
+import { qrMatrix, qrPath } from "./lib/qr";
+import { cardLink, slugFromScan } from "./lib/friends";
 import {
   booksFrom, BOOKS, CARDS_PER_BOOK, SPECIAL_COVERS, specialCards, themeProgress,
   THEME_BOOKS, THEME_SLOTS, TRAY_SLOTS, type CollectedCard,
@@ -1700,13 +1702,14 @@ describe("MINIMEE route shells", () => {
     const targets = (interior: typeof home) => interior.spots.map(spot => spot.target);
 
     // 「裡面會有小朋友更改自我介紹卡的貼紙功能、更改角色造型（之後開放的新
-    // 功能）、我的好友冊、檢視我的卡片」 — four things, and the fourth is
-    // marked as not built rather than quietly missing.
+    // 功能）、我的好友冊、檢視我的卡片」 — four things, and all four open
+    // now. 造型 was Em's own 「之後開放」 and is the wardrobe: it changes which
+    // of the six heroes walks the town, which is the part that could be built
+    // out of art that exists.
     expect(targets(home)).toEqual(
       expect.arrayContaining(["update-card", "about-me", "friends", "looks"]));
     const looks = home.spots.find(spot => spot.target === "looks")!;
-    expect(looks.kind).toBe("soon");
-    expect(looks.note).toBeTruthy();
+    expect(looks.kind).toBe("panel");
 
     // 「這間 cafe 主要的功能有 2 樣」 — the code swap and the pet news. Both
     // are real panels, not seats.
@@ -2103,5 +2106,72 @@ describe("MINIMEE route shells", () => {
   it("tells the child the four are done rather than offering a fifth round", () => {
     render(<ThemeGame source={rail} earned={ROUNDS_PER_THEME} age={7} onComplete={() => {}} />);
     expect(screen.getByText(/四塊碎片已經儲齊/)).toBeInTheDocument();
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+
+describe("好友 QR", () => {
+  // The encoder is written out in src/lib/qr.ts rather than installed, so the
+  // parts a library would have guaranteed are checked here. A code that is
+  // subtly wrong looks exactly like a code that is right, and the first person
+  // to find out would be a child holding a phone up to another child.
+
+  it("puts the three finder eyes, the timing rows and the dark module where the spec says", () => {
+    for (const text of ["a", "https://minimee.hk/kid/emma-2019", "x".repeat(100)]) {
+      const m = qrMatrix(text);
+      const n = m.length;
+      // 21, 25, 29, 33 or 37 — versions 1 through 5.
+      expect((n - 17) % 4, text).toBe(0);
+      expect(n, text).toBeGreaterThanOrEqual(21);
+      expect(n, text).toBeLessThanOrEqual(37);
+
+      for (const [cx, cy] of [[0, 0], [n - 7, 0], [0, n - 7]]) {
+        for (let dy = 0; dy < 7; dy += 1) {
+          for (let dx = 0; dx < 7; dx += 1) {
+            // A finder is three concentric rings: dark, light, dark-dark.
+            const ring = Math.max(Math.abs(dx - 3), Math.abs(dy - 3));
+            expect(m[cy + dy][cx + dx], `${text} finder ${cx},${cy}`).toBe(ring !== 2);
+          }
+        }
+      }
+      for (let i = 8; i < n - 8; i += 1) {
+        expect(m[6][i], "timing row").toBe(i % 2 === 0);
+        expect(m[i][6], "timing column").toBe(i % 2 === 0);
+      }
+      expect(m[n - 8][8], "dark module").toBe(true);
+    }
+  });
+
+  it("picks the smallest version that fits and refuses what does not", () => {
+    expect(qrMatrix("a").length).toBe(21);          // version 1
+    expect(qrMatrix("x".repeat(30)).length).toBe(25); // version 2
+    expect(qrMatrix("x".repeat(100)).length).toBe(37); // version 5
+    // 106 bytes is the level-L version-5 ceiling. A slug cannot get there —
+    // the schema caps it at 40 characters — but silence would be worse.
+    expect(() => qrMatrix("x".repeat(200))).toThrow(/too long/);
+  });
+
+  it("draws one path rather than eight hundred rects", () => {
+    const { d, size } = qrPath("https://minimee.hk/kid/emma-2019");
+    expect(size).toBe(25 + 4); // the quiet zone is part of the code
+    expect(d.startsWith("M")).toBe(true);
+    expect(d).not.toContain("<rect");
+  });
+
+  it("reads a slug out of a link, a bare code, or neither", () => {
+    expect(slugFromScan("https://minimee.hk/kid/emma-2019")).toBe("emma-2019");
+    expect(slugFromScan("http://localhost:5173/kid/emma-2019?from=cafe")).toBe("emma-2019");
+    expect(slugFromScan("  EMMA-2019  ")).toBe("emma-2019");
+    // Anything else is a code from some other product, and adding a friend
+    // off it would be adding a friend off a cereal box.
+    expect(slugFromScan("hello world")).toBeNull();
+    expect(slugFromScan("https://example.com/")).toBeNull();
+    expect(slugFromScan("")).toBeNull();
+  });
+
+  it("builds the card link off the site the child is actually on", () => {
+    expect(cardLink("emma-2019")).toBe(`${window.location.origin}/kid/emma-2019`);
   });
 });

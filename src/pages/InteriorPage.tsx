@@ -24,7 +24,7 @@ import {
   AboutMePanel, FriendScanPanel, FriendsBookPanel, NoticeBoardPanel, UpdateCardPanel,
 } from "../components/interior/HomePanels";
 import {
-  PetNewsPanel, RoomHost, SeatPanel, SnacksPanel, SoonPanel, TreatsPanel,
+  LooksPanel, PetNewsPanel, RoomHost, SeatPanel, SnacksPanel, SoonPanel, TreatsPanel,
 } from "../components/interior/RoomMoments";
 
 // One page for every building in the world.
@@ -270,7 +270,11 @@ export function InteriorPage() {
 
           {open.target === "about-me" && <AboutMePanel card={card} />}
           {open.target === "update-card" && <UpdateCardPanel card={card} childId={childId} />}
-          {open.target === "friends" && <FriendsBookPanel />}
+          {open.target === "friends" && <FriendsBookPanel card={card} />}
+          {open.target === "looks" && card && (
+            <LooksPanel cardId={card.id} heroId={card.heroId}
+              onChanged={heroId => setCard(current => (current ? { ...current, heroId } : current))} />
+          )}
 
           {/* The small in-room moments. Driven by the spot's kind rather than
               its target, because every seat behaves the same and only the
