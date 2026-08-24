@@ -1,3 +1,5 @@
+import { sceneArt, SCENES } from "./scenes";
+
 // MEE 世界：一個行得走得嘅小鎮，唔係一個細框。
 //
 // Two things make this feel like a place rather than a widget, and both are
@@ -104,8 +106,8 @@ export const ZONES: Record<string, Zone> = {
   "town-centre": {
     id: "town-centre",
     name: "小鎮中心",
-    day: "/assets/world/town-centre-day.webp",
-    night: "/assets/world/town-centre-night.webp",
+    day: sceneArt(SCENES.townCentre),
+    night: sceneArt(SCENES.townCentre, { night: true }),
     mask: "town-centre",
     // Measured off Em's 2026-08-24 art: a sand plaza with a compass rose,
     // five shopfronts around it, the road out at the bottom and the path to
@@ -134,8 +136,8 @@ export const ZONES: Record<string, Zone> = {
   "town-square": {
     id: "town-square",
     name: "小鎮廣場",
-    day: "/assets/world/town-square-day.webp",
-    night: "/assets/world/town-square-night.webp",
+    day: sceneArt(SCENES.townSquare),
+    night: sceneArt(SCENES.townSquare, { night: true }),
     mask: "town-square",
     spawn: { x: 0.470, y: 0.800 },
     // Read off the shipped painting: a timber stage under bunting at the top
@@ -164,8 +166,8 @@ export const ZONES: Record<string, Zone> = {
   "seaside-park": {
     id: "seaside-park",
     name: "散步公園",
-    day: "/assets/world/seaside-park-day.webp",
-    night: "/assets/world/seaside-park-night.webp",
+    day: sceneArt(SCENES.seasidePark),
+    night: sceneArt(SCENES.seasidePark, { night: true }),
     mask: "seaside-park",
     spawn: { x: 0.490, y: 0.840 },
     hotspots: [
@@ -200,8 +202,8 @@ export const ZONES: Record<string, Zone> = {
   "village-gate": {
     id: "village-gate",
     name: "小屋區入口",
-    day: "/assets/world/village-gate-day.webp",
-    night: "/assets/world/village-gate-night.webp",
+    day: sceneArt(SCENES.villageGate),
+    night: sceneArt(SCENES.villageGate, { night: true }),
     mask: "village-gate",
     spawn: { x: 0.500, y: 0.585 },
     hotspots: [
@@ -230,8 +232,8 @@ export const ZONES: Record<string, Zone> = {
   "wharf-market": {
     id: "wharf-market",
     name: "碼頭市集",
-    day: "/assets/world/wharf-market-day.webp",
-    night: "/assets/world/wharf-market-night.webp",
+    day: sceneArt(SCENES.wharfMarket),
+    night: sceneArt(SCENES.wharfMarket, { night: true }),
     mask: "wharf-market",
     parentsOnly: true,
     spawn: { x: 0.470, y: 0.880 },
@@ -256,16 +258,16 @@ export const START_ZONE = "town-centre";
 
 /** Interior art, used by the page a door leads into. */
 export const ROOM_ART: Record<string, string> = {
-  "cafe": "/assets/world/cafe.webp",
-  "studio": "/assets/world/studio.webp",
-  "album-hall": "/assets/world/album-hall.webp",
-  "album-books": "/assets/world/album-books.webp",
-  "fragment-room": "/assets/world/fragment-room.webp",
-  "library": "/assets/world/library.webp",
-  "cinema-lobby": "/assets/world/cinema-lobby.webp",
-  "cinema-hall": "/assets/world/cinema-hall.webp",
-  "cinema-hall-2": "/assets/world/cinema-hall-2.webp",
-  "my-home": "/assets/world/my-home.webp",
+  "cafe": sceneArt(SCENES.cafe),
+  "studio": sceneArt(SCENES.studio),
+  "album-hall": sceneArt(SCENES.albumHall),
+  "album-books": sceneArt(SCENES.albumBooks),
+  "fragment-room": sceneArt(SCENES.fragmentRoom),
+  "library": sceneArt(SCENES.library),
+  "cinema-lobby": sceneArt(SCENES.cinemaLobby),
+  "cinema-hall": sceneArt(SCENES.cinemaHall),
+  "cinema-hall-2": sceneArt(SCENES.cinemaHall2),
+  "my-home": sceneArt(SCENES.myHome),
 };
 
 /**

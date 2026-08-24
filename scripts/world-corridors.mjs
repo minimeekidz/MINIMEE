@@ -21,6 +21,24 @@
 
 /** @typedef {{ x: number, y: number, r: number }} Disc */
 
+/**
+ * The art each corridor set was traced over, by the name it has on disk.
+ *
+ * Em's filename is the filename now (see src/lib/scenes.ts), and this script
+ * cannot import the TypeScript registry — so the day cut is named here, next
+ * to the discs that were measured against it. One place, and it is the place
+ * you are already looking at when a corridor is wrong.
+ *
+ * Night shares the day mask: same place, same ground, different light.
+ */
+export const CORRIDOR_ART = {
+  "town-centre": "小鎮中心_日_9x16",
+  "town-square": "小鎮廣場_日_9x16",
+  "seaside-park": "散步公園_日_9x16",
+  "village-gate": "小屋區入口_日_9x16",
+  "wharf-market": "碼頭市集_日_9x16",
+};
+
 export const CORRIDORS = {
   // 小鎮中心 — one central plaza with a compass rose, five doors around it,
   // and two ways out. Redrawn for Em's new art (2026-08-16): the old chain
@@ -36,7 +54,7 @@ export const CORRIDORS = {
   //
   // Redrawn from scratch: the picture this replaces was a different town
   // altogether, so nothing from the old chain survives.
-  "town-centre-day": [
+  "town-centre": [
     [ // the plaza — a broad band under the three shopfronts that narrows as
       // it comes forward, which is what the painting does
       { x: 0.470, y: 0.435, r: 0.180 },
@@ -83,7 +101,7 @@ export const CORRIDORS = {
   // Almost all of it is paving. The shapes carved out of it are the notice
   // board in the middle, the stage deck at the top left (you stand at the
   // foot of its steps, not on it), and the planters along the bottom corners.
-  "town-square-day": [
+  "town-square": [
     [ // the open floor, most of the picture
       { x: 0.480, y: 0.700, r: 0.290 }, { x: 0.480, y: 0.850, r: 0.270 },
       { x: 0.195, y: 0.625, r: 0.155 }, { x: 0.775, y: 0.625, r: 0.155 },
@@ -119,7 +137,7 @@ export const CORRIDORS = {
   // little bridge. The spurs exist because of the seats — 「公園長椅及野餐墊
   // 是可以有『坐下』的互動」— and a bench you cannot walk to is a bench that
   // is only a picture.
-  "seaside-park-day": [
+  "seaside-park": [
     [ // the path itself, bottom edge to the 小屋區 exit at the top right
       { x: 0.480, y: 0.99, r: 0.13 }, { x: 0.485, y: 0.93, r: 0.13 },
       { x: 0.490, y: 0.87, r: 0.13 }, { x: 0.500, y: 0.81, r: 0.12 },
@@ -167,7 +185,7 @@ export const CORRIDORS = {
   // paving — the purple tower and the glass greenhouse both sit off the main
   // stone, and the stones are drawn in the art. Following them is what keeps
   // these corridors on the picture instead of cutting across a flower bed.
-  "village-gate-day": [
+  "village-gate": [
     [ // the approach, bottom edge up through the arch
       { x: 0.490, y: 0.99, r: 0.13 }, { x: 0.490, y: 0.93, r: 0.13 },
       { x: 0.500, y: 0.87, r: 0.13 }, { x: 0.505, y: 0.81, r: 0.13 },
@@ -217,7 +235,7 @@ export const CORRIDORS = {
   // huddled around the centre.
   // 碼頭市集 — the compass plaza, the road down to the bottom edge, and a
   // lobe out to each of the five counters. Redrawn against the shipped art.
-  "wharf-market-day": [
+  "wharf-market": [
     [ // the compass plaza
       { x: 0.470, y: 0.605, r: 0.19 }, { x: 0.470, y: 0.530, r: 0.15 },
       { x: 0.470, y: 0.680, r: 0.16 },

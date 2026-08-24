@@ -18,6 +18,8 @@ import {
   decodeEntrance, encodeEntrance, interiorPath, INTERIORS, stallRoute, WHARF_STALLS,
 } from "./lib/interiors";
 import { qrMatrix, qrPath } from "./lib/qr";
+import { sceneArt, SCENES } from "./lib/scenes";
+import sceneIndex from "./data/sceneIndex.json";
 import { petFrame } from "./lib/characters";
 import petFrames from "./data/petFrames.json";
 import { cardLink, slugFromScan } from "./lib/friends";
@@ -2248,5 +2250,61 @@ describe("兩邊都入得：原位入口原位出口", () => {
     // And the default is still there for everyone who arrives without one.
     expect(INTERIORS["cinema-lobby"].back).toEqual(
       { kind: "room", target: "studio", side: "bottom" });
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+
+describe("場景圖：檔名就係索引", () => {
+  // Em asked for the scene files to carry her own Chinese names, and the
+  // renaming layer that used to sit between her export and the game is gone.
+  // That layer is exactly what went wrong before: for a week the town ran on
+  // an old 小鎮中心 while the new one sat in the repo under a name nothing
+  // looked for, and the report said the art had never been sent.
+  //
+  // With no mapping there is nothing to get wrong — but also nothing to fail
+  // loudly, because a missing background is just a missing background on
+  // screen. These are the checks that make the gap visible here instead.
+
+  const onDisk = new Set(sceneIndex.files.map(name => `/assets/world/${name}`));
+
+  it("has the portrait day cut of every scene the game names", () => {
+    for (const [key, scene] of Object.entries(SCENES)) {
+      expect(onDisk.has(sceneArt(scene)), `${key} (${scene.base}) day 9x16`).toBe(true);
+    }
+  });
+
+  it("has a 夜 cut for exactly the scenes that can tell day from night", () => {
+    for (const [key, scene] of Object.entries(SCENES)) {
+      // 戲院1號廳 has no window; asking for night there is meant to give back
+      // the day file rather than a path to nothing.
+      if (!scene.lit) {
+        expect(sceneArt(scene, { night: true }), key).toBe(sceneArt(scene));
+        continue;
+      }
+      expect(onDisk.has(sceneArt(scene, { night: true })), `${key} night 9x16`).toBe(true);
+    }
+  });
+
+  it("names 碼頭市集 as the one scene still short a landscape cut", () => {
+    // Not a nice-to-have: this is the reminder that Em's 40-file batch did not
+    // include the wharf, and the day it does the assertion flips and gets
+    // deleted.
+    const missing = Object.entries(SCENES)
+      .flatMap(([key, scene]) => {
+        const cuts = scene.lit ? [{ wide: true }, { night: true, wide: true }] : [{ wide: true }];
+        return cuts
+          .filter(cut => !onDisk.has(sceneArt(scene, cut)))
+          .map(() => key);
+      });
+    expect([...new Set(missing)]).toEqual(["wharfMarket"]);
+  });
+
+  it("builds a path Em can read off the folder listing", () => {
+    expect(sceneArt(SCENES.townCentre)).toBe("/assets/world/小鎮中心_日_9x16.webp");
+    expect(sceneArt(SCENES.townCentre, { night: true, wide: true }))
+      .toBe("/assets/world/小鎮中心_夜_16x9.webp");
+    expect(sceneArt(SCENES.cinemaHall)).toBe("/assets/world/戲院1號廳_9x16.webp");
   });
 });

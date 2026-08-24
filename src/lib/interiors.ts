@@ -1,3 +1,5 @@
+import { sceneArt, SCENES } from "./scenes";
+
 // What is inside each building, and where on the art it is.
 //
 // Every position here was read off the copies Em annotated — the ones under
@@ -95,7 +97,7 @@ export const INTERIORS: Record<string, Interior> = {
   "album-hall": {
     id: "album-hall",
     name: "MEE 珍藏館",
-    art: "/assets/world/album-hall.webp",
+    art: sceneArt(SCENES.albumHall),
     back: { kind: "zone", target: "town-centre", side: "bottom" },
     spots: [
       { id: "all-cards", label: "中央展示櫃", x: 0.465, y: 0.370, kind: "panel", target: "all-cards", hint: "一禁就睇晒" },
@@ -114,7 +116,7 @@ export const INTERIORS: Record<string, Interior> = {
   "album-books": {
     id: "album-books",
     name: "卡冊展示室",
-    art: "/assets/world/album-books.webp",
+    art: sceneArt(SCENES.albumBooks),
     back: { kind: "room", target: "album-hall", side: "right" },
     spots: [
       { id: "books", label: "轉盤揀卡冊", x: 0.500, y: 0.395, kind: "panel", target: "books", hint: "轉一轉揀一本" },
@@ -135,7 +137,7 @@ export const INTERIORS: Record<string, Interior> = {
   "fragment-room": {
     id: "fragment-room",
     name: "碎片拼合室",
-    art: "/assets/world/fragment-room.webp",
+    art: sceneArt(SCENES.fragmentRoom),
     back: { kind: "room", target: "album-hall", side: "right" },
     spots: [
       { id: "tray-1", label: "第一組", x: 0.225, y: 0.310, kind: "panel", target: "tray-1", hint: "四塊砌一張" },
@@ -165,8 +167,8 @@ export const INTERIORS: Record<string, Interior> = {
   "studio": {
     id: "studio",
     name: "Hero Studio",
-    art: "/assets/world/studio.webp",
-    artNight: "/assets/world/studio-night.webp",
+    art: sceneArt(SCENES.studio),
+    artNight: sceneArt(SCENES.studio, { night: true }),
     back: { kind: "zone", target: "town-centre", side: "bottom" },
     spots: [
       { id: "current-words", label: "教學板", x: 0.505, y: 0.300, kind: "panel", target: "current-words", hint: "今期學嘅字" },
@@ -192,8 +194,8 @@ export const INTERIORS: Record<string, Interior> = {
   "library": {
     id: "library",
     name: "MEE 圖書館",
-    art: "/assets/world/library.webp",
-    artNight: "/assets/world/library-night.webp",
+    art: sceneArt(SCENES.library),
+    artNight: sceneArt(SCENES.library, { night: true }),
     back: { kind: "room", target: "studio", side: "bottom" },
     spots: [
       { id: "past-words", label: "重溫枱", x: 0.500, y: 0.500, kind: "panel", target: "past-words", hint: "由頭睇返" },
@@ -221,7 +223,7 @@ export const INTERIORS: Record<string, Interior> = {
   "cinema-lobby": {
     id: "cinema-lobby",
     name: "戲院大堂",
-    art: "/assets/world/cinema-lobby.webp",
+    art: sceneArt(SCENES.cinemaLobby),
     back: { kind: "room", target: "studio", side: "bottom" },
     spots: [
       { id: "tickets", label: "接待處", x: 0.365, y: 0.378, kind: "panel", target: "tickets", hint: "同職員揀套片" },
@@ -246,7 +248,7 @@ export const INTERIORS: Record<string, Interior> = {
   "cinema-hall": {
     id: "cinema-hall",
     name: "戲院 1 號廳",
-    art: "/assets/world/cinema-hall.webp",
+    art: sceneArt(SCENES.cinemaHall),
     back: { kind: "room", target: "cinema-lobby", side: "bottom" },
     frames: [
       { id: "screen", kind: "screen", x: 0.245, y: 0.117, w: 0.512, h: 0.298 },
@@ -265,7 +267,7 @@ export const INTERIORS: Record<string, Interior> = {
   "cinema-hall-2": {
     id: "cinema-hall-2",
     name: "戲院 2 號廳",
-    art: "/assets/world/cinema-hall-2.webp",
+    art: sceneArt(SCENES.cinemaHall2),
     back: { kind: "room", target: "cinema-lobby", side: "bottom" },
     frames: [
       { id: "screen", kind: "screen", x: 0.240, y: 0.170, w: 0.518, h: 0.230 },
@@ -295,8 +297,8 @@ export const INTERIORS: Record<string, Interior> = {
   "cafe": {
     id: "cafe",
     name: "Buddy Café",
-    art: "/assets/world/cafe.webp",
-    artNight: "/assets/world/cafe-night.webp",
+    art: sceneArt(SCENES.cafe),
+    artNight: sceneArt(SCENES.cafe, { night: true }),
     back: { kind: "zone", target: "town-centre", side: "bottom" },
     spots: [
       { id: "friend-scan", label: "換好友 code", x: 0.470, y: 0.455, kind: "panel", target: "friend-scan", hint: "面對面坐低換" },
@@ -326,8 +328,8 @@ export const INTERIORS: Record<string, Interior> = {
   "my-home": {
     id: "my-home",
     name: "我的小屋",
-    art: "/assets/world/my-home.webp",
-    artNight: "/assets/world/my-home-night.webp",
+    art: sceneArt(SCENES.myHome),
+    artNight: sceneArt(SCENES.myHome, { night: true }),
     back: { kind: "zone", target: "village-gate", side: "bottom" },
     spots: [
       { id: "update-card", label: "貼紙枱", x: 0.185, y: 0.470, kind: "panel", target: "update-card", hint: "整靚我張卡" },
