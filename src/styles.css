@@ -1216,7 +1216,9 @@ footer div { display: flex; gap: 20px; }
      phone and on a desktop. */
   container-type: inline-size;
 }
-.interior-art img {
+/* The background only. `.interior-art img` also caught the hero standing in
+   the room and stretched them to fill the wall. */
+.interior-art > .interior-bg {
   display: block; width: 100%; height: 100%;
   object-fit: cover; border-radius: 10px;
 }
@@ -1234,6 +1236,34 @@ footer div { display: flex; gap: 20px; }
   background: linear-gradient(180deg, rgba(23,17,12,.92), rgba(23,17,12,0));
 }
 .interior-bar h1 { margin: 0; font-size: 17px; font-weight: 900; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+
+/* The child, standing in the room. Sized off the art so they are the same
+   size relative to the furniture at any screen width. */
+.interior-hero {
+  position: absolute;
+  width: 18cqw; height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 0 rgba(13,16,32,.42));
+  transition: none;
+}
+.interior-hero.walking { animation: marker-bob .42s steps(2) infinite; }
+/* Sitting is a real state, not a sentence about sitting: the sprite settles
+   onto the cushion and stays there until they get up. */
+.interior-hero.sitting { translate: 0 6%; scale: 1 .93; }
+
+.interior-stand {
+  position: fixed; left: 50%; bottom: 18px; translate: -50% 0; z-index: 24;
+  min-height: 44px; padding: 0 22px;
+  border: 3px solid var(--wood, #6b4a2c); border-radius: 999px;
+  background: linear-gradient(180deg, var(--gold, #e6b64c), #d29a2f);
+  color: #4a3010; font-size: 14px; font-weight: 900; cursor: pointer;
+  box-shadow: 0 4px 0 var(--gold-dark, #a97d22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interior-hero.walking { animation: none; }
+}
 
 /* A marker sits on the thing it names, not in a list down the side — the
    room is the menu. */

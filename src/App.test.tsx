@@ -13,6 +13,7 @@ import { livesIn, petsForZone, spawnWeight } from "./lib/petSpawn";
 import { ageFrom, ageLabel } from "./lib/age";
 import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
 import { StickerWall } from "./components/profile/StickerWall";
+import { InteriorScene } from "./components/InteriorScene";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import {
   decodeEntrance, decodeTrail, encodeEntrance, encodeTrail, interiorPath, pushTrail,
@@ -2424,5 +2425,63 @@ describe("互動音效", () => {
     for (const name of ["eat", "drink", "sit", "stand", "door", "panel", "sparkle"]) {
       expect(SFX_NAMES, name).toContain(name);
     }
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+
+describe("房入面有個人", () => {
+  // Em: 「就算入到每一間房，人物都係跟住入去，唔會剩係得個畫面或者按鈕而沒有
+  // 角色」 and 「可以坐的位置要真的可以坐，而唔係得句子」. Both are the same
+  // point: with nobody in the room, sitting down can only be a sentence about
+  // sitting down.
+
+  it("gives every room a floor to stand on", () => {
+    for (const [id, interior] of Object.entries(INTERIORS)) {
+      const floor = interior.floor;
+      expect(floor, `${id} has no floor`).toBeDefined();
+      expect(floor!.x0, id).toBeLessThan(floor!.x1);
+      expect(floor!.y0, id).toBeLessThan(floor!.y1);
+      // A floor is the lower part of a room. One that starts at the ceiling
+      // means the coordinates were guessed rather than read off the picture.
+      expect(floor!.y1, `${id} floor runs past the bottom`).toBeLessThanOrEqual(1);
+      expect(floor!.y0, `${id} floor starts too high`).toBeGreaterThan(0.4);
+    }
+  });
+
+  it("puts the hero in the room and walks them to a seat before sitting", async () => {
+    const opened: string[] = [];
+    render(
+      <InteriorScene
+        interior={INTERIORS["cafe"]}
+        heroId="girl-a"
+        onSpot={spot => opened.push(spot.id)}
+        onBack={() => {}}
+        backLabel="出去"
+      />,
+    );
+
+    // Markers appear once the art has loaded; jsdom never fires that by
+    // itself, so the scene is told the picture arrived.
+    fireEvent.load(document.querySelector(".interior-bg")!);
+
+    // Somebody is in the room.
+    const hero = document.querySelector(".interior-hero");
+    expect(hero).not.toBeNull();
+    expect(hero!.className).not.toContain("sitting");
+
+    // Tapping a seat does not sit instantly — the child walks there first,
+    // which is the difference between a room and a menu.
+    const seat = INTERIORS["cafe"].spots.find(spot => spot.kind === "seat")!;
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(seat.label) }));
+    expect(opened, "opened before arriving").toHaveLength(0);
+
+    // …and once they arrive, they are sitting and the panel opens.
+    await waitFor(() => {
+      expect(document.querySelector(".interior-hero")!.className).toContain("sitting");
+    }, { timeout: 4000 });
+    expect(opened).toEqual([seat.id]);
+    expect(screen.getByRole("button", { name: "起身" })).toBeInTheDocument();
   });
 });

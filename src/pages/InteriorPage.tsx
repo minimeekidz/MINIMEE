@@ -226,6 +226,7 @@ export function InteriorPage() {
   return (
     <InteriorScene
       interior={interior}
+      heroId={card?.heroId}
       onSpot={handleSpot}
       onBack={() => navigate(backTo)}
       backLabel={backLabel}
