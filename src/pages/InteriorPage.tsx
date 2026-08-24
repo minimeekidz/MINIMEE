@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { INTERIORS, type InteriorFrame, type InteriorSpot } from "../lib/interiors";
+import {
+  decodeEntrance, interiorPath, INTERIORS,
+  type InteriorFrame, type InteriorSpot,
+} from "../lib/interiors";
 import { InteriorPanel, InteriorScene } from "../components/InteriorScene";
 import { WorldLoading } from "../components/WorldLoading";
 import { useFamily } from "../contexts/FamilyContext";
@@ -99,12 +102,16 @@ export function InteriorPage() {
   // configured order.
   const wallTrays = currentTrays(collection.trays);
 
-  const backTo = interior.back.kind === "zone"
-    ? `/parent/children/${childId}/play?zone=${interior.back.target}&from=${interior.id}`
-    : `/parent/children/${childId}/inside/${interior.back.target}`;
-  const backLabel = interior.back.kind === "zone"
-    ? (ZONES[interior.back.target]?.name ?? "出去")
-    : (INTERIORS[interior.back.target]?.name ?? "出去");
+  // Out the door you came in by. The room's own `back` is the answer for
+  // anyone who arrived without one — a bookmark, a shared link, a refresh
+  // after the history is gone — which is what it always was.
+  const cameFrom = decodeEntrance(params.get("from")) ?? interior.back;
+  const backTo = cameFrom.kind === "zone"
+    ? `/parent/children/${childId}/play?zone=${cameFrom.target}&from=${interior.id}`
+    : interiorPath(childId!, cameFrom.target, { kind: "room", target: interior.id });
+  const backLabel = cameFrom.kind === "zone"
+    ? (ZONES[cameFrom.target]?.name ?? "出去")
+    : (INTERIORS[cameFrom.target]?.name ?? "出去");
 
   // What goes in the blank rectangles Em painted. Returning null leaves one
   // empty, which is what a month with nothing scheduled should look like —
@@ -174,7 +181,12 @@ export function InteriorPage() {
   }
 
   function handleSpot(spot: InteriorSpot) {
-    if (spot.kind === "room") { navigate(`/parent/children/${childId}/inside/${spot.target}`); return; }
+    if (spot.kind === "room") {
+      // The room being opened is told which room opened it, so its own way
+      // out comes back here rather than to whatever its default is.
+      navigate(interiorPath(childId!, spot.target, { kind: "room", target: interior!.id }));
+      return;
+    }
     if (spot.kind === "route") { navigate(spot.target); return; }
     setOpen(spot);
   }

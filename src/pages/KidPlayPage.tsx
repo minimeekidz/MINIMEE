@@ -5,7 +5,7 @@ import { GameWorld } from "../components/GameWorld";
 import { useFamily } from "../contexts/FamilyContext";
 import { loadEditableCard, type EditableCard } from "../lib/kidCardStore";
 import { useRooms } from "../lib/rooms";
-import { INTERIORS, stallRoute, WHARF_STALLS } from "../lib/interiors";
+import { INTERIORS, interiorPath, stallRoute, WHARF_STALLS } from "../lib/interiors";
 import { InteriorPanel } from "../components/InteriorScene";
 import { NoticeBoardPanel } from "../components/interior/HomePanels";
 import { StagePanel } from "../components/interior/StagePanel";
@@ -79,8 +79,11 @@ export function KidPlayPage() {
       doneRooms={rooms.filter(room => room.earned).map(room => room.id)}
       // A door in the world leads to that building's own page; the lesson
       // rooms are reached from inside Hero Studio, not off the street.
-      onEnterRoom={roomId => navigate(INTERIORS[roomId]
-        ? `/parent/children/${child.id}/inside/${roomId}`
+      onEnterRoom={(roomId, fromZone) => navigate(INTERIORS[roomId]
+        // The zone is carried in so the room's way out is the door the child
+        // actually came through — 小鎮中心 and Hero Studio both open onto the
+        // cinema and the library now.
+        ? interiorPath(child.id, roomId, { kind: "zone", target: fromZone })
         : `/parent/children/${child.id}/room/${roomId}`)}
       onEnterStall={stallId => {
         const stall = WHARF_STALLS.find(candidate => candidate.id === stallId);

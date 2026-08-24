@@ -14,7 +14,9 @@ import { ageFrom, ageLabel } from "./lib/age";
 import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
 import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
-import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
+import {
+  decodeEntrance, encodeEntrance, interiorPath, INTERIORS, stallRoute, WHARF_STALLS,
+} from "./lib/interiors";
 import { qrMatrix, qrPath } from "./lib/qr";
 import { petFrame } from "./lib/characters";
 import petFrames from "./data/petFrames.json";
@@ -2207,5 +2209,44 @@ describe("小寵物多角度 sprite", () => {
     for (const pet of TOWN_PETS) {
       expect(petFrame(pet.id, "left", 0)).not.toBe(petFrame(pet.id, "right", 0));
     }
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+
+describe("兩邊都入得：原位入口原位出口", () => {
+  // Em: 「兩邊都得」. The cinema and the library open off 小鎮中心 and off Hero
+  // Studio, so `Interior.back` — one fixed way out per room — is no longer the
+  // whole answer. The door a child came through travels with them.
+
+  it("opens the cinema and the library from the street as well as from the studio", () => {
+    const streetDoors = ZONES["town-centre"].hotspots
+      .filter(spot => spot.kind === "door").map(spot => spot.target);
+    expect(streetDoors).toEqual(
+      expect.arrayContaining(["cinema-lobby", "library", "studio", "cafe", "album-hall"]));
+
+    const studioDoors = INTERIORS["studio"].spots
+      .filter(spot => spot.kind === "room").map(spot => spot.target);
+    expect(studioDoors).toEqual(expect.arrayContaining(["cinema-lobby", "library"]));
+  });
+
+  it("carries the entrance in the link and reads it back", () => {
+    const fromStreet = interiorPath("kid-1", "cinema-lobby", { kind: "zone", target: "town-centre" });
+    expect(fromStreet).toBe("/parent/children/kid-1/inside/cinema-lobby?from=zone:town-centre");
+    expect(decodeEntrance("zone:town-centre")).toEqual({ kind: "zone", target: "town-centre" });
+    expect(decodeEntrance("room:studio")).toEqual({ kind: "room", target: "studio" });
+    expect(encodeEntrance({ kind: "room", target: "studio" })).toBe("room:studio");
+  });
+
+  it("falls back to the room's own exit rather than breaking on a bad one", () => {
+    // This value comes off the address bar, so a stray keystroke has to land
+    // on the room's default exit, not on a blank page.
+    for (const bad of [null, "", "zone", "zone:", "shop:cafe", "room:not-a-room", "::"]) {
+      expect(decodeEntrance(bad), JSON.stringify(bad)).toBeNull();
+    }
+    // And the default is still there for everyone who arrives without one.
+    expect(INTERIORS["cinema-lobby"].back).toEqual(
+      { kind: "room", target: "studio", side: "bottom" });
   });
 });
