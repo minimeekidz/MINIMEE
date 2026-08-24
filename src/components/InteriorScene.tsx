@@ -59,13 +59,22 @@ export function InteriorScene({
         />
 
         {/* The dynamic rectangles go under the markers: a poster is part of
-            the wall, not something floating in front of it. */}
+            the wall, not something floating in front of it.
+            
+            The kind is prefixed — `frame-poster`, not `poster`. Unprefixed it
+            collided with the component classes of the same name: `.poster`
+            (Hero Studio's lesson cards) carries `position: relative`, which
+            cancelled the absolute positioning and dropped all three cinema
+            posters out of the picture and down the page; `.tray` (a card in a
+            panel) carries `background: #fff`, which painted a white pill over
+            the gem strip in 碎片拼合室. Both were invisible in review and
+            obvious on screen. */}
         {ready && renderFrame && interior.frames?.map(frame => {
           const content = renderFrame(frame);
           return content === null || content === undefined ? null : (
             <div
               key={frame.id}
-              className={`interior-frame ${frame.kind}`}
+              className={`interior-frame frame-${frame.kind}`}
               style={{
                 left: `${frame.x * 100}%`, top: `${frame.y * 100}%`,
                 width: `${frame.w * 100}%`, height: `${frame.h * 100}%`,

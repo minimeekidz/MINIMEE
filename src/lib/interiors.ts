@@ -146,10 +146,12 @@ export const INTERIORS: Record<string, Interior> = {
     ],
     // The four gems under each mount. Lit from the fragments actually held,
     // so the room itself is the progress bar rather than a panel about it.
+    // Measured onto the painted gem strips themselves, so a lit gem lights
+    // the one in the picture rather than sitting in a row underneath it.
     frames: [
-      { id: "tray-1", kind: "tray", x: 0.118, y: 0.347, w: 0.216, h: 0.038 },
-      { id: "tray-2", kind: "tray", x: 0.400, y: 0.324, w: 0.212, h: 0.037 },
-      { id: "tray-3", kind: "tray", x: 0.672, y: 0.347, w: 0.216, h: 0.038 },
+      { id: "tray-1", kind: "tray", x: 0.140, y: 0.353, w: 0.205, h: 0.032 },
+      { id: "tray-2", kind: "tray", x: 0.390, y: 0.332, w: 0.202, h: 0.032 },
+      { id: "tray-3", kind: "tray", x: 0.645, y: 0.355, w: 0.203, h: 0.032 },
     ],
   },
 
@@ -236,10 +238,14 @@ export const INTERIORS: Record<string, Interior> = {
         note: "望住入場門嗰邊。有人行過都見到，好似真係喺戲院等緊入場咁。" },
     ],
     frames: [
-      { id: "marquee", kind: "marquee", x: 0.160, y: 0.140, w: 0.410, h: 0.042 },
-      { id: "poster-1", kind: "poster", x: 0.207, y: 0.203, w: 0.100, h: 0.150 },
-      { id: "poster-2", kind: "poster", x: 0.317, y: 0.203, w: 0.103, h: 0.150 },
-      { id: "poster-3", kind: "poster", x: 0.437, y: 0.203, w: 0.103, h: 0.150 },
+      // Re-measured off the painting at 2.5% gridlines. The old numbers put
+      // the posters half a frame low and a frame and a half too tall, which
+      // was invisible while a CSS collision was throwing them off the wall
+      // entirely.
+      { id: "marquee", kind: "marquee", x: 0.163, y: 0.140, w: 0.402, h: 0.040 },
+      { id: "poster-1", kind: "poster", x: 0.190, y: 0.223, w: 0.092, h: 0.102 },
+      { id: "poster-2", kind: "poster", x: 0.313, y: 0.223, w: 0.090, h: 0.102 },
+      { id: "poster-3", kind: "poster", x: 0.432, y: 0.223, w: 0.091, h: 0.102 },
     ],
   },
 
@@ -365,6 +371,31 @@ export function encodeEntrance(from: Entrance): string {
 }
 
 /**
+ * The doors held open behind you, nearest first.
+ *
+ * One entrance was not enough. 小鎮中心 → 戲院大堂 → 2 號廳 → back put you in
+ * the lobby recording 2 號廳 as the way in, so the lobby's exit led back into
+ * the hall and the hall's exit led back to the lobby: a child could bounce
+ * between two rooms and never reach the street. Em: 「戲院冇出口」.
+ *
+ * A trail fixes it because it is what actually happened — each room you walk
+ * through pushes its own way in, and walking out pops one off.
+ */
+export type Trail = Entrance[];
+
+/** Deepest first, joined by `>`: `room:cinema-lobby>zone:town-centre`. */
+export function encodeTrail(trail: Trail): string {
+  return trail.map(encodeEntrance).join(">");
+}
+
+/** Capped so a child circling two rooms cannot grow the URL without limit. */
+const TRAIL_MAX = 8;
+
+export function pushTrail(trail: Trail, from: Entrance): Trail {
+  return [from, ...trail].slice(0, TRAIL_MAX);
+}
+
+/**
  * Read an entrance back off the URL.
  *
  * Anything unrecognised returns null rather than throwing: this value comes
@@ -381,9 +412,19 @@ export function decodeEntrance(raw: string | null): Entrance | null {
   return { kind, target };
 }
 
-/** The link that opens an interior, carrying the door it was opened from. */
-export function interiorPath(childId: string, roomId: string, from: Entrance): string {
-  return `/parent/children/${childId}/inside/${roomId}?from=${encodeEntrance(from)}`;
+/** Read a whole trail back, dropping anything that does not parse. */
+export function decodeTrail(raw: string | null): Trail {
+  if (!raw) return [];
+  return raw.split(">")
+    .map(decodeEntrance)
+    .filter((entrance): entrance is Entrance => entrance !== null)
+    .slice(0, TRAIL_MAX);
+}
+
+/** The link that opens an interior, carrying the doors held open behind it. */
+export function interiorPath(childId: string, roomId: string, trail: Trail): string {
+  const query = trail.length > 0 ? `?from=${encodeURIComponent(encodeTrail(trail))}` : "";
+  return `/parent/children/${childId}/inside/${roomId}${query}`;
 }
 
 // --- 碼頭市集 --------------------------------------------------------------

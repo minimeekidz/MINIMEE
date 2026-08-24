@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  decodeEntrance, interiorPath, INTERIORS,
+  decodeTrail, interiorPath, pushTrail, INTERIORS,
   type InteriorFrame, type InteriorSpot,
 } from "../lib/interiors";
 import { InteriorPanel, InteriorScene } from "../components/InteriorScene";
@@ -102,13 +102,20 @@ export function InteriorPage() {
   // configured order.
   const wallTrays = currentTrays(collection.trays);
 
-  // Out the door you came in by. The room's own `back` is the answer for
-  // anyone who arrived without one — a bookmark, a shared link, a refresh
-  // after the history is gone — which is what it always was.
-  const cameFrom = decodeEntrance(params.get("from")) ?? interior.back;
+  // Out the door you came in by, at whatever depth. Walking out pops the
+  // nearest door off the trail and hands the rest to wherever it leads, so
+  // 小鎮中心 → 戲院大堂 → 2 號廳 walks back out to 小鎮中心 rather than
+  // bouncing between the two rooms forever.
+  //
+  // The room's own `back` is the answer for anyone who arrived without a
+  // trail — a bookmark, a shared link, a refresh after the history is gone —
+  // which is what it always was.
+  const trail = decodeTrail(params.get("from"));
+  const cameFrom = trail[0] ?? interior.back;
+  const rest = trail.slice(1);
   const backTo = cameFrom.kind === "zone"
     ? `/parent/children/${childId}/play?zone=${cameFrom.target}&from=${interior.id}`
-    : interiorPath(childId!, cameFrom.target, { kind: "room", target: interior.id });
+    : interiorPath(childId!, cameFrom.target, rest);
   const backLabel = cameFrom.kind === "zone"
     ? (ZONES[cameFrom.target]?.name ?? "出去")
     : (INTERIORS[cameFrom.target]?.name ?? "出去");
@@ -121,7 +128,10 @@ export function InteriorPage() {
     if (frame.kind === "marquee") {
       const names = wallTrays.map(tray => tray.theme);
       if (names.length === 0) return null;
-      return <span className="marquee-text">本月上映 · {names.join("・")}</span>;
+      // Just the three names. 「本月上映 ·」 in front pushed the line past the
+      // width of the painted board, and a marquee that wraps onto two lines
+      // and spills over its own frame is worse than one that says less.
+      return <span className="marquee-text">{names.join("・")}</span>;
     }
 
     if (frame.kind === "poster") {
@@ -134,13 +144,19 @@ export function InteriorPage() {
       return (
         <button
           type="button"
-          className={tray.owned ? "poster done" : "poster"}
+          className={tray.owned ? "wall-poster done" : "wall-poster"}
           onClick={() => navigate(
             `/parent/children/${childId}/inside/cinema-hall?theme=${tray.themeId}`)}
         >
           {art && <img src={art} alt="" loading="lazy" />}
-          <span className="poster-name">{tray.theme}</span>
-          <span className="poster-mark">{tray.owned ? "✓" : `${tray.earned}/4`}</span>
+          {/* Em's posters are artwork with no title printed on them, and the
+              painted frames are far narrower than they are tall — a Chinese
+              name laid over one came out as a column of single characters
+              nobody could read. The name stays for screen readers and for the
+              box office; the wall shows the picture and how far in you are,
+              which is what a cinema poster does. */}
+          <span className="wall-poster-name">{tray.theme}</span>
+          <span className="wall-poster-mark">{tray.owned ? "✓" : `${tray.earned}/4`}</span>
         </button>
       );
     }
@@ -182,9 +198,10 @@ export function InteriorPage() {
 
   function handleSpot(spot: InteriorSpot) {
     if (spot.kind === "room") {
-      // The room being opened is told which room opened it, so its own way
-      // out comes back here rather than to whatever its default is.
-      navigate(interiorPath(childId!, spot.target, { kind: "room", target: interior!.id }));
+      // The room being opened inherits this trail with this room pushed on
+      // top, so its way out is here and *its* way out is still the street.
+      navigate(interiorPath(childId!, spot.target,
+        pushTrail(trail, { kind: "room", target: interior!.id })));
       return;
     }
     if (spot.kind === "route") { navigate(spot.target); return; }

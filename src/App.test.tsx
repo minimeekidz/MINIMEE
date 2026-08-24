@@ -15,7 +15,8 @@ import { StickerDetailPanel } from "./components/profile/StickerDetailPanel";
 import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import {
-  decodeEntrance, encodeEntrance, interiorPath, INTERIORS, stallRoute, WHARF_STALLS,
+  decodeEntrance, decodeTrail, encodeEntrance, encodeTrail, interiorPath, pushTrail,
+  INTERIORS, stallRoute, WHARF_STALLS,
 } from "./lib/interiors";
 import { qrMatrix, qrPath } from "./lib/qr";
 import { sceneArt, SCENES } from "./lib/scenes";
@@ -2234,11 +2235,48 @@ describe("兩邊都入得：原位入口原位出口", () => {
   });
 
   it("carries the entrance in the link and reads it back", () => {
-    const fromStreet = interiorPath("kid-1", "cinema-lobby", { kind: "zone", target: "town-centre" });
-    expect(fromStreet).toBe("/parent/children/kid-1/inside/cinema-lobby?from=zone:town-centre");
+    const fromStreet = interiorPath("kid-1", "cinema-lobby", [{ kind: "zone", target: "town-centre" }]);
+    expect(fromStreet).toBe("/parent/children/kid-1/inside/cinema-lobby?from=zone%3Atown-centre");
     expect(decodeEntrance("zone:town-centre")).toEqual({ kind: "zone", target: "town-centre" });
     expect(decodeEntrance("room:studio")).toEqual({ kind: "room", target: "studio" });
     expect(encodeEntrance({ kind: "room", target: "studio" })).toBe("room:studio");
+  });
+
+  it("walks back out of two nested rooms to the street, not between them", () => {
+    // 小鎮中心 → 戲院大堂 → 2 號廳. One remembered entrance was not enough:
+    // leaving the hall put the lobby's exit back into the hall, so a child
+    // could bounce between the two rooms and never reach the street.
+    // Em: 「戲院冇出口」.
+    const street = { kind: "zone", target: "town-centre" } as const;
+    const inLobby = [street];
+    const inHall = pushTrail(inLobby, { kind: "room", target: "cinema-lobby" });
+
+    expect(encodeTrail(inHall)).toBe("room:cinema-lobby>zone:town-centre");
+
+    // Out of the hall: back to the lobby, still holding the street.
+    const [outOfHall, ...restFromHall] = inHall;
+    expect(outOfHall).toEqual({ kind: "room", target: "cinema-lobby" });
+    expect(restFromHall).toEqual(inLobby);
+
+    // Out of the lobby: the street, which is where the child actually was.
+    const [outOfLobby, ...restFromLobby] = restFromHall;
+    expect(outOfLobby).toEqual(street);
+    expect(restFromLobby).toEqual([]);
+  });
+
+  it("keeps the trail bounded and drops anything that does not parse", () => {
+    let trail = [{ kind: "zone", target: "town-centre" } as const];
+    for (let i = 0; i < 30; i += 1) {
+      trail = pushTrail(trail, { kind: "room", target: "studio" }) as typeof trail;
+    }
+    expect(trail).toHaveLength(8);
+
+    expect(decodeTrail("room:studio>zone:town-centre"))
+      .toEqual([{ kind: "room", target: "studio" }, { kind: "zone", target: "town-centre" }]);
+    // A junk segment is dropped, the good ones survive.
+    expect(decodeTrail("shop:x>zone:town-centre"))
+      .toEqual([{ kind: "zone", target: "town-centre" }]);
+    expect(decodeTrail(null)).toEqual([]);
   });
 
   it("falls back to the room's own exit rather than breaking on a bad one", () => {

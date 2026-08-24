@@ -1161,9 +1161,54 @@ footer div { display: flex; gap: 20px; }
    室內場景 — a building is one picture with the things you came for
    marked on it. No walking: Em's 原位入口原位出口 rule.
    ===================================================================== */
-.interior-scene { position: relative; min-height: 100vh; background: #17110c; color: #f6e8cd; }
-.interior-art { position: relative; width: 100%; }
-.interior-art img { display: block; width: 100%; height: auto; }
+/* A room is a framed picture, not a wall pressed against your face.
+   
+   The art used to be `width: 100%`, so a 941x1672 portrait painting on a
+   1990px-wide window became 3536px tall: you saw a third of the room and
+   scrolled for the rest, and every marker and poster was somewhere off
+   screen. Em: 「全個遊戲感覺佔全螢幕太逼夾」.
+   
+   It is sized by height now. The whole room is on screen at once, centred,
+   with the wood showing either side — which is the breathing room, and also
+   what makes it read as a place you are looking into rather than a texture
+   you are standing on. Every scene is 941x1672, so one ratio covers them all.
+   
+   The landscape cuts are the real answer on a tablet and they are drawn and
+   shipped; wiring them needs a second set of hotspot coordinates per scene,
+   because they are separate renders rather than crops. */
+.interior-scene {
+  position: relative; min-height: 100dvh;
+  display: grid; place-items: center;
+  padding: 56px 12px 12px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.13) 0 2px, transparent 2px 5px),
+    linear-gradient(180deg, #3a2718, #201509);
+  color: #f6e8cd;
+}
+.interior-art {
+  position: relative;
+  height: min(100dvh - 68px, 1100px);
+  aspect-ratio: 941 / 1672;
+  max-width: 100%;
+  border: 4px solid var(--wood, #6b4a2c);
+  border-radius: 14px;
+  overflow: visible;
+  box-shadow: 0 18px 44px rgba(10,6,3,.6), inset 0 0 0 2px rgba(255,220,170,.14);
+  /* Frames and markers size themselves off the art rather than off the
+     window, so a poster title is the same size relative to its poster on a
+     phone and on a desktop. */
+  container-type: inline-size;
+}
+.interior-art img {
+  display: block; width: 100%; height: 100%;
+  object-fit: cover; border-radius: 10px;
+}
+/* Phones get the whole width — there is no room to spare and no wood worth
+   showing. */
+@media (max-width: 620px) {
+  .interior-scene { padding: 48px 0 0; }
+  .interior-art { height: auto; width: 100%; border-width: 0; border-radius: 0; }
+}
 
 .interior-bar {
   position: fixed; left: 0; right: 0; top: 0; z-index: 20;
@@ -1410,37 +1455,52 @@ footer div { display: flex; gap: 20px; }
   position: absolute; display: grid; place-items: center;
   overflow: hidden; text-align: center; line-height: 1.25;
 }
-.interior-frame.marquee { color: #6b3f14; font-weight: 900; }
-.marquee-text { font-size: clamp(7px, 1.5vw, 12px); padding: 0 4%; }
+.interior-frame.frame-marquee { color: #6b3f14; font-weight: 900; }
+.marquee-text { font-size: 2.3cqw; padding: 0 3%; white-space: nowrap; }
 
-.interior-frame.poster { padding: 3%; }
-.poster {
+.interior-frame.frame-poster { padding: 3%; }
+/* Named `wall-poster`, not `poster`. Hero Studio's lesson cards already owned
+   `.poster`, and its `position: relative` was landing on the frame div —
+   which carries `interior-frame poster` — and cancelling the absolute
+   positioning that puts a poster on the wall. All three fell out of the
+   picture and stacked down the page below the art, each offset by its own
+   left/top, which is what Em saw as 「海報全部錯位」. */
+.wall-poster {
+  position: relative; overflow: hidden;
   display: grid; align-content: center; gap: 4%;
   width: 100%; height: 100%; padding: 0; cursor: pointer;
   border: 0; border-radius: 3px; background: rgba(255,255,255,.08);
   font: inherit; color: #3a2a12;
 }
-.poster:hover, .poster:focus-visible { background: rgba(255,255,255,.3); }
-.poster img {
+.wall-poster:hover, .wall-poster:focus-visible { background: rgba(255,255,255,.3); }
+.wall-poster img {
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover; object-position: center;
 }
 /* The name sits on the poster rather than instead of it — Em's frames are
    much narrower than a 2:3 poster, so the art is cropped and the title is
    what stays readable at thumbnail size. */
-.poster { position: relative; overflow: hidden; }
-.poster-name, .poster-mark { position: relative; z-index: 1; text-shadow: 0 1px 3px rgba(0,0,0,.85); color: #fff; }
-.poster-name { font-size: clamp(8px, 1.7vw, 14px); font-weight: 900; }
-.poster-mark { font-size: clamp(6px, 1.2vw, 10px); font-weight: 800; opacity: .8; }
-.poster.done .poster-mark { color: #7dffab; }
+.wall-poster-name, .wall-poster-mark {
+  position: relative; z-index: 1; text-shadow: 0 1px 3px rgba(0,0,0,.85); color: #fff;
+}
+.wall-poster-name {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.wall-poster-mark {
+  position: absolute; z-index: 1; left: 50%; bottom: 4%; translate: -50% 0;
+  padding: 0.4cqw 1.2cqw; border-radius: 999px;
+  background: rgba(20,12,6,.72); font-size: 1.5cqw; font-weight: 900;
+}
+.wall-poster.done .wall-poster-mark { color: #7dffab; }
 
-.interior-frame.screen { color: #4a3418; }
-.screen-title { font-size: clamp(11px, 2.6vw, 24px); font-weight: 900; }
-.screen-idle { font-size: clamp(9px, 1.8vw, 16px); font-weight: 800; opacity: .5; }
+.interior-frame.frame-screen { color: #4a3418; }
+.screen-title { font-size: 4.4cqw; font-weight: 900; }
+.screen-idle { font-size: 3cqw; font-weight: 800; opacity: .5; }
 
-.interior-frame.board { color: #5a4322; padding: 0 3%; }
-.board-words { display: grid; gap: 3px; font-size: clamp(8px, 1.6vw, 13px); font-weight: 900; }
-.board-words em { font-style: normal; font-size: clamp(7px, 1.3vw, 11px); font-weight: 800; opacity: .85; }
+.interior-frame.frame-board { color: #5a4322; padding: 0 3%; }
+.board-words { display: grid; gap: 0.4cqw; font-size: 2.6cqw; font-weight: 900; }
+.board-words em { font-style: normal; font-size: 2.1cqw; font-weight: 800; opacity: .85; }
 
 .ticket.done, .ticket.past { opacity: .82; }
 
@@ -1468,10 +1528,10 @@ footer div { display: flex; gap: 20px; }
 }
 
 /* 碎片拼合室嘅寶石燈 —— 每組四粒，直接亮喺張圖上面。 */
-.interior-frame.tray { padding: 0 2%; }
+.interior-frame.frame-tray { padding: 0 2%; }
 .tray-gems { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 100%; }
 .tray-gems .gem {
-  flex: 0 0 auto; width: 18%; aspect-ratio: 1; border-radius: 50%;
+  flex: 0 0 auto; width: 20%; aspect-ratio: 1; border-radius: 50%;
   background: rgba(20,16,40,.35); box-shadow: inset 0 0 4px rgba(0,0,0,.5);
 }
 .tray-gems .gem.lit {
