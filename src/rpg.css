@@ -109,7 +109,7 @@ p { color: var(--ink-soft); }
 .button.ghost:hover:not(:disabled) {
   background: linear-gradient(180deg, #fffbf0, var(--paper-cream));
 }
-.button.small { min-height: 40px; padding: 0 17px; font-size: 13px; }
+.button.small { min-height: 40px; padding: 0 17px; font-size: 15px; }
 .danger-button {
   min-height: 44px; padding: 0 20px; border: 3px solid #7a3326;
   background: linear-gradient(180deg, #d4614c, #b04434); color: #fff;
@@ -425,7 +425,7 @@ label { color: var(--ink-warm); }
   .section-block > h2:first-child,
   .admin-block > h2:first-child,
   .block-heading > h2,
-  .section-heading > h2 { font-size: 16px; }
+  .section-heading > h2 { font-size: 18px; }
 }
 
 /* A child may have asked for less motion, and a page of paper that lifts and
