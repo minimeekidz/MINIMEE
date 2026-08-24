@@ -107,13 +107,22 @@ export const ZONES: Record<string, Zone> = {
     day: "/assets/world/town-centre-day.webp",
     night: "/assets/world/town-centre-night.webp",
     mask: "town-centre",
-    spawn: { x: 0.450, y: 0.840 },
+    // Measured off Em's 2026-08-24 art: a sand plaza with a compass rose,
+    // five shopfronts around it, the road out at the bottom and the path to
+    // the pier climbing away at the top right.
+    //
+    // Five buildings are drawn and three are doors. The cinema and the
+    // library are facades on purpose — 「Hero Studio…左門去戲院大堂、右門去
+    // 圖書館」 is Em's own routing, and an interior carries exactly one `back`
+    // target, so a second way in would make the way out lie about where the
+    // child came from.
+    spawn: { x: 0.465, y: 0.800 },
     hotspots: [
-      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.305, y: 0.270, target: "cafe" },
-      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.660, y: 0.505, target: "studio" },
-      { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.690, y: 0.855, target: "album-hall" },
-      { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.335, y: 0.130, target: "wharf-market" },
-      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.455, y: 0.980, target: "town-square" },
+      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.235, y: 0.605, target: "cafe" },
+      { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.465, y: 0.360, target: "studio" },
+      { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.750, y: 0.655, target: "album-hall" },
+      { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.885, y: 0.100, target: "wharf-market" },
+      { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.465, y: 0.980, target: "town-square" },
     ],
   },
 
@@ -125,15 +134,19 @@ export const ZONES: Record<string, Zone> = {
     day: "/assets/world/town-square-day.webp",
     night: "/assets/world/town-square-night.webp",
     mask: "town-square",
-    spawn: { x: 0.470, y: 0.840 },
-    // Read off the shipped painting: a big blank notice board across the
-    // top, a raised round wooden platform to its left that reads as a small
-    // stage, a stone arch on the right, and the road out at the bottom.
+    spawn: { x: 0.470, y: 0.800 },
+    // Read off the shipped painting: a timber stage under bunting at the top
+    // left with steps down onto the plaza, a fountain behind it, the notice
+    // board in the middle, a stone arch to 小屋區 on the right, the park
+    // signpost on the left, and the road out at the bottom.
     hotspots: [
-      { id: "b-stage", kind: "stage", label: "小舞台", x: 0.355, y: 0.560, target: "stage" },
-      { id: "b-board", kind: "board", label: "公告板", x: 0.470, y: 0.455, target: "notice-board" },
-      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.845, y: 0.470, target: "village-gate" },
-      { id: "g-park", kind: "gate", label: "散步公園", x: 0.085, y: 0.600, target: "seaside-park" },
+      // The stage is real now. Em's 2026-08-24 square has a timber deck under
+      // a bunting canopy at the top left, with steps down onto the plaza —
+      // the marker stands at the foot of those steps.
+      { id: "b-stage", kind: "stage", label: "小舞台", x: 0.340, y: 0.345, target: "stage" },
+      { id: "b-board", kind: "board", label: "公告板", x: 0.470, y: 0.615, target: "notice-board" },
+      { id: "g-village", kind: "gate", label: "小屋區入口", x: 0.845, y: 0.335, target: "village-gate" },
+      { id: "g-park", kind: "gate", label: "散步公園", x: 0.055, y: 0.645, target: "seaside-park" },
       { id: "g-centre", kind: "gate", label: "小鎮中心", x: 0.470, y: 0.980, target: "town-centre" },
     ],
   },

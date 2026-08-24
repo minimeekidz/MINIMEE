@@ -16,6 +16,8 @@ import { StickerWall } from "./components/profile/StickerWall";
 import { eventsFor, PET_BIRTHDAYS } from "./lib/petEvents";
 import { INTERIORS, stallRoute, WHARF_STALLS } from "./lib/interiors";
 import { qrMatrix, qrPath } from "./lib/qr";
+import { petFrame } from "./lib/characters";
+import petFrames from "./data/petFrames.json";
 import { cardLink, slugFromScan } from "./lib/friends";
 import {
   booksFrom, BOOKS, CARDS_PER_BOOK, SPECIAL_COVERS, specialCards, themeProgress,
@@ -2173,5 +2175,37 @@ describe("好友 QR", () => {
 
   it("builds the card link off the site the child is actually on", () => {
     expect(cardLink("emma-2019")).toBe(`${window.location.origin}/kid/emma-2019`);
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+
+describe("小寵物多角度 sprite", () => {
+  // Em ships one magenta walk sheet per pet per direction and
+  // scripts/extract-pet-sprites.mjs cuts them. The cut runs once, by hand, so
+  // nothing on the build path would notice a pet whose frames never landed —
+  // in the town a missing frame quietly falls back to the still portrait,
+  // which is right on screen and invisible in review. This is what notices.
+
+  it("has all four drawn directions and both walk frames for every one of the twelve", () => {
+    expect(TOWN_PETS).toHaveLength(12);
+    const onDisk = new Set(petFrames.frames);
+    for (const pet of TOWN_PETS) {
+      for (const facing of ["down", "up", "left", "right"] as const) {
+        for (const frame of [0, 1] as const) {
+          expect(onDisk.has(petFrame(pet.id, facing, frame)),
+            `${pet.id} ${facing} ${frame}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("never mirrors a sprite: left and right are different files", () => {
+    // 「必須獨立繪製 right_side，因為兔蝴蝶結、三花貓頭花／斑紋、牛奶盒細節
+    // 等不可被鏡像到錯邊」 — so a shared path here would be the bug.
+    for (const pet of TOWN_PETS) {
+      expect(petFrame(pet.id, "left", 0)).not.toBe(petFrame(pet.id, "right", 0));
+    }
   });
 });

@@ -5,10 +5,11 @@
 // smooth 3D and plastic skin. The 3D plush version of the pet sheet was
 // rejected for exactly that reason.
 //
-// Each is a single front-facing pose, so movement animates with a bob and a
-// horizontal flip rather than a per-direction frame. When multi-angle sheets
-// arrive, `scripts/extract-grid.mjs` produces them and only the lookup here
-// changes.
+// The multi-angle sheets arrived on 2026-08-24. `scripts/extract-pet-sprites.
+// mjs` cuts Em's magenta walk sheets into four facings x two frames per pet,
+// and `petFrame` below is the lookup the town walks on. `TownPet.art` stays as
+// the single front-facing portrait, which is still what a card, a panel or a
+// friend list wants — a still picture of a pet, not one leg of a walk cycle.
 
 export interface Hero {
   id: string;
@@ -27,6 +28,20 @@ export const HEROES: Hero[] = [
 
 export function findHero(id: string | null | undefined): Hero {
   return HEROES.find(hero => hero.id === id) ?? HEROES[0];
+}
+
+/** Which way a pet is walking, in the words Em's sheets use. */
+export type PetFacing = "down" | "up" | "left" | "right";
+
+/**
+ * One frame of a pet's walk.
+ *
+ * `right` is a drawn direction, not a mirrored `left` — Em's spec is explicit
+ * about that (「必須獨立繪製 right_side，因為兔蝴蝶結、三花貓頭花／斑紋、
+ * 牛奶盒細節等不可被鏡像到錯邊」), so nothing here flips a sprite.
+ */
+export function petFrame(id: string, facing: PetFacing, frame: 0 | 1): string {
+  return `/assets/pets/${id}/${facing}-${frame + 1}.webp`;
 }
 
 export interface TownPet {

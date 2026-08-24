@@ -299,8 +299,8 @@ export type NpcPost = (typeof NPC_POSTS)[number];
 export const AMBIENT_NPCS: Array<{
   id: string; nameZh: string; zone: string; x: number; y: number;
 }> = [
-  { id: "deer", nameZh: "梅花鹿", zone: "town-square", x: 0.360, y: 0.560 },
-  { id: "koala", nameZh: "樹熊", zone: "town-square", x: 0.620, y: 0.520 },
+  { id: "deer", nameZh: "梅花鹿", zone: "town-square", x: 0.215, y: 0.560 },
+  { id: "koala", nameZh: "樹熊", zone: "town-square", x: 0.790, y: 0.505 },
   { id: "frog", nameZh: "青蛙", zone: "town-square", x: 0.430, y: 0.720 },
   { id: "ferret", nameZh: "雪貂", zone: "town-square", x: 0.560, y: 0.640 },
   { id: "hamster", nameZh: "倉鼠", zone: "village-gate", x: 0.430, y: 0.600 },

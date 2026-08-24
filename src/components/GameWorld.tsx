@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { findHero, TOWN_PETS, type TownPet } from "../lib/characters";
+import { findHero, petFrame, TOWN_PETS, type PetFacing, type TownPet } from "../lib/characters";
 import { PET_WISHES, WISH_MS } from "../lib/petFriends";
 import { petsForZone } from "../lib/petSpawn";
 import { usePetFriends } from "../lib/petStore";
@@ -65,9 +65,24 @@ interface Wanderer {
   pet: TownPet;
   x: number; y: number;
   goal: Point;
-  flip: boolean;
+  /** Which of Em's four drawn directions this pet is showing. */
+  facing: PetFacing;
+  /** Which of the two walk frames, advanced only while actually moving. */
+  step: 0 | 1;
   wish: string;
 }
+
+/** The drawn direction that best matches a step. */
+function facingFor(dx: number, dy: number, fallback: PetFacing): PetFacing {
+  if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return fallback;
+  // Sideways wins ties: a pet crossing the screen reads better in profile
+  // than head-on, and most of this town is walked left to right.
+  if (Math.abs(dx) >= Math.abs(dy) * 0.7) return dx < 0 ? "left" : "right";
+  return dy < 0 ? "up" : "down";
+}
+
+/** How long one walk frame is held, in animation ticks. */
+const PET_STEP_TICKS = 9;
 interface Point { x: number; y: number }
 
 export interface GameWorldProps {
@@ -206,7 +221,7 @@ export function GameWorld({
       const spot = nearestWalkable(zone, zone.spawn.x + offset.x, zone.spawn.y + offset.y)
         ?? zone.spawn;
       return {
-        pet, x: spot.x, y: spot.y, goal: spot, flip: false,
+        pet, x: spot.x, y: spot.y, goal: spot, facing: "down", step: 0,
         wish: PET_WISHES[Math.floor(Math.random() * PET_WISHES.length)],
       };
     }));
@@ -218,15 +233,24 @@ export function GameWorld({
   useEffect(() => {
     let running = true;
     let frame = 0;
+    // Counted separately from the rAF handle. The handle happens to climb,
+    // which made the walk cycle look right by accident; a browser that
+    // reuses ids would have frozen every pet mid-stride.
+    let tick = 0;
     const step = () => {
       if (!running) return;
+      tick += 1;
       setPets(current => current.map(walker => {
         // A pet stops and turns when the child comes close. It reads the way
         // an animal actually behaves, and — the practical half — a small
         // child cannot reliably tap a target that never stops moving.
         const toChild = Math.hypot(walker.x - heroAt.current.x, (walker.y - heroAt.current.y) * 0.6);
         if (toChild < PET_REACH * 1.7) {
-          return { ...walker, flip: heroAt.current.x < walker.x };
+          // Stopped, and turned to look at the child. Standing still means
+          // frame 0 — a pet frozen mid-stride reads as a broken animation.
+          const dx = heroAt.current.x - walker.x;
+          const dy = heroAt.current.y - walker.y;
+          return { ...walker, facing: facingFor(dx, dy, walker.facing), step: 0 };
         }
         const dx = walker.goal.x - walker.x;
         const dy = walker.goal.y - walker.y;
@@ -238,7 +262,11 @@ export function GameWorld({
         // Pets obey the paths too. A neighbour standing in the sea would give
         // the game away faster than anything else on screen.
         if (!isWalkable(zone, nx, ny)) return { ...walker, goal: roam(zone, walker) };
-        return { ...walker, x: nx, y: ny, flip: dx < 0 };
+        return {
+          ...walker, x: nx, y: ny,
+          facing: facingFor(dx, dy, walker.facing),
+          step: (Math.floor(tick / PET_STEP_TICKS) % 2) as 0 | 1,
+        };
       }));
       frame = window.requestAnimationFrame(step);
     };
@@ -529,12 +557,18 @@ export function GameWorld({
           <button
             className={nearPet?.pet.id === walker.pet.id ? "world-npc close" : "world-npc"}
             onClick={event => { event.stopPropagation(); meetPet(walker); }}
-            style={{ transform: `scaleX(${walker.flip ? -1 : 1})` }}
           >
+            {/* Em drew all four directions, so nothing is mirrored here —
+                the bunny's bow and the calico's markings are on one side. */}
             <img
-              src={walker.pet.art}
+              src={petFrame(walker.pet.id, walker.facing, walker.step)}
               alt={walker.pet.nameZh}
               style={{ height: `${HERO_H * 0.62 * map.h}px` }}
+              onError={event => {
+                // A pet whose sheet has not been cut yet falls back to its
+                // portrait rather than showing a broken image.
+                (event.currentTarget as HTMLImageElement).src = walker.pet.art;
+              }}
             />
           </button>
         </div>
