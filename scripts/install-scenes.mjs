@@ -8,7 +8,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const DIR = "public/assets/world";
+const DEST = "public/assets/world";
+
+// Where Em drops a batch. She has used both, so both are looked at rather
+// than one being declared correct after the fact.
+const DROPS = [DEST, "public/assets/uploads/場景-地圖"];
 
 /** Em's name (without the aspect suffix) → the slug the game asks for. */
 const MAP = {
@@ -18,6 +22,8 @@ const MAP = {
   "小鎮廣場_夜": "town-square-night",
   "散步公園_日": "seaside-park-day",
   "散步公園_夜": "seaside-park-night",
+  "碼頭市集_日": "wharf-market-day",
+  "碼頭市集_夜": "wharf-market-night",
   "小屋區入口_日": "village-gate-day",
   "小屋區入口_夜": "village-gate-night",
   "我的小屋_日": "my-home",
@@ -39,9 +45,18 @@ const rows = [];
 
 for (const [zh, slug] of Object.entries(MAP)) {
   for (const [aspect, suffix] of [["9x16", ""], ["16x9", "-wide"]]) {
-    const src = path.join(DIR, `${zh}_${aspect}.webp`);
-    const dest = path.join(DIR, `${slug}${suffix}.webp`);
-    if (!fs.existsSync(src)) { rows.push([`${zh}_${aspect}`, "MISSING", ""]); continue; }
+    const src = DROPS
+      .map(dir => path.join(dir, `${zh}_${aspect}.webp`))
+      .find(candidate => fs.existsSync(candidate));
+    const dest = path.join(DEST, `${slug}${suffix}.webp`);
+    // A scene Em has not sent yet is reported, not fatal — this runs every
+    // time a batch lands, and half a batch is normal. An installed scene with
+    // no source left in a drop folder is the same case: already done.
+    if (!src) {
+      rows.push([`${zh}_${aspect}`, `${slug}${suffix}`,
+        fs.existsSync(dest) ? "installed" : "NOT SENT YET"]);
+      continue;
+    }
     const had = fs.existsSync(dest);
     const same = had && fs.readFileSync(src).equals(fs.readFileSync(dest));
     rows.push([`${zh}_${aspect}`, `${slug}${suffix}`, same ? "same" : had ? "REPLACED" : "new"]);
