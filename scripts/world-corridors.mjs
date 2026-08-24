@@ -50,6 +50,15 @@ export const CORRIDORS = {
       { x: 0.458, y: 0.720, r: 0.105 }, { x: 0.463, y: 0.675, r: 0.110 },
       { x: 0.470, y: 0.630, r: 0.120 },
     ],
+    [ // up-left to the cinema steps. A short spur rather than a wider plaza
+      // disc: widening it put walkable ground on the café roof.
+      { x: 0.260, y: 0.400, r: 0.085 }, { x: 0.225, y: 0.378, r: 0.070 },
+      { x: 0.200, y: 0.355, r: 0.060 },
+    ],
+    [ // up-right to the library steps
+      { x: 0.705, y: 0.415, r: 0.085 }, { x: 0.730, y: 0.395, r: 0.070 },
+      { x: 0.750, y: 0.375, r: 0.060 },
+    ],
     [ // left to the Buddy Café doorstep
       { x: 0.360, y: 0.560, r: 0.100 }, { x: 0.298, y: 0.583, r: 0.080 },
       { x: 0.235, y: 0.605, r: 0.068 },

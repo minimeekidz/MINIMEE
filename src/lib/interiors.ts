@@ -339,6 +339,51 @@ export const INTERIORS: Record<string, Interior> = {
   },
 };
 
+// --- 原位入口原位出口, when there is more than one entrance ----------------
+//
+// Em's rule was 「原位入口原位出口」 and `Interior.back` was how it was kept:
+// one fixed way out per room. That works while every building has one door.
+// The 2026-08-24 小鎮中心 art draws the cinema and the library on the street
+// as well as inside Hero Studio, and Em asked for both to open — at which
+// point a fixed `back` starts lying: walk in off the street, walk out, and
+// the room puts you in the Studio you were never in.
+//
+// So the way in is recorded on the way in. `back` stays as the answer for
+// anyone who arrives without one — a bookmark, a shared link, a refresh after
+// the history is gone — which is exactly what it always was.
+
+/** Where a child entered an interior from, as it travels in the URL. */
+export type Entrance =
+  | { kind: "zone"; target: string }
+  | { kind: "room"; target: string };
+
+/** `zone:town-centre` / `room:studio`. Short, and readable in a URL bar. */
+export function encodeEntrance(from: Entrance): string {
+  return `${from.kind}:${from.target}`;
+}
+
+/**
+ * Read an entrance back off the URL.
+ *
+ * Anything unrecognised returns null rather than throwing: this value comes
+ * from the address bar, so a child's stray keystroke should fall back to the
+ * room's own exit, not break the page.
+ */
+export function decodeEntrance(raw: string | null): Entrance | null {
+  if (!raw) return null;
+  const [kind, ...rest] = raw.split(":");
+  const target = rest.join(":");
+  if (kind !== "zone" && kind !== "room") return null;
+  if (!target) return null;
+  if (kind === "room" && !INTERIORS[target]) return null;
+  return { kind, target };
+}
+
+/** The link that opens an interior, carrying the door it was opened from. */
+export function interiorPath(childId: string, roomId: string, from: Entrance): string {
+  return `/parent/children/${childId}/inside/${roomId}?from=${encodeEntrance(from)}`;
+}
+
 // --- 碼頭市集 --------------------------------------------------------------
 // The stalls Em labelled on uploads/場景/7.webp. These are the parents'
 // services and every one of them already exists as a page, so the market is a

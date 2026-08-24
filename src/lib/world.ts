@@ -111,15 +111,18 @@ export const ZONES: Record<string, Zone> = {
     // five shopfronts around it, the road out at the bottom and the path to
     // the pier climbing away at the top right.
     //
-    // Five buildings are drawn and three are doors. The cinema and the
-    // library are facades on purpose — 「Hero Studio…左門去戲院大堂、右門去
-    // 圖書館」 is Em's own routing, and an interior carries exactly one `back`
-    // target, so a second way in would make the way out lie about where the
-    // child came from.
+    // All five shopfronts open. The cinema and the library are also reached
+    // through Hero Studio — Em: 「兩邊都得」 — which used to be impossible
+    // because an interior carried exactly one `back` target and a second way
+    // in would have made the way out lie. The door a child came through now
+    // travels with them (see `interiorPath` in interiors.ts), so both are
+    // true at once.
     spawn: { x: 0.465, y: 0.800 },
     hotspots: [
-      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.235, y: 0.605, target: "cafe" },
+      { id: "d-cinema", kind: "door", label: "戲院大堂", x: 0.200, y: 0.355, target: "cinema-lobby" },
       { id: "d-studio", kind: "door", label: "Hero Studio", x: 0.465, y: 0.360, target: "studio" },
+      { id: "d-library", kind: "door", label: "MEE 圖書館", x: 0.750, y: 0.375, target: "library" },
+      { id: "d-cafe", kind: "door", label: "Buddy Café", x: 0.235, y: 0.605, target: "cafe" },
       { id: "d-album-hall", kind: "door", label: "MEE 珍藏館", x: 0.750, y: 0.655, target: "album-hall" },
       { id: "g-wharf", kind: "gate", label: "碼頭市集", x: 0.885, y: 0.100, target: "wharf-market" },
       { id: "g-square", kind: "gate", label: "小鎮廣場", x: 0.465, y: 0.980, target: "town-square" },

@@ -94,7 +94,10 @@ export interface GameWorldProps {
   /** The child's card, which is what 好感度 is stored against. Null in the
    *  public demo, where the pets still talk but nothing is kept. */
   cardId?: string | null;
-  onEnterRoom: (roomId: string) => void;
+  /** `fromZone` is the zone the child walked out of, so the room knows which
+   *  door to send them back through — a building with two street entrances
+   *  has two right answers. */
+  onEnterRoom: (roomId: string, fromZone: string) => void;
   /** A market counter, which opens one of the parent pages. */
   onEnterStall?: (stallId: string) => void;
   /** The 公告板, which opens in place rather than leading anywhere. */
@@ -423,7 +426,7 @@ export function GameWorld({
   }, [camera, map, zone]);
 
   const travel = useCallback((spot: Hotspot) => {
-    if (spot.kind === "door") { onEnterRoom(spot.target); return; }
+    if (spot.kind === "door") { onEnterRoom(spot.target, zone.id); return; }
     if (spot.kind === "board") { onReadBoard?.(); return; }
     // The stage. Em: 「如果有節慶／活動時都可以係到有d野做下」 — so it is a
     // real place to stand, and what is on it comes from the almanac rather
