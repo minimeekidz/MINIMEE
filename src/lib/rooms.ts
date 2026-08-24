@@ -146,8 +146,18 @@ export async function awardFragment(kidCardId: string, roomId: string, lessonId:
 // URL (ops doc section 10). The signed URL is minted at play time and
 // expires, so unpublishing content or ending a subscription actually takes
 // the video away rather than leaving a working link in the wild.
+//
+// A `video_path` that is already a URL is played as it stands. That is not a
+// loophole in the rule above, it is the second half of it: Em can put a film
+// on the CDN while she is building — cheap, instant, nothing to upload
+// through — and move it into the bucket by changing one column, with no code
+// change either way. What a public path costs is real and is hers to weigh:
+// the film is then downloadable by anyone who has the link, forever, whether
+// or not they ever paid.
 export async function signedLessonVideo(videoPath: string): Promise<string | null> {
-  if (!supabase || !videoPath) return null;
+  if (!videoPath) return null;
+  if (videoPath.startsWith("/") || videoPath.startsWith("http")) return videoPath;
+  if (!supabase) return null;
   const { data } = await supabase.storage.from("room-videos").createSignedUrl(videoPath, 3600);
   return data?.signedUrl ?? null;
 }

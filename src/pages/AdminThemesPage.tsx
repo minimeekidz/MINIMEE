@@ -264,7 +264,13 @@ export function AdminThemesPage() {
             </tbody>
           </table>
           {takenSlots.size >= TRAY_SLOTS && (
-            <p className="editor-help">六格已經滿咗 —— 要先將一個主題落架先上到新嘅。</p>
+            // Counted rather than written out. The wall went from six slots to
+            // three when Em set 「有 3 組（3 個主題）」, and this sentence still
+            // said six — under a button that had quietly become undisablable
+            // because three retired themes were still holding slots 4 to 6.
+            <p className="editor-help">
+              {TRAY_SLOTS} 格已經滿咗 —— 要先將一個主題落架先上到新嘅。
+            </p>
           )}
         </section>
       )}

@@ -291,6 +291,29 @@ Before accepting real families:
 - Maintain consent and audit records.
 - Database backup alone does not back up Storage objects; maintain a separate Storage backup process.
 
+### 10-0. Where a learning film lives (2026-08-24)
+
+`themes.video_path` now accepts two kinds of value, and the difference is a
+business decision rather than a technical one:
+
+| Value | What happens | What it costs |
+|---|---|---|
+| `lessons/theme-06.mp4` | treated as a key in the private `room-videos` bucket; a signed URL is minted at play time and expires in an hour | an upload step through the Supabase dashboard |
+| `/assets/lessons/theme-06.mp4` | served straight off the CDN with the rest of the site | **the film is downloadable by anyone with the link, forever, paid or not** |
+
+`signedLessonVideo` decides by looking at the value: anything starting with
+`/` or `http` is already a URL and is played as it stands.
+
+The public route is there because it is the only one Em can use without
+leaving GitHub, and while there is nothing to protect — no subscribers, one
+test child — it is the fast way to see a film in the cinema. **Before launch
+every film should move into the bucket**, which is one `update themes set
+video_path = ...` per row and no code change.
+
+Note that a video committed to `public/assets/` stays in git history even
+after it is deleted from the working tree. Moving a film to the bucket stops
+it being *served*; it does not remove it from the repository's past.
+
 ### 10a. Who may call a SECURITY DEFINER function (2026-08-21)
 
 Supabase grants `EXECUTE` on every new function to `anon`, `authenticated`
