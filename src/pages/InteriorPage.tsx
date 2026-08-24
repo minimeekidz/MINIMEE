@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { play } from "../lib/sfx";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   decodeTrail, interiorPath, pushTrail, INTERIORS,
@@ -57,6 +58,12 @@ export function InteriorPage() {
   // cake, not an inventory item, and a child coming back tomorrow should walk
   // into a café rather than into yesterday's half-eaten plate.
   const [holding, setHolding] = useState<string | null>(null);
+  // 「食嘢會有食嘢嘅配音」. A drink sounds like a drink, which the café's own
+  // menu already tells us: the cold ones are the ones you swallow.
+  function eat(label: string) {
+    play(/飲|汁|茶|奶|水|朱古力|汽水/.test(label) ? "drink" : "eat");
+    setHolding(label);
+  }
   // Arriving from the box office or from the film opens the right thing by
   // itself. A child who has just chosen a film should not have to find the
   // screen, and one sent out to answer should not have to find the desk.
@@ -197,14 +204,18 @@ export function InteriorPage() {
   }
 
   function handleSpot(spot: InteriorSpot) {
+    // Every kind of thing makes its own sound — Em: 「每件事情會有每件事情
+    //亦配音」. A door sounds like a door, a cushion like a cushion.
     if (spot.kind === "room") {
+      play("door");
       // The room being opened inherits this trail with this room pushed on
       // top, so its way out is here and *its* way out is still the street.
       navigate(interiorPath(childId!, spot.target,
         pushTrail(trail, { kind: "room", target: interior!.id })));
       return;
     }
-    if (spot.kind === "route") { navigate(spot.target); return; }
+    if (spot.kind === "route") { play("door"); navigate(spot.target); return; }
+    play(spot.kind === "seat" ? "sit" : "panel");
     setOpen(spot);
   }
 
@@ -221,7 +232,7 @@ export function InteriorPage() {
       renderFrame={renderFrame}
     >
       {open && (
-        <InteriorPanel title={open.label} onClose={() => setOpen(null)}>
+        <InteriorPanel title={open.label} onClose={() => { play("close"); setOpen(null); }}>
           {open.target === "all-cards" && <AllCardsPanel cards={collection.cards} />}
           {open.target === "books" && <BooksPanel cards={collection.cards} />}
           {/* One mount, one theme. The room has three and each is tapped on
@@ -311,8 +322,8 @@ export function InteriorPage() {
           {open.kind === "seat" && <SeatPanel spot={open} holding={holding} />}
           {open.kind === "treat" && (
             open.target === "snacks"
-              ? <SnacksPanel holding={holding} onEat={setHolding} />
-              : <TreatsPanel holding={holding} onEat={setHolding}
+              ? <SnacksPanel holding={holding} onEat={eat} />
+              : <TreatsPanel holding={holding} onEat={eat}
                   host={{ post: "cafe", name: "店員", line: "今日想食啲乜？我啱啱焗好嘅。" }} />
           )}
           {open.kind === "soon" && <SoonPanel spot={open} />}

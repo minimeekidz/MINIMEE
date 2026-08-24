@@ -742,7 +742,24 @@ footer div { display: flex; gap: 20px; }
 
 /* ---- v2: pets that live here, and talking to them ---- */
 .world-npc-wrap { position: absolute; display: grid; justify-items: center; transform: translate(-50%, -100%); }
-.world-wish { margin-bottom: 3px; padding: 4px 9px; border: 2px solid #14213D; border-radius: 10px 10px 10px 2px; background: rgba(255,247,232,.95); color: #14213D; font-size: 12px; font-weight: 800; white-space: nowrap; animation: marker-bob 3.4s steps(2) infinite; pointer-events: none; }
+/* A thought, not a line. One sticker, over one pet, for a few seconds —
+   Em: 「小寵物平常只會有一啲 Sticker 嘅想法 Bubbles，唔使長期都有句句子」. */
+.world-thought {
+  display: grid; place-items: center;
+  width: 34px; height: 34px; margin-bottom: 4px;
+  border: 2px solid #14213D; border-radius: 50% 50% 50% 6px;
+  background: rgba(255,247,232,.96);
+  font-size: 17px; line-height: 1;
+  animation: thought-in .28s ease-out, marker-bob 3.4s steps(2) .28s infinite;
+  pointer-events: none;
+}
+@keyframes thought-in {
+  from { opacity: 0; scale: .5; }
+  to { opacity: 1; scale: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-thought { animation: none; }
+}
 /* The height goes on the image, not the button: sizing the button and then
    asking the image for 100% of it left the sprite's width to resolve against
    a box that was itself waiting on the image, and the pets came out squashed. */

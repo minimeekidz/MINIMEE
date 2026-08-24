@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { findHero, petFrame, TOWN_PETS, type PetFacing, type TownPet } from "../lib/characters";
-import { PET_WISHES, WISH_MS } from "../lib/petFriends";
+import {
+  driftMood, MOOD_TICK_MS, MOODS, pickMoodLine, pickThought, startingMood,
+  THINK_TICK_MS, THOUGHT_MS, type Mood,
+} from "../lib/petMoods";
+import { play } from "../lib/sfx";
 import { petsForZone } from "../lib/petSpawn";
 import { usePetFriends } from "../lib/petStore";
 import { useFullscreen } from "../lib/fullscreen";
@@ -69,7 +73,11 @@ interface Wanderer {
   facing: PetFacing;
   /** Which of the two walk frames, advanced only while actually moving. */
   step: 0 | 1;
-  wish: string;
+  /** How this one is feeling. Drifts on its own; colours voice and thoughts. */
+  mood: Mood;
+  /** The sticker over its head right now, or nothing — which is most of the
+   *  time. Em: 「唔使長期都有句句子喺上面」. */
+  thought: string | null;
 }
 
 /** The drawn direction that best matches a step. */
@@ -225,7 +233,7 @@ export function GameWorld({
         ?? zone.spawn;
       return {
         pet, x: spot.x, y: spot.y, goal: spot, facing: "down", step: 0,
-        wish: PET_WISHES[Math.floor(Math.random() * PET_WISHES.length)],
+        mood: startingMood(pet.id), thought: null,
       };
     }));
   }, [zone]);
@@ -277,16 +285,48 @@ export function GameWorld({
     return () => { running = false; window.cancelAnimationFrame(frame); };
   }, [zone, map]);
 
-  // What each pet is daydreaming about, changed on a timer so the town has
-  // something going on even when the child is standing still.
+  // One pet at a time thinks one sticker, for a few seconds, and then stops.
+  //
+  // The old version hung a full sentence over all six pets permanently and
+  // rotated it every fourteen seconds, which is not a town — it is a wall of
+  // text with animals behind it. A thought you can always see is a label.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setPets(current => {
+        if (current.length === 0) return current;
+        // Nobody is thinking anything while somebody already is: two bubbles
+        // at once starts to read as conversation, which it is not.
+        if (current.some(walker => walker.thought)) return current;
+        const who = Math.floor(Math.random() * current.length);
+        // A sleepy pet thinks less often than a playful one — the rate is as
+        // much of the characterisation as the picture is.
+        if (Math.random() > MOODS[current[who].mood].chatter) return current;
+        return current.map((walker, index) => (
+          index === who ? { ...walker, thought: pickThought(walker.mood) } : walker
+        ));
+      });
+    }, THINK_TICK_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // …and it fades again on its own.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setPets(current => (current.some(walker => walker.thought)
+        ? current.map(walker => (walker.thought ? { ...walker, thought: null } : walker))
+        : current));
+    }, THOUGHT_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // Moods move slowly and only to a neighbouring mood, so an afternoon reads
+  // as sleepy → shy → curious rather than as a pet flicking between states.
   useEffect(() => {
     const timer = window.setInterval(() => {
       setPets(current => current.map(walker => (
-        Math.random() < 0.4
-          ? { ...walker, wish: PET_WISHES[Math.floor(Math.random() * PET_WISHES.length)] }
-          : walker
+        Math.random() < 0.45 ? { ...walker, mood: driftMood(walker.mood) } : walker
       )));
-    }, WISH_MS);
+    }, MOOD_TICK_MS);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -426,22 +466,24 @@ export function GameWorld({
   }, [camera, map, zone]);
 
   const travel = useCallback((spot: Hotspot) => {
-    if (spot.kind === "door") { onEnterRoom(spot.target, zone.id); return; }
-    if (spot.kind === "board") { onReadBoard?.(); return; }
+    // Each thing sounds like itself — Em: 「每件事情會有每件事情亦配音」.
+    if (spot.kind === "door") { play("door"); onEnterRoom(spot.target, zone.id); return; }
+    if (spot.kind === "board") { play("panel"); onReadBoard?.(); return; }
     // The stage. Em: 「如果有節慶／活動時都可以係到有d野做下」 — so it is a
     // real place to stand, and what is on it comes from the almanac rather
     // than from a schedule anybody has to maintain.
-    if (spot.kind === "stage") { onTakeStage?.(); return; }
+    if (spot.kind === "stage") { play("panel"); onTakeStage?.(); return; }
     if (spot.kind === "seat") {
       // Snap onto the seat rather than stopping a stride short of it: the
       // whole point is that the child is on the bench, not beside it.
       target.current = null;
       setPos({ x: spot.x, y: spot.y });
       setSeated(spot);
+      play("sit");
       return;
     }
-    if (spot.kind === "cottage") { setPeek(spot); return; }
-    if (spot.kind === "stall") { onEnterStall?.(spot.target); return; }
+    if (spot.kind === "cottage") { play("panel"); setPeek(spot); return; }
+    if (spot.kind === "stall") { play("door"); onEnterStall?.(spot.target); return; }
     // 碼頭市集 asks for the 船飛 first. A child holding the phone must not be
     // able to walk into the account, the money or the privacy switches.
     if (ZONES[spot.target]?.parentsOnly && !parentGateOpen()) {
@@ -476,6 +518,12 @@ export function GameWorld({
       return;
     }
     target.current = null;
+    // Talking is what happens when the child talks to them — the sticker over
+    // a pet's head is a thought, not a line. The voice is the pet's own,
+    // coloured by whatever mood it is in.
+    const mood = MOODS[walker.mood];
+    void speak(walker.pet.id, pickMoodLine(walker.mood),
+      { pitch: mood.pitch, pace: mood.pace });
     setMeeting(walker.pet);
   }
 
@@ -556,7 +604,9 @@ export function GameWorld({
           decorated with props. */}
       {pets.map(walker => (
         <div key={walker.pet.id} className="world-npc-wrap" style={place(walker.x, walker.y)}>
-          <span className="world-wish">{walker.wish}</span>
+          {walker.thought && (
+            <span className="world-thought" aria-hidden>{walker.thought}</span>
+          )}
           <button
             className={nearPet?.pet.id === walker.pet.id ? "world-npc close" : "world-npc"}
             onClick={event => { event.stopPropagation(); meetPet(walker); }}
@@ -617,7 +667,7 @@ export function GameWorld({
     {seated
       ? <div className="world-seated" role="status">
           <p>{seated.note ?? `坐緊喺${seated.label}度。`}</p>
-          <button className="world-action" onClick={() => setSeated(null)}>
+          <button className="world-action" onClick={() => { play("stand"); setSeated(null); }}>
             企返起身
             <small>行一步都得</small>
           </button>

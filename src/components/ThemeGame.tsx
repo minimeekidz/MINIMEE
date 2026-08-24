@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { play } from "../lib/sfx";
 import { Check, Sparkles, Timer, X } from "lucide-react";
 import { stickerFor } from "../lib/stickers";
 import {
@@ -95,12 +96,15 @@ function RoundBody({ round, onDone }: { round: Round; onDone: () => void }) {
 
   function finish() {
     setDone(true);
+    play("sparkle");
     onDone();
   }
 
   function settle(given: string, source: string) {
     if (isCorrect(round, given)) { setWrong(null); finish(); }
-    else setWrong(source);
+    // Not a buzzer. 「一個錯咗嘅答案淨係值多一次機會」 — a child who guessed
+    // wrong is trying, so the sound is a small shrug, not a penalty.
+    else { play("wrong"); setWrong(source); }
   }
 
   if (done) {

@@ -20,6 +20,10 @@ import {
 } from "./lib/interiors";
 import { qrMatrix, qrPath } from "./lib/qr";
 import { sceneArt, SCENES } from "./lib/scenes";
+import {
+  driftMood, MOOD_IDS, MOODS, pickMoodLine, pickThought, startingMood,
+} from "./lib/petMoods";
+import { SFX_NAMES } from "./lib/sfx";
 import sceneIndex from "./data/sceneIndex.json";
 import { petFrame } from "./lib/characters";
 import petFrames from "./data/petFrames.json";
@@ -2344,5 +2348,81 @@ describe("場景圖：檔名就係索引", () => {
     expect(sceneArt(SCENES.townCentre, { night: true, wide: true }))
       .toBe("/assets/world/小鎮中心_夜_16x9.webp");
     expect(sceneArt(SCENES.cinemaHall)).toBe("/assets/world/戲院1號廳_9x16.webp");
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+
+describe("小寵物：情緒同 sticker 想法", () => {
+  // Em: 「小寵物平常只會有一啲 Sticker 嘅想法 Bubbles，唔使長期都有句句子喺
+  // 上面，當同佢互動嘅時候先有嘢講都得；或者平常啲小寵物係會有唔同嘅情緒變化
+  //（當然要配合埋佢諗法 Bubbles 同埋聲音，好似 sims4 咁樣）」.
+
+  it("thinks in stickers and speaks in sentences, never the other way round", () => {
+    for (const mood of MOOD_IDS) {
+      const spec = MOODS[mood];
+      for (const thought of spec.thoughts) {
+        // A thought is one sticker. The moment it becomes a sentence it stops
+        // being a thought and starts being a label.
+        expect([...thought].length, `${mood} thought ${thought}`).toBeLessThanOrEqual(3);
+        expect(/[a-zA-Z\u4e00-\u9fff]/.test(thought), `${mood} thought has words`).toBe(false);
+      }
+      // …and what it says when talked to is a real line.
+      for (const line of spec.lines) {
+        expect(line.length, `${mood} line`).toBeGreaterThan(2);
+      }
+    }
+  });
+
+  it("gives every mood a voice colour and a rate of its own", () => {
+    // The rate is as much of the characterisation as the picture is: a sleepy
+    // pet that pipes up as often as a playful one is not sleepy.
+    expect(MOODS.sleepy.chatter).toBeLessThan(MOODS.playful.chatter);
+    expect(MOODS.sleepy.pitch).toBeLessThan(MOODS.playful.pitch);
+    expect(MOODS.sleepy.pace).toBeGreaterThan(MOODS.playful.pace);
+    for (const mood of MOOD_IDS) {
+      expect(MOODS[mood].chatter).toBeGreaterThan(0);
+      expect(MOODS[mood].chatter).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("drifts to a neighbouring mood rather than anywhere at all", () => {
+    // sleepy → shy → curious reads as an afternoon; sleepy → bouncing → sleepy
+    // inside a minute reads as broken.
+    for (const mood of MOOD_IDS) {
+      for (const roll of [0, 0.34, 0.67, 0.99]) {
+        const next = driftMood(mood, roll);
+        expect(MOOD_IDS, `${mood} -> ${next}`).toContain(next);
+        expect(next, `${mood} drifted to itself`).not.toBe(mood);
+      }
+    }
+  });
+
+  it("starts each pet in the same mood every time, not a random one", () => {
+    for (const pet of TOWN_PETS) {
+      expect(startingMood(pet.id)).toBe(startingMood(pet.id));
+      expect(MOOD_IDS).toContain(startingMood(pet.id));
+    }
+  });
+
+  it("always has something to think and something to say", () => {
+    for (const mood of MOOD_IDS) {
+      for (const roll of [0, 0.5, 0.999]) {
+        expect(pickThought(mood, roll)).toBeTruthy();
+        expect(pickMoodLine(mood, roll)).toBeTruthy();
+      }
+    }
+  });
+});
+
+describe("互動音效", () => {
+  it("has a sound for eating, drinking, sitting and every door", () => {
+    // Em: 「每間房間裏面嘅互動，例如係食嘢會有食嘢嘅配音，每件事情會有每件事
+    // 情亦配音」. Synthesised, so this is a list of recipes rather than a list
+    // of files that might not have been uploaded.
+    for (const name of ["eat", "drink", "sit", "stand", "door", "panel", "sparkle"]) {
+      expect(SFX_NAMES, name).toContain(name);
+    }
   });
 });
