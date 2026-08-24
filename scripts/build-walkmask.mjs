@@ -14,7 +14,7 @@
 import { writeFile, access } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import { CORRIDORS } from "./world-corridors.mjs";
+import { CORRIDOR_ART, CORRIDORS } from "./world-corridors.mjs";
 
 const ASSETS = "public/assets/world";
 const OUT = "src/lib/walkmask.ts";
@@ -111,7 +111,9 @@ async function maskFor(file, corridors) {
 const out = {};
 let stranded = false;
 for (const [scene, corridors] of Object.entries(CORRIDORS)) {
-  const file = path.join(ASSETS, `${scene}.webp`);
+  const art = CORRIDOR_ART[scene];
+  if (!art) throw new Error(`${scene}: no art named in CORRIDOR_ART`);
+  const file = path.join(ASSETS, `${art}.webp`);
   try {
     await access(file);
   } catch {
@@ -119,8 +121,7 @@ for (const [scene, corridors] of Object.entries(CORRIDORS)) {
     continue;
   }
   const mask = await maskFor(file, corridors);
-  // The key drops the -day suffix: night is the same ground.
-  out[scene.replace(/-day$/, "")] = mask;
+  out[scene] = mask;
   if (mask.stranded) stranded = true;
   const note = mask.stranded ? `  ** ${mask.stranded} cells unreachable` : "";
   console.log(`${scene}: ${mask.width}x${mask.height} walkable ${(mask.coverage * 100).toFixed(1)}%${note}`);

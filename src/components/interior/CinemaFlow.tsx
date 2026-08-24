@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { sceneArt, SCENES } from "../../lib/scenes";
 import { Link, useNavigate } from "react-router-dom";
 import { Play, Sparkles, Ticket } from "lucide-react";
 import { ThemeGame } from "../ThemeGame";
@@ -223,7 +224,7 @@ export function ScreeningPanel({ tray, childId, videoPath, rewatch = false }: {
       {playing && url
         ? <video src={url} controls autoPlay playsInline />
         : <button className="room-video-poster" onClick={() => setPlaying(true)}>
-            <img src="/assets/world/cinema-hall.webp" alt="" />
+            <img src={sceneArt(SCENES.cinemaHall)} alt="" />
             <span className="kid-play"><Play size={26} /></span>
             <span className="kid-video-label">▶ 播放</span>
           </button>}

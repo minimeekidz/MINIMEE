@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { sceneArt, SCENES } from "../lib/scenes";
 import { MapPin, Play, ShieldCheck, Sparkles } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { serviceSchema, useStructuredData } from "../lib/seo";
@@ -46,10 +47,10 @@ export function GameHome() {
 
         <section className="game-home-strip" aria-label="小鎮入面有咩">
           {[
-            { art: "/assets/world/town-centre-day.webp", name: "小鎮中心", note: "自由行走" },
-            { art: "/assets/world/cinema-lobby.webp", name: "戲院", note: "睇片學新詞" },
-            { art: "/assets/world/fragment-room.webp", name: "碎片拼合室", note: "砌成 MEE 卡" },
-            { art: "/assets/world/cafe.webp", name: "Buddy Cafe", note: "同小寵物做朋友" },
+            { art: sceneArt(SCENES.townCentre), name: "小鎮中心", note: "自由行走" },
+            { art: sceneArt(SCENES.cinemaLobby), name: "戲院", note: "睇片學新詞" },
+            { art: sceneArt(SCENES.fragmentRoom), name: "碎片拼合室", note: "砌成 MEE 卡" },
+            { art: sceneArt(SCENES.cafe), name: "Buddy Cafe", note: "同小寵物做朋友" },
           ].map(place => (
             <figure className="game-home-place" key={place.name}>
               <img src={place.art} alt="" loading="lazy" />
