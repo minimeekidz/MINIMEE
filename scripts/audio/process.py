@@ -12,6 +12,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from denoise import voice_bounds, denoise
 
 SR = 44100
+# 原素材兩聲道內容完全一樣，單聲道輸出零損失兼細一半。
+CHANNELS = os.environ.get("CHANNELS", "1")
+BITRATE  = os.environ.get("BITRATE", "128k")
 PAD_HEAD, PAD_TAIL = 0.05, 0.12
 
 # PITCH = 音高倍數（決定聽落幾高音）
@@ -84,7 +87,7 @@ def main(src, dst):
         sf.write(tmp, y, SR, subtype="PCM_24")
         out = os.path.join(dst, name)
         run(["ffmpeg", "-v", "error", "-y", "-i", tmp, "-af", chain,
-             "-ac", "2", "-c:a", "libmp3lame", "-b:a", "192k", "-write_xing", "1", out])
+             "-ac", CHANNELS, "-c:a", "libmp3lame", "-b:a", BITRATE, "-write_xing", "1", out])
 
         dur = len(decode(out)[0]) / SR
         report.append(dict(檔案=name, 原長=round(len(orig)/SR, 2), 新長=round(dur, 2),
