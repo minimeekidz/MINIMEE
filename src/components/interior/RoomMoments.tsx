@@ -1,6 +1,8 @@
-import { useEffect } from "react";
-import { Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Sparkles } from "lucide-react";
 import { npcPortrait, speak } from "../../lib/babble";
+import { HEROES } from "../../lib/characters";
+import { setHero } from "../../lib/kidCardStore";
 import { isDaytime } from "../../lib/world";
 import type { InteriorSpot } from "../../lib/interiors";
 import type { NewsItem } from "./HomePanels";
@@ -193,10 +195,54 @@ export function PetNewsPanel({ news }: { news: NewsItem[] }) {
 // ---------------------------------------------------------------------------
 
 /**
- * Something drawn but not built. Em: 「更改角色造型（之後開放的新功能）」.
+ * 換造型. Em drew a wardrobe and a tall mirror in 我的小屋 and marked the
+ * feature 「之後開放」; it opens now, because the six heroes already exist and
+ * the card already has a column for which one you are.
+ *
+ * What it is not is a dressing-up game with separate hats and capes — that
+ * needs art that has not been drawn. Changing which hero walks the town is
+ * the honest version of the same wish, and it is the one that works today.
+ */
+export function LooksPanel({ cardId, heroId, onChanged }: {
+  cardId: string;
+  heroId: string | null;
+  onChanged?: (heroId: string) => void;
+}) {
+  const [chosen, setChosen] = useState(heroId ?? HEROES[0].id);
+  const [saved, setSaved] = useState(false);
+
+  async function pick(id: string) {
+    setChosen(id);
+    setSaved(false);
+    const result = await setHero(cardId, id);
+    if (result.ok) { setSaved(true); onChanged?.(id); }
+  }
+
+  return (
+    <div className="looks-panel">
+      <p>衣櫃打開咗。揀邊個造型行出小鎮？</p>
+      <div className="looks-row">
+        {HEROES.map(hero => (
+          <button key={hero.id} type="button"
+            className={chosen === hero.id ? "looks-option picked" : "looks-option"}
+            aria-pressed={chosen === hero.id}
+            onClick={() => void pick(hero.id)}>
+            <img src={hero.art} alt="" />
+            <span>{hero.nameZh}</span>
+            {chosen === hero.id && <Check className="looks-tick" size={16} aria-hidden />}
+          </button>
+        ))}
+      </div>
+      {saved && <p className="panel-note">換好喇 —— 出返小鎮就見到。</p>}
+    </div>
+  );
+}
+
+/**
+ * Something drawn but not built.
  *
  * It is a marker rather than nothing at all because a child will tap the
- * wardrobe either way, and a tap that does nothing reads as broken while a
+ * thing either way, and a tap that does nothing reads as broken while a
  * tap that says 「之後先開放」 reads as a promise.
  */
 export function SoonPanel({ spot }: { spot: InteriorSpot }) {

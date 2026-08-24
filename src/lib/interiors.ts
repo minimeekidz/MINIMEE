@@ -333,8 +333,8 @@ export const INTERIORS: Record<string, Interior> = {
       { id: "update-card", label: "貼紙枱", x: 0.185, y: 0.470, kind: "panel", target: "update-card", hint: "整靚我張卡" },
       { id: "about-me", label: "我張卡", x: 0.740, y: 0.505, kind: "panel", target: "about-me", hint: "睇下寫咗啲乜" },
       { id: "friends", label: "我的好友冊", x: 0.195, y: 0.700, kind: "panel", target: "friends", hint: "見過邊個" },
-      { id: "looks", label: "衣櫃同鏡", x: 0.850, y: 0.255, kind: "soon", target: "looks", hint: "換造型 · 未開放",
-        note: "衣櫃入面掛住幾套仲未做好嘅衫。之後可以喺呢度換角色造型 —— 而家住住先。" },
+      { id: "looks", label: "衣櫃同鏡", x: 0.850, y: 0.255, kind: "panel", target: "looks", hint: "換造型",
+        note: "衣櫃門打開咗，鏡入面照住你。" },
     ],
   },
 };

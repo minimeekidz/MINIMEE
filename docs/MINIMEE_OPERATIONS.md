@@ -291,6 +291,61 @@ Before accepting real families:
 - Maintain consent and audit records.
 - Database backup alone does not back up Storage objects; maintain a separate Storage backup process.
 
+### 10a. Who may call a SECURITY DEFINER function (2026-08-21)
+
+Supabase grants `EXECUTE` on every new function to `anon`, `authenticated`
+**and** `service_role` by default, and `revoke ... from public` does not
+touch an explicit grant. A definer function runs as its owner with RLS out of
+the way, so an anon grant on one is a hole regardless of what the policies
+say. Every function written for this product had that grant from the day it
+was created.
+
+`20260821110000_lock_down_definer_functions.sql` closes them. The rule from
+here on:
+
+> **Every migration that creates a function ends with an explicit
+> `revoke … from public, anon;` and then names the roles that may call it.**
+
+Exactly three functions are anonymous on purpose, because a stranger is the
+intended reader:
+
+| Function | Why anon |
+|---|---|
+| `kid_card_public(slug)` | the shared card link, published cards only |
+| `kid_card_public_stickers(slug)` | the same card's sticker wall |
+| `kid_card_for_lost_token(token)` | a found-item tag, read by whoever found it |
+
+Everything else is `authenticated` or database-internal. Three that were not:
+
+- **`theme_history()` was leaking `themes.video_path` to anon.** `themes` is
+  revoked from `anon` precisely so a video path cannot reach an
+  unauthenticated reader; this definer function handed the retired half of
+  that table to anybody holding the publishable key. Fixed.
+- **`backfill_flash(uuid)`** had no ownership check and wrote cards. It now
+  makes the same `parent_id = auth.uid()` check every other card-writing
+  function makes.
+- **`check_theme_milestones(uuid)`** had no ownership check and wrote cards.
+  It has no caller outside the database, so it is now database-internal.
+
+Neither of the last two could grant a card the child had not earned — both
+only re-issue what the entitlement already says — so there was nothing to
+clean up. They were still unauthenticated write paths into another family's
+collection.
+
+### 10b. 好友 — the one table with no RLS policy
+
+`friendships` has RLS enabled and **no policies**, and nothing is granted on
+the table to any role. That is not an oversight, and the Supabase linter will
+keep flagging it as `rls_enabled_no_policy` (INFO). A row names two children
+belonging to two different parents, so "may this person read this row" has two
+answers; a policy that gets it slightly wrong hands one family's card to the
+other. `request_friend`, `respond_friend` and `my_friends` answer it once.
+
+A friendship is two booleans and is not a friendship until both are true —
+「兩邊都撳同意先加得成」. Declining deletes the row rather than recording the
+refusal, so a child who says no leaves nothing behind in someone else's
+account and can be asked again later.
+
 ## 11. SEO baseline
 
 Required public SEO files and metadata:

@@ -1,49 +1,151 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Camera, QrCode, ShieldCheck } from "lucide-react";
+import { Camera, Check, Keyboard, QrCode, ShieldCheck, X } from "lucide-react";
 import type { EditableCard } from "../../lib/kidCardStore";
+import {
+  canScan, cardLink, requestFriend, respondFriend, scanOnce, slugFromScan, useFriends,
+} from "../../lib/friends";
+import { qrPath } from "../../lib/qr";
 
 // Buddy Café, the 公告板, and the three things in 我的小屋.
 
+/** A card's link, as a scannable square. */
+export function CardQr({ slug, size = 168 }: { slug: string; size?: number }) {
+  const link = cardLink(slug);
+  let code: { d: string; size: number };
+  try {
+    code = qrPath(link);
+  } catch {
+    // Only reachable if a slug grew past what the schema allows, but a café
+    // that throws is worse than a café that shows the link.
+    return <code className="scan-link">{link}</code>;
+  }
+  return (
+    <svg className="card-qr" width={size} height={size}
+      viewBox={`0 0 ${code.size} ${code.size}`} role="img" aria-label={`${slug} 嘅 QR code`}>
+      <rect width={code.size} height={code.size} fill="#fff" />
+      <path d={code.d} fill="#1b1233" />
+    </svg>
+  );
+}
+
 /**
  * Buddy Café's centre table. 「讓小朋友與小朋友之間互掃 qrcode 加好友及同意
- * 加入好友的」— which is the two consoles Em drew facing each other across a
- * divider, one child on each side.
+ * 加入好友的」— the two consoles Em drew facing each other across a divider,
+ * one child on each side.
  *
- * The scanner itself needs a camera permission prompt and a friends backend,
- * neither of which exists yet, so the café teaches the exchange and shows the
- * child their own code. That is honest and still useful: two children can
- * read each other's code off the screen today. The consent step is written
- * into the steps now rather than added later, because 「同意加入好友」 is the
- * half that has to be true before any of this ships — a code that adds a
- * friend the moment it is scanned is a code anybody can point a camera at.
+ * Both halves are real now: the code is a genuine QR (see `qr.ts`) and the
+ * scan writes a friendship that the other child has to agree to before it
+ * counts. Scanning uses the browser's own barcode reader where there is one
+ * and falls back to typing the code, because that reader is not in Safari and
+ * an iPad is the likeliest thing in a child's hands.
  */
-export function FriendScanPanel({ card }: { card: EditableCard | null }) {
+export function FriendScanPanel({ card, onChanged }: {
+  card: EditableCard | null;
+  /** Told when a request goes out, so the book behind can refresh. */
+  onChanged?: () => void;
+}) {
+  const [mode, setMode] = useState<"idle" | "camera" | "type">("idle");
+  const [typed, setTyped] = useState("");
+  const [message, setMessage] = useState<{ good: boolean; text: string } | null>(null);
+  const video = useRef<HTMLVideoElement | null>(null);
+  const stopper = useRef<(() => void) | null>(null);
+
+  // The camera is stopped on the way out of every path, including unmount —
+  // a panel closed with the camera still running is a light left on.
+  useEffect(() => () => stopper.current?.(), []);
+
+  async function send(raw: string) {
+    const slug = slugFromScan(raw);
+    if (!card) return;
+    if (!slug) { setMessage({ good: false, text: "呢個 code 讀唔明，再試多次。" }); return; }
+    const result = await requestFriend(card.id, slug);
+    setMessage(result.ok
+      ? { good: true, text: "送咗出去喇！等佢撳「同意」就加得成。" }
+      : { good: false, text: result.error });
+    if (result.ok) { setMode("idle"); setTyped(""); onChanged?.(); }
+  }
+
+  async function startCamera() {
+    setMode("camera");
+    setMessage(null);
+    // The <video> only exists once the mode has rendered.
+    requestAnimationFrame(() => void (async () => {
+      if (!video.current) return;
+      try {
+        stopper.current = await scanOnce(video.current, text => { void send(text); });
+      } catch {
+        setMode("type");
+        setMessage({ good: false, text: "開唔到相機。打朋友個 code 都得。" });
+      }
+    })());
+  }
+
+  function stopCamera() {
+    stopper.current?.();
+    stopper.current = null;
+    setMode("idle");
+  }
+
   return (
     <div className="cafe-scan">
-      <div className="scan-frame">
-        <Camera size={40} aria-hidden />
-        <p>對準朋友張卡上面嘅 QR code</p>
-      </div>
+      {mode === "camera" ? (
+        <div className="scan-frame live">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video ref={video} playsInline muted />
+          <button type="button" className="tape-button ghost" onClick={stopCamera}>唔掃住</button>
+        </div>
+      ) : (
+        <>
+          {card?.slug ? (
+            <div className="scan-mine">
+              <CardQr slug={card.slug} />
+              <div>
+                <strong>我張卡</strong>
+                <p>俾朋友掃呢個。</p>
+                <code className="scan-link">{card.slug}</code>
+              </div>
+            </div>
+          ) : (
+            <p className="panel-empty">你張卡仲未整好，整好咗先可以換好友。</p>
+          )}
+
+          <div className="scan-actions">
+            {canScan() && (
+              <button type="button" className="tape-button" onClick={() => void startCamera()}>
+                <Camera size={16} aria-hidden /> 掃朋友張卡
+              </button>
+            )}
+            <button type="button" className="tape-button ghost" onClick={() => setMode("type")}>
+              <Keyboard size={16} aria-hidden /> 打朋友個 code
+            </button>
+          </div>
+        </>
+      )}
+
+      {mode === "type" && (
+        <form className="scan-type" onSubmit={event => { event.preventDefault(); void send(typed); }}>
+          <label htmlFor="friend-code">朋友個 code</label>
+          <input id="friend-code" value={typed} autoComplete="off"
+            placeholder="例如 emma-3f2k9x"
+            onChange={event => setTyped(event.target.value)} />
+          <button type="submit" className="tape-button" disabled={!typed.trim() || !card}>送出</button>
+        </form>
+      )}
+
+      {message && (
+        <p className={message.good ? "scan-said good" : "scan-said bad"}>{message.text}</p>
+      )}
 
       <ol className="scan-steps">
         <li>兩個人面對面坐低，一人一邊，打開自己張卡。</li>
-        <li>一個人揀「我的好友冊」，另一個人俾佢掃。</li>
-        <li><strong>兩邊都撳「同意」</strong>先加得成 —— 一邊撳係唔算數嘅。</li>
+        <li>一個人掃另一個人嘅 QR code。</li>
+        <li><strong>另一邊要喺好友冊撳「同意」</strong>先加得成 —— 一邊撳係唔算數嘅。</li>
         <li>加咗之後，兩個人嘅好友冊都會多咗對方。</li>
       </ol>
 
-      {card?.slug && (
-        <div className="scan-mine">
-          <QrCode size={18} aria-hidden />
-          <div>
-            <strong>我嘅卡</strong>
-            <code>/kid/{card.slug}</code>
-          </div>
-        </div>
-      )}
-
       <p className="panel-note">
-        <ShieldCheck size={12} /> 掃描功能整緊。而家可以先影低對方張卡嘅連結。
+        <ShieldCheck size={12} /> 冇公開嘅卡係掃唔到嘅。你唔撳「同意」，冇人加到你。
       </p>
     </div>
   );
@@ -137,14 +239,97 @@ export function UpdateCardPanel({ card, childId }: { card: EditableCard | null; 
   );
 }
 
-/** 我的小屋 — 我的好友冊. */
-export function FriendsBookPanel() {
+/**
+ * 我的小屋 — 我的好友冊.
+ *
+ * Three groups, and the order is deliberate: the people waiting on you come
+ * first, because that is the only part of this screen with something to do.
+ */
+export function FriendsBookPanel({ card }: { card: EditableCard | null }) {
+  const { friends, loading, refresh } = useFriends(card?.id ?? null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function answer(friendshipId: string, accept: boolean) {
+    if (!card) return;
+    setBusy(friendshipId);
+    await respondFriend(card.id, friendshipId, accept);
+    await refresh();
+    setBusy(null);
+  }
+
+  const asking = friends.filter(friend => friend.status === "waiting-me");
+  const sent = friends.filter(friend => friend.status === "waiting-them");
+  const made = friends.filter(friend => friend.status === "friends");
+
+  if (loading) return <div className="home-panel"><p className="panel-empty">揭緊…</p></div>;
+
+  if (friends.length === 0) {
+    return (
+      <div className="home-panel">
+        <p className="panel-empty">好友冊仲係空白。</p>
+        <p className="panel-note">去 Buddy Café 同朋友互掃張卡，加咗就會喺呢度。</p>
+      </div>
+    );
+  }
+
+  const face = (friend: typeof friends[number]) => (
+    <div className="friend-face">
+      {friend.avatarUrl
+        ? <img src={friend.avatarUrl} alt="" />
+        : <span aria-hidden>{friend.displayName.slice(0, 1)}</span>}
+      <div>
+        <strong>{friend.displayName}</strong>
+        <code>{friend.slug}</code>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="home-panel">
-      <p className="panel-empty">好友冊整緊。</p>
-      <p className="panel-note">
-        整好之後，喺 Buddy Café 掃朋友張卡就會加入呢度。
-      </p>
+    <div className="home-panel friends-book">
+      {asking.length > 0 && (
+        <section className="friends-group asking">
+          <h3>等你答</h3>
+          {asking.map(friend => (
+            <article key={friend.friendshipId}>
+              {face(friend)}
+              <div className="friend-buttons">
+                <button type="button" className="tape-button" disabled={busy === friend.friendshipId}
+                  onClick={() => void answer(friend.friendshipId, true)}>
+                  <Check size={15} aria-hidden /> 同意
+                </button>
+                <button type="button" className="tape-button ghost" disabled={busy === friend.friendshipId}
+                  onClick={() => void answer(friend.friendshipId, false)}>
+                  <X size={15} aria-hidden /> 唔要住
+                </button>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
+
+      {made.length > 0 && (
+        <section className="friends-group made">
+          <h3>好友 · {made.length}</h3>
+          {made.map(friend => (
+            <article key={friend.friendshipId}>
+              {face(friend)}
+              <Link className="tape-button ghost" to={`/kid/${friend.slug}`}>睇佢張卡</Link>
+            </article>
+          ))}
+        </section>
+      )}
+
+      {sent.length > 0 && (
+        <section className="friends-group sent">
+          <h3>等緊對方</h3>
+          {sent.map(friend => (
+            <article key={friend.friendshipId}>
+              {face(friend)}
+              <span className="friend-waiting">等緊佢撳同意</span>
+            </article>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

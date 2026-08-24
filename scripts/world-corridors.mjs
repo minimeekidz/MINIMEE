@@ -30,77 +30,75 @@ export const CORRIDORS = {
   // 0.07 step with a 0.055 radius, which on a 1.78 portrait map leaves a gap
   // between centres — the chain came apart and left the upper town
   // unreachable. Keep every step shorter than the smaller radius.
+  // 小鎮中心 — Em's 2026-08-24 art. A sand plaza with a compass rose, the
+  // road in from the bottom edge, a spur to each of the three doors, and the
+  // path climbing away to the pier at the top right.
+  //
+  // Redrawn from scratch: the picture this replaces was a different town
+  // altogether, so nothing from the old chain survives.
   "town-centre-day": [
-    [ // the plaza itself, a wide walkable disc in the middle
-      { x: 0.48, y: 0.42, r: 0.20 }, { x: 0.44, y: 0.48, r: 0.19 },
-      { x: 0.52, y: 0.48, r: 0.19 }, { x: 0.48, y: 0.53, r: 0.18 },
+    [ // the plaza — a broad band under the three shopfronts that narrows as
+      // it comes forward, which is what the painting does
+      { x: 0.470, y: 0.435, r: 0.180 },
+      { x: 0.250, y: 0.425, r: 0.130 }, { x: 0.700, y: 0.425, r: 0.130 },
+      { x: 0.480, y: 0.520, r: 0.170 }, { x: 0.480, y: 0.590, r: 0.150 },
     ],
-    [ // main road, bottom edge up into the plaza
-      { x: 0.47, y: 0.99, r: 0.10 }, { x: 0.47, y: 0.93, r: 0.10 },
-      { x: 0.47, y: 0.87, r: 0.10 }, { x: 0.47, y: 0.81, r: 0.10 },
-      { x: 0.47, y: 0.75, r: 0.11 }, { x: 0.47, y: 0.69, r: 0.12 },
-      { x: 0.47, y: 0.63, r: 0.13 },
+    [ // the road in from the bottom edge, narrowing as it comes forward
+      { x: 0.465, y: 0.990, r: 0.085 }, { x: 0.463, y: 0.945, r: 0.088 },
+      { x: 0.461, y: 0.900, r: 0.090 }, { x: 0.459, y: 0.855, r: 0.092 },
+      { x: 0.458, y: 0.810, r: 0.095 }, { x: 0.457, y: 0.765, r: 0.100 },
+      { x: 0.458, y: 0.720, r: 0.105 }, { x: 0.463, y: 0.675, r: 0.110 },
+      { x: 0.470, y: 0.630, r: 0.120 },
     ],
-    [ // up-left to the cinema door
-      { x: 0.42, y: 0.44, r: 0.11 }, { x: 0.36, y: 0.41, r: 0.10 },
-      { x: 0.30, y: 0.38, r: 0.09 }, { x: 0.25, y: 0.35, r: 0.08 },
-      { x: 0.21, y: 0.32, r: 0.07 }, { x: 0.20, y: 0.30, r: 0.065 },
+    [ // left to the Buddy Café doorstep
+      { x: 0.360, y: 0.560, r: 0.100 }, { x: 0.298, y: 0.583, r: 0.080 },
+      { x: 0.235, y: 0.605, r: 0.068 },
     ],
-    [ // straight up to Hero Studio, the centrepiece
-      { x: 0.49, y: 0.40, r: 0.11 }, { x: 0.50, y: 0.36, r: 0.09 },
-      { x: 0.50, y: 0.32, r: 0.08 }, { x: 0.50, y: 0.29, r: 0.07 },
+    [ // right to MEE 珍藏館
+      { x: 0.590, y: 0.590, r: 0.100 }, { x: 0.670, y: 0.622, r: 0.082 },
+      { x: 0.750, y: 0.655, r: 0.070 },
     ],
-    [ // up-right to the library door
-      { x: 0.55, y: 0.44, r: 0.11 }, { x: 0.62, y: 0.41, r: 0.10 },
-      { x: 0.68, y: 0.38, r: 0.09 }, { x: 0.74, y: 0.35, r: 0.08 },
-      { x: 0.78, y: 0.32, r: 0.07 }, { x: 0.79, y: 0.31, r: 0.065 },
-    ],
-    [ // down-left to the café door
-      { x: 0.40, y: 0.53, r: 0.12 }, { x: 0.34, y: 0.55, r: 0.10 },
-      { x: 0.28, y: 0.57, r: 0.09 }, { x: 0.23, y: 0.58, r: 0.08 },
-      { x: 0.21, y: 0.58, r: 0.07 },
-    ],
-    [ // down-right to the album hall door
-      { x: 0.56, y: 0.54, r: 0.12 }, { x: 0.62, y: 0.56, r: 0.10 },
-      { x: 0.68, y: 0.58, r: 0.09 }, { x: 0.73, y: 0.59, r: 0.08 },
-      { x: 0.76, y: 0.60, r: 0.07 },
-    ],
-    [ // the coast path, up the right edge to the wharf gate
-      { x: 0.66, y: 0.36, r: 0.09 }, { x: 0.74, y: 0.30, r: 0.08 },
-      { x: 0.81, y: 0.24, r: 0.075 }, { x: 0.87, y: 0.18, r: 0.07 },
-      { x: 0.91, y: 0.13, r: 0.065 }, { x: 0.93, y: 0.10, r: 0.06 },
+    [ // up the right edge to the pier. The path runs behind the library, not
+      // diagonally across the hedge the way the first pass had it.
+      { x: 0.800, y: 0.400, r: 0.100 }, { x: 0.860, y: 0.345, r: 0.075 },
+      { x: 0.895, y: 0.290, r: 0.065 }, { x: 0.910, y: 0.235, r: 0.060 },
+      { x: 0.905, y: 0.180, r: 0.058 }, { x: 0.893, y: 0.137, r: 0.052 },
+      { x: 0.885, y: 0.100, r: 0.048 },
     ],
   ],
-  // 小鎮廣場 — redrawn for Em's new art (2026-08-16). One big paved square
-  // with the notice board in the middle, a stage in the upper left, the
-  // village arch on the right and the park path on the left. Deliberately
-  // the roomiest map in the world: this is where the pets wander, and a
-  // narrow square makes them shuffle on the spot.
+
+  // 小鎮廣場 — Em's 2026-08-24 art, and the roomiest map in the world on
+  // purpose: this is where the pets wander, and a narrow square makes them
+  // shuffle on the spot.
+  //
+  // Almost all of it is paving. The shapes carved out of it are the notice
+  // board in the middle, the stage deck at the top left (you stand at the
+  // foot of its steps, not on it), and the planters along the bottom corners.
   "town-square-day": [
-    [ // the square itself
-      { x: 0.48, y: 0.68, r: 0.30 }, { x: 0.42, y: 0.55, r: 0.26 },
-      { x: 0.56, y: 0.55, r: 0.26 }, { x: 0.48, y: 0.45, r: 0.24 },
-      { x: 0.40, y: 0.36, r: 0.20 }, { x: 0.58, y: 0.36, r: 0.20 },
-      { x: 0.48, y: 0.30, r: 0.18 },
+    [ // the open floor, most of the picture
+      { x: 0.480, y: 0.700, r: 0.290 }, { x: 0.480, y: 0.850, r: 0.270 },
+      { x: 0.195, y: 0.625, r: 0.155 }, { x: 0.775, y: 0.625, r: 0.155 },
     ],
     [ // in from the bottom edge
-      { x: 0.47, y: 0.99, r: 0.14 }, { x: 0.47, y: 0.93, r: 0.14 },
-      { x: 0.47, y: 0.87, r: 0.15 },
+      { x: 0.470, y: 0.990, r: 0.170 }, { x: 0.470, y: 0.930, r: 0.185 },
     ],
-    [ // up-left to the stage steps
-      { x: 0.40, y: 0.36, r: 0.16 }, { x: 0.34, y: 0.31, r: 0.13 },
-      { x: 0.29, y: 0.27, r: 0.10 }, { x: 0.27, y: 0.25, r: 0.08 },
+    [ // up the left, past the park signpost, to the stage steps
+      { x: 0.155, y: 0.545, r: 0.115 }, { x: 0.155, y: 0.470, r: 0.105 },
+      { x: 0.180, y: 0.405, r: 0.095 }, { x: 0.250, y: 0.365, r: 0.090 },
+      { x: 0.340, y: 0.345, r: 0.085 },
     ],
-    [ // right to the village arch
-      { x: 0.60, y: 0.33, r: 0.15 }, { x: 0.68, y: 0.27, r: 0.12 },
-      { x: 0.74, y: 0.22, r: 0.10 }, { x: 0.79, y: 0.18, r: 0.085 },
+    [ // out to 散步公園 through the left edge
+      { x: 0.150, y: 0.630, r: 0.115 }, { x: 0.055, y: 0.645, r: 0.090 },
     ],
-    [ // left to the park path
-      { x: 0.34, y: 0.48, r: 0.16 }, { x: 0.26, y: 0.50, r: 0.13 },
-      { x: 0.18, y: 0.52, r: 0.11 }, { x: 0.11, y: 0.54, r: 0.09 },
-      { x: 0.08, y: 0.55, r: 0.08 },
+    [ // up the right, to the arch
+      { x: 0.790, y: 0.545, r: 0.115 }, { x: 0.800, y: 0.470, r: 0.105 },
+      { x: 0.820, y: 0.400, r: 0.095 }, { x: 0.845, y: 0.335, r: 0.085 },
+    ],
+    [ // the strip in front of the notice board
+      { x: 0.470, y: 0.618, r: 0.110 },
     ],
   ],
+
   // 散步公園 — redrawn for Em's new art (2026-08-16). Read off the picture
   // rather than guessed: a scan for the pale stone gives the path's left and
   // right edge on every row, and these discs sit on the middle of it. The
@@ -208,31 +206,34 @@ export const CORRIDORS = {
   // registration in the middle, payment to its right, and the harbour
   // master's booth at the top by the pier. The old chain assumed all five
   // huddled around the centre.
+  // 碼頭市集 — the compass plaza, the road down to the bottom edge, and a
+  // lobe out to each of the five counters. Redrawn against the shipped art.
   "wharf-market-day": [
-    [ // the open quay, most of the lower half
-      { x: 0.47, y: 0.78, r: 0.24 }, { x: 0.40, y: 0.70, r: 0.22 },
-      { x: 0.55, y: 0.70, r: 0.22 }, { x: 0.47, y: 0.64, r: 0.21 },
+    [ // the compass plaza
+      { x: 0.470, y: 0.605, r: 0.19 }, { x: 0.470, y: 0.530, r: 0.15 },
+      { x: 0.470, y: 0.680, r: 0.16 },
     ],
-    [ // in from the bottom edge
-      { x: 0.47, y: 0.99, r: 0.13 }, { x: 0.47, y: 0.93, r: 0.13 },
-      { x: 0.47, y: 0.87, r: 0.14 },
+    [ // the road down and out
+      { x: 0.470, y: 0.99, r: 0.11 }, { x: 0.470, y: 0.93, r: 0.11 },
+      { x: 0.470, y: 0.87, r: 0.11 }, { x: 0.470, y: 0.81, r: 0.12 },
+      { x: 0.470, y: 0.75, r: 0.13 },
     ],
-    [ // up the middle, past registration to the harbour master
-      { x: 0.47, y: 0.62, r: 0.15 }, { x: 0.47, y: 0.56, r: 0.12 },
-      { x: 0.48, y: 0.49, r: 0.11 }, { x: 0.48, y: 0.42, r: 0.10 },
-      { x: 0.48, y: 0.35, r: 0.09 }, { x: 0.48, y: 0.29, r: 0.08 },
-      { x: 0.48, y: 0.24, r: 0.075 },
+    [ // left, to the map-and-card stall
+      { x: 0.360, y: 0.580, r: 0.11 }, { x: 0.280, y: 0.565, r: 0.09 },
+      { x: 0.210, y: 0.555, r: 0.075 }, { x: 0.170, y: 0.545, r: 0.07 },
     ],
-    [ // left along the front of the card stall
-      { x: 0.42, y: 0.60, r: 0.14 }, { x: 0.35, y: 0.55, r: 0.12 },
-      { x: 0.29, y: 0.49, r: 0.10 }, { x: 0.25, y: 0.43, r: 0.09 },
-      { x: 0.23, y: 0.38, r: 0.08 },
+    [ // up, to the striped market awning
+      { x: 0.450, y: 0.560, r: 0.10 }, { x: 0.440, y: 0.510, r: 0.075 },
     ],
-    [ // right to payment, then on to lost property
-      { x: 0.55, y: 0.62, r: 0.14 }, { x: 0.63, y: 0.59, r: 0.12 },
-      { x: 0.71, y: 0.57, r: 0.11 }, { x: 0.78, y: 0.56, r: 0.10 },
-      { x: 0.79, y: 0.49, r: 0.09 }, { x: 0.78, y: 0.42, r: 0.09 },
-      { x: 0.77, y: 0.35, r: 0.08 },
+    [ // right, to the harbour-master and the notice board beside it
+      { x: 0.570, y: 0.580, r: 0.095 }, { x: 0.650, y: 0.560, r: 0.075 },
+      { x: 0.720, y: 0.548, r: 0.065 }, { x: 0.790, y: 0.560, r: 0.062 },
+      { x: 0.845, y: 0.600, r: 0.062 }, { x: 0.880, y: 0.640, r: 0.062 },
+    ],
+    [ // down-right, to the table under the parasol
+      { x: 0.560, y: 0.735, r: 0.085 }, { x: 0.650, y: 0.765, r: 0.075 },
+      { x: 0.745, y: 0.792, r: 0.070 }, { x: 0.830, y: 0.815, r: 0.068 },
     ],
   ],
+
 };

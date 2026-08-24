@@ -37,9 +37,10 @@ export const STAGE_FESTIVALS: Record<LunarFestival, {
     cue: "上台講一句拜年說話，成個廣場都聽到你！",
   },
   "dragon-boat": {
-    // No 端午 card in the catalogue yet, so this one is a performance and
-    // says so. Offering a claim that quietly returns nothing is worse than
-    // offering no claim at all.
+    // There is no 端午 card. Em's eight special cards are 18 主題, 36 主題,
+    // 一周年, 加好友, 新年, 中秋, 寵物 Lv12 and 生日 — dragon-boat is not one
+    // of them, so this is a performance and says so. Offering a claim that
+    // quietly returns nothing is worse than offering no claim at all.
     claim: null,
     prop: "🐲",
     acts: ["扒龍舟", "包糭", "掛香包", "叫加油"],
