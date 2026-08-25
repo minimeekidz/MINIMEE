@@ -39,10 +39,11 @@ import { pastFilmsFrom } from "./components/interior/CinemaFlow";
 import { configProblem } from "./lib/supabase";
 import { posterFor } from "./lib/posters";
 import {
-  AMBIENT_NPCS, ambientPortrait, babbleFor, blipCount, kitFor, NPC_POSTS,
-  npcPortrait, SYLLABLE_SHAPES, SYLLABLES_PER_KIT, VOICE_KIT_OVERRIDES,
-  VOICE_PRESETS,
+  AMBIENT_NPCS, ambientPortrait, babbleFor, blipCount, kitFor, NPC_EMOTIONS,
+  NPC_FOLDERS, NPC_POSTS, npcEmotion, npcPortrait, npcPose, SYLLABLE_SHAPES,
+  SYLLABLES_PER_KIT, VOICE_KIT_OVERRIDES, VOICE_PRESETS,
 } from "./lib/babble";
+import npcArtIndex from "./data/npcArtIndex.json";
 import posterIndex from "./data/posterIndex.json";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 import {
@@ -1538,8 +1539,15 @@ describe("MINIMEE route shells", () => {
     expect(NPC_POSTS).toHaveLength(10);
     expect(new Set(NPC_POSTS).size).toBe(NPC_POSTS.length);
     for (const post of NPC_POSTS) {
-      expect(npcPortrait(post, true)).toBe(`/assets/uploads/NPC/${post}-day.webp`);
-      expect(npcPortrait(post, false)).toBe(`/assets/uploads/NPC/${post}-night.webp`);
+      for (const daytime of [true, false]) {
+        const shift = `${post}-${daytime ? "day" : "night"}`;
+        const folder = NPC_FOLDERS[shift];
+        // Every shift is drawn, and the path is built from Em's folder rather
+        // than from the post id — the two do not always spell the same thing.
+        expect(folder, shift).toBeDefined();
+        expect(npcPortrait(post, daytime))
+          .toBe(`/assets/uploads/NPC/${folder}/runtime/turnaround/front.webp`);
+      }
     }
     expect(npcPortrait("usher", true)).not.toBe(npcPortrait("usher", false));
 
@@ -1555,7 +1563,10 @@ describe("MINIMEE route shells", () => {
     for (const idler of AMBIENT_NPCS) {
       expect(ZONES[idler.zone], idler.id).toBeDefined();
       expect(isWalkable(ZONES[idler.zone], idler.x, idler.y), `${idler.id} off the path`).toBe(true);
-      expect(ambientPortrait(idler.id)).toBe(`/assets/uploads/NPC/idle-${idler.id}.webp`);
+      const folder = NPC_FOLDERS[`idle-${idler.id}`];
+      expect(folder, idler.id).toBeDefined();
+      expect(ambientPortrait(idler.id))
+        .toBe(`/assets/uploads/NPC/${folder}/runtime/turnaround/front.webp`);
     }
     // And they do not pile on top of each other.
     for (const a of AMBIENT_NPCS) {
@@ -1564,6 +1575,47 @@ describe("MINIMEE route shells", () => {
         expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id}/${b.id}`).toBeGreaterThan(0.06);
       }
     }
+  });
+
+  it("has a folder on disk for all 26 characters, every one the same shape", () => {
+    // A missing portrait hides itself on screen, which is the right thing to
+    // do and the reason nobody would notice a character who never made it out
+    // of the zip. npcArtIndex.json is written from the folder itself by
+    // scripts/index-npc-art.mjs, so this compares the casting table against
+    // what actually shipped rather than against a hand-kept list.
+    const onDisk = (npcArtIndex as {
+      folders: Record<string, { turnaround: string[]; emotions: string[] }>;
+    }).folders;
+
+    const ids = Object.keys(NPC_FOLDERS);
+    expect(ids).toHaveLength(NPC_POSTS.length * 2 + AMBIENT_NPCS.length);
+    // Two characters never share a folder — that would be one animal working
+    // both shifts.
+    expect(new Set(Object.values(NPC_FOLDERS)).size).toBe(ids.length);
+    expect(Object.keys(onDisk)).toHaveLength(ids.length);
+
+    for (const id of ids) {
+      const art = onDisk[NPC_FOLDERS[id]];
+      expect(art, `missing art for ${id}`).toBeDefined();
+      // The front view is what every counter and every idler draws.
+      expect(art.turnaround, id).toContain("front");
+      // 「四面 + 道具」 — the four sides are the turnaround, the rest is what
+      // that post holds in its hands.
+      for (const side of ["front", "back", "left_side", "right_side"]) {
+        expect(art.turnaround, `${id} ${side}`).toContain(side);
+      }
+      // All twelve faces, for all 26, so a panel can ask for one without
+      // knowing who is standing in it.
+      expect([...art.emotions].sort(), id).toEqual([...NPC_EMOTIONS].sort());
+    }
+
+    // And the paths point where the files actually are.
+    expect(npcPose("usher-day"))
+      .toBe("/assets/uploads/NPC/NPC_01_usher-day/runtime/turnaround/front.webp");
+    expect(npcPose("usher-day", "check_ticket"))
+      .toBe("/assets/uploads/NPC/NPC_01_usher-day/runtime/turnaround/check_ticket.webp");
+    expect(npcEmotion("idle-deer", "joyful"))
+      .toBe("/assets/uploads/NPC/NPC_23_plaza-deer/runtime/emotions/joyful.webp");
   });
 
   it("has a poster on disk for every one of the 36 themes", () => {

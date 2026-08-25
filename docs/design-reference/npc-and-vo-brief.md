@@ -182,7 +182,7 @@ Em：「NPC 藍圖我記得已經比左你，你放上去」。
 
 | 你以為交咗 | 實際狀態 |
 |---|---|
-| NPC 藍圖 | `uploads/NPC/` 只有 README，0 個檔 |
+| ~~NPC 藍圖~~ | ✅ **2026-08-25 已收齊並接好** —— 26 隻 × 20 個檔，見下面 |
 | ~~12 隻寵物多角度 sprite~~ | ✅ **已收到並接好** —— 12 × 4 方向 × 2 幀，已喺遊戲行緊 |
 | ~~小鎮中心／小鎮廣場~~ | ✅ **已收到並換咗** —— 你 push 咗上 `main`，我之前淨係睇自己條 branch |
 | 碼頭市集 | 仲未有 —— 你嗰 40 個檔入面冇 |
@@ -201,18 +201,44 @@ Em：「NPC 藍圖我記得已經比左你，你放上去」。
 
 ---
 
+## ✅ 2026-08-25：26 隻 NPC 全部收齊
+
+五個 zip，26 隻，每隻 20 個檔（8 個轉身／道具 + 12 個表情），共 518 張。
+舊嗰批 all-in-one 大圖（`usher-day-action.webp` 之類）已經刪走 ——
+一隻一個資料夾，唔再有一張圖入面塞幾個 pose。
+
+```
+public/assets/uploads/NPC/NPC_01_usher-day/runtime/turnaround/front.webp
+public/assets/uploads/NPC/NPC_01_usher-day/runtime/emotions/joyful.webp
+```
+
+程式入面：
+
+- `npcPortrait(post, isDaytime())` → 嗰更嘅 `front.webp`（同以前一樣，路徑變咗）
+- `npcPose(id, "check_ticket")` → 轉身／道具動作
+- `npcEmotion(id, "joyful")` → 十二個表情之一
+- `NPC_FOLDERS` 就係「程式叫法 ↔ Em 資料夾名」嘅對照表
+
+**Em 嘅資料夾名照原樣保留**（連 `NPC_01_` 個編號），所以重畫邊隻都唔使改名。
+唯一要記住嘅係 Studio 嗰兩對：`NPC_05/06`（搖桿）= `studio-game`，
+`NPC_19/20`（「Aa」字卡）= `studio-words`。
+
+詳情同交圖規格見 [`public/assets/uploads/NPC/README.md`](../../public/assets/uploads/NPC/README.md)。
+
+---
+
 ## 總數一覽
 
 | 項目 | 數量 | 優先 | 幾耐 |
 |---|---|---|---|
-| NPC 崗位（10 × 早晚更） | 20 隻 | 🔴 | 出圖，唔使錄 |
-| 閒人（冇早晚更） | 6 隻 | ⚪ | |
+| ~~NPC 崗位（10 × 早晚更）~~ | 20 隻 | ✅ | **2026-08-25 已收齊** |
+| ~~閒人（冇早晚更）~~ | 6 隻 | ✅ | **2026-08-25 已收齊** |
 | 主題旁白（清楚廣東話） | 36 條（先錄 3 條） | 🔴 | 3 條約 10 分鐘 |
 | 主題問題（清楚廣東話） | 36 條（先錄 3 條） | 🔴 | 好快 |
 | ~~亂語音庫~~ | **0 段** | ✅ | **已經做好，瀏覽器合成，唔使錄** |
 
-**如果今個星期只做一件事：** 出 `usher-day.webp` 同 `usher-night.webp`。
-戲院接待處而家有對白、有聲，就係差個樣。
+**如果今個星期只做一件事：** 錄 3 條主題旁白。
+NPC 已經全部有樣，而家淨低係把聲。
 
 ---
 
@@ -220,10 +246,13 @@ Em：「NPC 藍圖我記得已經比左你，你放上去」。
 
 - 旁白 → `public/assets/vo/themes/theme-NN.mp3`
 - 問題 → `public/assets/vo/questions/theme-NN-q.mp3`
-- NPC 崗位 → `public/assets/uploads/NPC/<post>-day.webp` / `-night.webp`
-- 閒人 → `public/assets/uploads/NPC/idle-<name>.webp`
+- NPC 崗位 → `public/assets/uploads/NPC/NPC_NN_<崗位>-day/runtime/…`
+- 閒人 → `public/assets/uploads/NPC/NPC_NN_<地方>-<角色>/runtime/…`
 
-檔名跟返上面，push 上 GitHub 就自動接，**唔使改任何 code**。
+角色圖照 [`uploads/NPC/README.md`](../../public/assets/uploads/NPC/README.md)
+嗰個資料夾結構放（`runtime/turnaround/` + `runtime/emotions/`），
+放完行一次 `node scripts/index-npc-art.mjs`。
+其餘檔名跟返上面，push 上 GitHub 就自動接，**唔使改任何 code**。
 同海報一樣：檔名就係索引，冇檔案嗰個位靜靜哋唔出聲，
 唔會有壞圖或者錯誤訊息。
 
