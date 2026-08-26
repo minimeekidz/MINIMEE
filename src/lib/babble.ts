@@ -336,9 +336,76 @@ export const AMBIENT_NPCS: Array<{
   { id: "guinea-pig", nameZh: "天竺鼠", zone: "village-gate", x: 0.585, y: 0.560 },
 ];
 
-/** Where an idler's sprite lives. One file each — they do not change shift. */
+/**
+ * Where each character's art lives, by the id the game already calls them.
+ *
+ * The folder names are Em's own, kept exactly as they arrive in the drop —
+ * running number and all — so a redraw can be dropped in without anybody
+ * renaming 500 files. That is also why the studio pair looks mismatched here:
+ * `NPC_05` is the joystick desk and `NPC_19` the "Aa" flashcard desk, and this
+ * table is the one place that has to know it.
+ */
+export const NPC_FOLDERS: Record<string, string> = {
+  "usher-day": "NPC_01_usher-day",
+  "usher-night": "NPC_02_usher-night",
+  "librarian-day": "NPC_03_librarian-day",
+  "librarian-night": "NPC_04_librarian-night",
+  "studio-game-day": "NPC_05_studio-day",
+  "studio-game-night": "NPC_06_studio-night",
+  "stall-card-day": "NPC_07_stall-card-day",
+  "stall-card-night": "NPC_08_stall-card-night",
+  "stall-child-day": "NPC_09_stall-child-day",
+  "stall-child-night": "NPC_10_stall-child-night",
+  "stall-pay-day": "NPC_11_stall-pay-day",
+  "stall-pay-night": "NPC_12_stall-pay-night",
+  "stall-lost-day": "NPC_13_stall-lost-day",
+  "stall-lost-night": "NPC_14_stall-lost-night",
+  "stall-security-day": "NPC_15_stall-security-day",
+  "stall-security-night": "NPC_16_stall-security-night",
+  "cafe-day": "NPC_17_cafe-day",
+  "cafe-night": "NPC_18_cafe-night",
+  "studio-words-day": "NPC_19_studio-extra-day",
+  "studio-words-night": "NPC_20_studio-extra-night",
+  "idle-hamster": "NPC_21_neighbour-hamster",
+  "idle-guinea-pig": "NPC_22_neighbour-guineapig",
+  "idle-deer": "NPC_23_plaza-deer",
+  "idle-koala": "NPC_24_plaza-koala",
+  "idle-frog": "NPC_25_plaza-frog",
+  "idle-ferret": "NPC_26_plaza-ferret",
+};
+
+/**
+ * The twelve faces every character ships with.
+ *
+ * The same twelve for all 26, which is what makes them usable: a panel can ask
+ * for `joyful` without knowing who is standing in it.
+ */
+export const NPC_EMOTIONS = [
+  "neutral", "joyful", "excited", "playful_wink", "shy", "surprised",
+  "thinking", "determined", "apologetic", "sad", "worried", "sleepy",
+] as const;
+export type NpcEmotion = (typeof NPC_EMOTIONS)[number];
+
+/**
+ * One pose out of a character's turnaround: `front`, `back`, `left_side`,
+ * `right_side`, plus the two or three props that belong to that post.
+ *
+ * An id with no folder still returns a path rather than throwing — every call
+ * site draws it into an `<img>` that hides itself on error, so a character Em
+ * has not drawn yet goes quiet instead of showing a broken picture.
+ */
+export function npcPose(id: string, pose = "front"): string {
+  return `/assets/uploads/NPC/${NPC_FOLDERS[id] ?? id}/runtime/turnaround/${pose}.webp`;
+}
+
+/** The same character, pulling one of the twelve faces. */
+export function npcEmotion(id: string, emotion: NpcEmotion): string {
+  return `/assets/uploads/NPC/${NPC_FOLDERS[id] ?? id}/runtime/emotions/${emotion}.webp`;
+}
+
+/** Where an idler's sprite lives. No shift — they stand as they are drawn. */
 export function ambientPortrait(id: string): string {
-  return `/assets/uploads/NPC/idle-${id}.webp`;
+  return npcPose(`idle-${id}`);
 }
 
 /** A short nothing to say, picked from the id so it stays the same per idler. */
@@ -351,7 +418,7 @@ export const IDLE_LINES = [
   "嘿，你又嚟啦！",
 ];
 
-/** Which portrait is on duty. */
+/** Which portrait is on duty — the standing front view of that shift. */
 export function npcPortrait(post: NpcPost | string, daytime: boolean): string {
-  return `/assets/uploads/NPC/${post}-${daytime ? "day" : "night"}.webp`;
+  return npcPose(`${post}-${daytime ? "day" : "night"}`);
 }

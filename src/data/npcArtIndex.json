@@ -1,0 +1,679 @@
+{
+  "note": "Written by scripts/index-npc-art.mjs from public/assets/uploads/NPC. The test asserts every character in NPC_FOLDERS has a front view and all twelve faces, which is the check a hidden portrait would otherwise swallow.",
+  "folders": {
+    "NPC_01_usher-day": {
+      "turnaround": [
+        "back",
+        "check_ticket",
+        "front",
+        "left_side",
+        "listen_idle",
+        "present_ticket",
+        "right_side"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_02_usher-night": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "listen_idle",
+        "present_ticket",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_03_librarian-day": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "point_shelf",
+        "present_book",
+        "right_side",
+        "stamp_book",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_04_librarian-night": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "point_shelf",
+        "present_book",
+        "right_side",
+        "stamp_book",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_05_studio-day": {
+      "turnaround": [
+        "award_star",
+        "back",
+        "front",
+        "left_side",
+        "present_word_card",
+        "right_side",
+        "use_controller",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_06_studio-night": {
+      "turnaround": [
+        "award_star",
+        "back",
+        "front",
+        "left_side",
+        "present_word_card",
+        "right_side",
+        "use_controller",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_07_stall-card-day": {
+      "turnaround": [
+        "apply_sticker",
+        "back",
+        "front",
+        "left_side",
+        "present_card",
+        "right_side",
+        "scan_card",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_08_stall-card-night": {
+      "turnaround": [
+        "apply_sticker",
+        "back",
+        "front",
+        "left_side",
+        "present_card",
+        "right_side",
+        "scan_card",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_09_stall-child-day": {
+      "turnaround": [
+        "back",
+        "check_form",
+        "confirm",
+        "front",
+        "left_side",
+        "present_form",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_10_stall-child-night": {
+      "turnaround": [
+        "back",
+        "check_form",
+        "confirm",
+        "front",
+        "left_side",
+        "present_form",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_11_stall-pay-day": {
+      "turnaround": [
+        "back",
+        "coin_receipt",
+        "confirm",
+        "front",
+        "left_side",
+        "present_plan",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_12_stall-pay-night": {
+      "turnaround": [
+        "back",
+        "coin_receipt",
+        "confirm",
+        "front",
+        "left_side",
+        "present_plan",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_13_stall-lost-day": {
+      "turnaround": [
+        "back",
+        "front",
+        "inspect",
+        "left_side",
+        "present_found",
+        "return_item",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_14_stall-lost-night": {
+      "turnaround": [
+        "back",
+        "front",
+        "inspect",
+        "left_side",
+        "present_found",
+        "return_item",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_15_stall-security-day": {
+      "turnaround": [
+        "back",
+        "flashlight",
+        "front",
+        "left_side",
+        "radio",
+        "right_side",
+        "salute",
+        "stop_check"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_16_stall-security-night": {
+      "turnaround": [
+        "back",
+        "flashlight",
+        "front",
+        "left_side",
+        "radio",
+        "right_side",
+        "salute",
+        "stop_check"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_17_cafe-day": {
+      "turnaround": [
+        "back",
+        "check_order",
+        "front",
+        "left_side",
+        "pour_drink",
+        "present_tray",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_18_cafe-night": {
+      "turnaround": [
+        "back",
+        "check_order",
+        "front",
+        "left_side",
+        "pour_drink",
+        "present_tray",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_19_studio-extra-day": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "point_wand",
+        "present_word_card",
+        "right_side",
+        "use_tablet",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_20_studio-extra-night": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "point_wand",
+        "present_word_card",
+        "right_side",
+        "use_tablet",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_21_neighbour-hamster": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "present_flower",
+        "right_side",
+        "water_plant",
+        "wave",
+        "welcome_card"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_22_neighbour-guineapig": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "present_gift",
+        "right_side",
+        "show_tote",
+        "wave",
+        "welcome_card"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_23_plaza-deer": {
+      "turnaround": [
+        "back",
+        "cheer",
+        "front",
+        "hold_balloon",
+        "left_side",
+        "point_map",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_24_plaza-koala": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "point_map",
+        "present_guide",
+        "read_map",
+        "right_side",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_25_plaza-frog": {
+      "turnaround": [
+        "back",
+        "blow_bubbles",
+        "cheer",
+        "front",
+        "left_side",
+        "right_side",
+        "show_bubble_jar",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    },
+    "NPC_26_plaza-ferret": {
+      "turnaround": [
+        "back",
+        "front",
+        "left_side",
+        "play_chord",
+        "right_side",
+        "strum_guitar",
+        "thank_you_bow",
+        "wave"
+      ],
+      "emotions": [
+        "apologetic",
+        "determined",
+        "excited",
+        "joyful",
+        "neutral",
+        "playful_wink",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "thinking",
+        "worried"
+      ]
+    }
+  }
+}

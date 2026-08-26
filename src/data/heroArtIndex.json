@@ -1,0 +1,209 @@
+{
+  "note": "Written by scripts/index-hero-art.mjs from public/assets/heroes. The test asserts every hero in HERO_FOLDERS has all sixteen motion frames and all twelve faces.",
+  "folders": {
+    "A_BOY": {
+      "motion": [
+        "back_idle",
+        "front_idle",
+        "front_left_3q",
+        "front_right_3q",
+        "left_idle",
+        "right_idle",
+        "run",
+        "sit_front",
+        "sit_side",
+        "walk_back",
+        "walk_front",
+        "walk_left_a",
+        "walk_left_b",
+        "walk_right_a",
+        "walk_right_b",
+        "wave"
+      ],
+      "expressions": [
+        "angry",
+        "cheer",
+        "curious",
+        "determined",
+        "laugh",
+        "neutral",
+        "proud",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "worried"
+      ]
+    },
+    "A_GIRL": {
+      "motion": [
+        "back_idle",
+        "front_idle",
+        "front_left_3q",
+        "front_right_3q",
+        "left_idle",
+        "right_idle",
+        "run",
+        "sit_front",
+        "sit_side",
+        "walk_back",
+        "walk_front",
+        "walk_left_a",
+        "walk_left_b",
+        "walk_right_a",
+        "walk_right_b",
+        "wave"
+      ],
+      "expressions": [
+        "angry",
+        "cheer",
+        "curious",
+        "determined",
+        "laugh",
+        "neutral",
+        "proud",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "worried"
+      ]
+    },
+    "B_BOY": {
+      "motion": [
+        "back_idle",
+        "front_idle",
+        "front_left_3q",
+        "front_right_3q",
+        "left_idle",
+        "right_idle",
+        "run",
+        "sit_front",
+        "sit_side",
+        "walk_back",
+        "walk_front",
+        "walk_left_a",
+        "walk_left_b",
+        "walk_right_a",
+        "walk_right_b",
+        "wave"
+      ],
+      "expressions": [
+        "angry",
+        "cheer",
+        "curious",
+        "determined",
+        "laugh",
+        "neutral",
+        "proud",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "worried"
+      ]
+    },
+    "B_GIRL": {
+      "motion": [
+        "back_idle",
+        "front_idle",
+        "front_left_3q",
+        "front_right_3q",
+        "left_idle",
+        "right_idle",
+        "run",
+        "sit_front",
+        "sit_side",
+        "walk_back",
+        "walk_front",
+        "walk_left_a",
+        "walk_left_b",
+        "walk_right_a",
+        "walk_right_b",
+        "wave"
+      ],
+      "expressions": [
+        "angry",
+        "cheer",
+        "curious",
+        "determined",
+        "laugh",
+        "neutral",
+        "proud",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "worried"
+      ]
+    },
+    "C_BOY": {
+      "motion": [
+        "back_idle",
+        "front_idle",
+        "front_left_3q",
+        "front_right_3q",
+        "left_idle",
+        "right_idle",
+        "run",
+        "sit_front",
+        "sit_side",
+        "walk_back",
+        "walk_front",
+        "walk_left_a",
+        "walk_left_b",
+        "walk_right_a",
+        "walk_right_b",
+        "wave"
+      ],
+      "expressions": [
+        "angry",
+        "cheer",
+        "curious",
+        "determined",
+        "laugh",
+        "neutral",
+        "proud",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "worried"
+      ]
+    },
+    "C_GIRL": {
+      "motion": [
+        "back_idle",
+        "front_idle",
+        "front_left_3q",
+        "front_right_3q",
+        "left_idle",
+        "right_idle",
+        "run",
+        "sit_front",
+        "sit_side",
+        "walk_back",
+        "walk_front",
+        "walk_left_a",
+        "walk_left_b",
+        "walk_right_a",
+        "walk_right_b",
+        "wave"
+      ],
+      "expressions": [
+        "angry",
+        "cheer",
+        "curious",
+        "determined",
+        "laugh",
+        "neutral",
+        "proud",
+        "sad",
+        "shy",
+        "sleepy",
+        "surprised",
+        "worried"
+      ]
+    }
+  }
+}
