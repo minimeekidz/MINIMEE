@@ -599,12 +599,13 @@ Buddy Cafe_夜_16x9.webp    1672 × 941
 | 高度 | 512 px 左右（闊度隨佢） |
 | 姿勢 | 企定、面向鏡頭或者略側、**全身** |
 | ⚠️ 位置 | **腳底要貼近圖片底邊** —— 下面留白會令佢浮喺半空 |
-| 放邊 | `public/assets/uploads/NPC/` |
+| 放邊 | `public/assets/uploads/NPC/NPC_NN_<名>/runtime/turnaround/`、`…/emotions/` |
 
 **完整清單（12 隻，連職責同角色描述）搬咗去
 [`npc-and-vo-brief.md`](./npc-and-vo-brief.md)** —— 嗰份仲有埋 VO 錄音清單。
 
-一句總結：`usher.webp`（戲院職員）最急，接待處而家空咗個位。
+一句總結：26 隻已經全部收齊接好（2026-08-25），
+資料夾結構見 [`uploads/NPC/README.md`](../../public/assets/uploads/NPC/README.md)。
 
 **NPC prompt 範本：**
 

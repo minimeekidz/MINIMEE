@@ -10,6 +10,12 @@
 // and `petFrame` below is the lookup the town walks on. `TownPet.art` stays as
 // the single front-facing portrait, which is still what a card, a panel or a
 // friend list wants — a still picture of a pet, not one leg of a walk cycle.
+//
+// The heroes got the same treatment on 2026-08-26: 16 motion frames and 12
+// faces each, one folder per hero. That drop arrived on white rather than on
+// transparency, so `scripts/cut-hero-sprites.mjs` de-keys it — `Hero.art` is
+// the standing `front_idle` frame, for the same reason `TownPet.art` is the
+// front-facing portrait.
 
 export interface Hero {
   id: string;
@@ -17,13 +23,69 @@ export interface Hero {
   art: string;
 }
 
+/**
+ * Where each hero's art lives, by the id the game already calls them.
+ *
+ * Em's folder names are kept exactly as they arrive in the drop, the same way
+ * the NPC folders are (see `NPC_FOLDERS` in `babble.ts`), so a redraw can be
+ * dropped in without renaming anything. Her letters are the pairs — A, B, C
+ * — and the game's ids read the same pairs the other way round.
+ */
+export const HERO_FOLDERS: Record<string, string> = {
+  "boy-a": "A_BOY", "girl-a": "A_GIRL",
+  "boy-b": "B_BOY", "girl-b": "B_GIRL",
+  "boy-c": "C_BOY", "girl-c": "C_GIRL",
+};
+
+/**
+ * The sixteen motion frames every hero ships with.
+ *
+ * `front_idle` is the still one — a card, a panel and the town walker all want
+ * a hero standing there, not one leg of a walk cycle. The `_a`/`_b` pairs are
+ * the two steps of a walk, and `run`, `wave`, `sit_front`, `sit_side` are the
+ * poses a room can put a child in.
+ */
+export const HERO_POSES = [
+  "front_idle", "back_idle", "left_idle", "right_idle",
+  "front_left_3q", "front_right_3q",
+  "walk_front", "walk_back",
+  "walk_left_a", "walk_left_b", "walk_right_a", "walk_right_b",
+  "run", "wave", "sit_front", "sit_side",
+] as const;
+export type HeroPose = (typeof HERO_POSES)[number];
+
+/** The twelve faces every hero ships with — the same twelve for all six. */
+export const HERO_EXPRESSIONS = [
+  "neutral", "laugh", "cheer", "proud", "shy", "surprised",
+  "curious", "determined", "angry", "sad", "worried", "sleepy",
+] as const;
+export type HeroExpression = (typeof HERO_EXPRESSIONS)[number];
+
+/**
+ * One pose out of a hero's motion set.
+ *
+ * An id with no folder still returns a path rather than throwing: the call
+ * sites draw it into an `<img>`, and a missing frame is better as a gap than
+ * as a crash.
+ */
+export function heroPose(id: string, pose: HeroPose = "front_idle"): string {
+  const folder = HERO_FOLDERS[id] ?? id;
+  return `/assets/heroes/${folder}/runtime/motion/${folder}_${pose}.webp`;
+}
+
+/** The same hero, pulling one of the twelve faces. */
+export function heroExpression(id: string, expression: HeroExpression): string {
+  const folder = HERO_FOLDERS[id] ?? id;
+  return `/assets/heroes/${folder}/runtime/expressions/${folder}_${expression}.webp`;
+}
+
 export const HEROES: Hero[] = [
-  { id: "girl-a", nameZh: "粉紅英雄", art: "/assets/heroes/hero-girl-a.webp" },
-  { id: "boy-a", nameZh: "藍披風英雄", art: "/assets/heroes/hero-boy-a.webp" },
-  { id: "girl-b", nameZh: "金髮公主", art: "/assets/heroes/hero-girl-b.webp" },
-  { id: "boy-b", nameZh: "飛行探險家", art: "/assets/heroes/hero-boy-b.webp" },
-  { id: "boy-c", nameZh: "星章英雄", art: "/assets/heroes/hero-boy-c.webp" },
-  { id: "girl-c", nameZh: "森林守護者", art: "/assets/heroes/hero-girl-c.webp" },
+  { id: "girl-a", nameZh: "粉紅英雄", art: heroPose("girl-a") },
+  { id: "boy-a", nameZh: "藍披風英雄", art: heroPose("boy-a") },
+  { id: "girl-b", nameZh: "金髮公主", art: heroPose("girl-b") },
+  { id: "boy-b", nameZh: "飛行探險家", art: heroPose("boy-b") },
+  { id: "boy-c", nameZh: "星章英雄", art: heroPose("boy-c") },
+  { id: "girl-c", nameZh: "森林守護者", art: heroPose("girl-c") },
 ];
 
 export function findHero(id: string | null | undefined): Hero {

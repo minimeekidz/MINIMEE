@@ -3,7 +3,11 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
-import { HEROES, TOWN_PETS } from "./lib/characters";
+import {
+  HERO_EXPRESSIONS, HERO_FOLDERS, HERO_POSES, HEROES, heroExpression, heroPose,
+  TOWN_PETS,
+} from "./lib/characters";
+import heroArtIndex from "./data/heroArtIndex.json";
 import { arrivalPoint, hotspotNear, isDaytime, isDawn, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground, zoneBackgroundLayers } from "./lib/world";
 import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
@@ -39,10 +43,11 @@ import { pastFilmsFrom } from "./components/interior/CinemaFlow";
 import { configProblem } from "./lib/supabase";
 import { posterFor } from "./lib/posters";
 import {
-  AMBIENT_NPCS, ambientPortrait, babbleFor, blipCount, kitFor, NPC_POSTS,
-  npcPortrait, SYLLABLE_SHAPES, SYLLABLES_PER_KIT, VOICE_KIT_OVERRIDES,
-  VOICE_PRESETS,
+  AMBIENT_NPCS, ambientPortrait, babbleFor, blipCount, kitFor, NPC_EMOTIONS,
+  NPC_FOLDERS, NPC_POSTS, npcEmotion, npcPortrait, npcPose, SYLLABLE_SHAPES,
+  SYLLABLES_PER_KIT, VOICE_KIT_OVERRIDES, VOICE_PRESETS,
 } from "./lib/babble";
+import npcArtIndex from "./data/npcArtIndex.json";
 import posterIndex from "./data/posterIndex.json";
 import { CurrentWordsPanel, TicketsPanel } from "./components/interior/StudioPanels";
 import {
@@ -603,6 +608,40 @@ describe("MINIMEE route shells", () => {
     // Distinct ids and distinct art, or two entries would render identically.
     expect(new Set(HEROES.map(h => h.art)).size).toBe(6);
     expect(new Set(TOWN_PETS.map(p => p.art)).size).toBe(12);
+  });
+
+  it("has a folder on disk for all six heroes, every one the same shape", () => {
+    // heroArtIndex.json is written from the folder itself by
+    // scripts/index-hero-art.mjs, so this compares the cast against what
+    // actually shipped rather than against a hand-kept list.
+    const onDisk = (heroArtIndex as {
+      folders: Record<string, { motion: string[]; expressions: string[] }>;
+    }).folders;
+
+    const ids = Object.keys(HERO_FOLDERS);
+    expect(ids).toHaveLength(HEROES.length);
+    // Two heroes never share a folder — that would be one child in two capes.
+    expect(new Set(Object.values(HERO_FOLDERS)).size).toBe(ids.length);
+    expect(Object.keys(onDisk)).toHaveLength(ids.length);
+
+    for (const id of ids) {
+      const art = onDisk[HERO_FOLDERS[id]];
+      expect(art, `missing art for ${id}`).toBeDefined();
+      // All sixteen frames and all twelve faces, for all six, so a panel can
+      // ask for one without knowing which hero the child picked.
+      expect([...art.motion].sort(), id).toEqual([...HERO_POSES].sort());
+      expect([...art.expressions].sort(), id).toEqual([...HERO_EXPRESSIONS].sort());
+    }
+
+    // Every hero's portrait is their standing frame, and the paths point where
+    // the files actually are.
+    for (const hero of HEROES) expect(hero.art).toBe(heroPose(hero.id));
+    expect(heroPose("girl-a"))
+      .toBe("/assets/heroes/A_GIRL/runtime/motion/A_GIRL_front_idle.webp");
+    expect(heroPose("boy-c", "walk_left_a"))
+      .toBe("/assets/heroes/C_BOY/runtime/motion/C_BOY_walk_left_a.webp");
+    expect(heroExpression("girl-b", "laugh"))
+      .toBe("/assets/heroes/B_GIRL/runtime/expressions/B_GIRL_laugh.webp");
   });
 
   it("scatters the pets rather than piling them in one corner", () => {
@@ -1538,8 +1577,15 @@ describe("MINIMEE route shells", () => {
     expect(NPC_POSTS).toHaveLength(10);
     expect(new Set(NPC_POSTS).size).toBe(NPC_POSTS.length);
     for (const post of NPC_POSTS) {
-      expect(npcPortrait(post, true)).toBe(`/assets/uploads/NPC/${post}-day.webp`);
-      expect(npcPortrait(post, false)).toBe(`/assets/uploads/NPC/${post}-night.webp`);
+      for (const daytime of [true, false]) {
+        const shift = `${post}-${daytime ? "day" : "night"}`;
+        const folder = NPC_FOLDERS[shift];
+        // Every shift is drawn, and the path is built from Em's folder rather
+        // than from the post id — the two do not always spell the same thing.
+        expect(folder, shift).toBeDefined();
+        expect(npcPortrait(post, daytime))
+          .toBe(`/assets/uploads/NPC/${folder}/runtime/turnaround/front.webp`);
+      }
     }
     expect(npcPortrait("usher", true)).not.toBe(npcPortrait("usher", false));
 
@@ -1555,7 +1601,10 @@ describe("MINIMEE route shells", () => {
     for (const idler of AMBIENT_NPCS) {
       expect(ZONES[idler.zone], idler.id).toBeDefined();
       expect(isWalkable(ZONES[idler.zone], idler.x, idler.y), `${idler.id} off the path`).toBe(true);
-      expect(ambientPortrait(idler.id)).toBe(`/assets/uploads/NPC/idle-${idler.id}.webp`);
+      const folder = NPC_FOLDERS[`idle-${idler.id}`];
+      expect(folder, idler.id).toBeDefined();
+      expect(ambientPortrait(idler.id))
+        .toBe(`/assets/uploads/NPC/${folder}/runtime/turnaround/front.webp`);
     }
     // And they do not pile on top of each other.
     for (const a of AMBIENT_NPCS) {
@@ -1564,6 +1613,47 @@ describe("MINIMEE route shells", () => {
         expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id}/${b.id}`).toBeGreaterThan(0.06);
       }
     }
+  });
+
+  it("has a folder on disk for all 26 characters, every one the same shape", () => {
+    // A missing portrait hides itself on screen, which is the right thing to
+    // do and the reason nobody would notice a character who never made it out
+    // of the zip. npcArtIndex.json is written from the folder itself by
+    // scripts/index-npc-art.mjs, so this compares the casting table against
+    // what actually shipped rather than against a hand-kept list.
+    const onDisk = (npcArtIndex as {
+      folders: Record<string, { turnaround: string[]; emotions: string[] }>;
+    }).folders;
+
+    const ids = Object.keys(NPC_FOLDERS);
+    expect(ids).toHaveLength(NPC_POSTS.length * 2 + AMBIENT_NPCS.length);
+    // Two characters never share a folder — that would be one animal working
+    // both shifts.
+    expect(new Set(Object.values(NPC_FOLDERS)).size).toBe(ids.length);
+    expect(Object.keys(onDisk)).toHaveLength(ids.length);
+
+    for (const id of ids) {
+      const art = onDisk[NPC_FOLDERS[id]];
+      expect(art, `missing art for ${id}`).toBeDefined();
+      // The front view is what every counter and every idler draws.
+      expect(art.turnaround, id).toContain("front");
+      // 「四面 + 道具」 — the four sides are the turnaround, the rest is what
+      // that post holds in its hands.
+      for (const side of ["front", "back", "left_side", "right_side"]) {
+        expect(art.turnaround, `${id} ${side}`).toContain(side);
+      }
+      // All twelve faces, for all 26, so a panel can ask for one without
+      // knowing who is standing in it.
+      expect([...art.emotions].sort(), id).toEqual([...NPC_EMOTIONS].sort());
+    }
+
+    // And the paths point where the files actually are.
+    expect(npcPose("usher-day"))
+      .toBe("/assets/uploads/NPC/NPC_01_usher-day/runtime/turnaround/front.webp");
+    expect(npcPose("usher-day", "check_ticket"))
+      .toBe("/assets/uploads/NPC/NPC_01_usher-day/runtime/turnaround/check_ticket.webp");
+    expect(npcEmotion("idle-deer", "joyful"))
+      .toBe("/assets/uploads/NPC/NPC_23_plaza-deer/runtime/emotions/joyful.webp");
   });
 
   it("has a poster on disk for every one of the 36 themes", () => {

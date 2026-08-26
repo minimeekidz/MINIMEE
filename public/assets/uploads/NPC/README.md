@@ -1,60 +1,91 @@
 # NPC 角色圖
 
-檔名就係索引。放咗入嚟 push 上 GitHub 就自動出，**唔使改任何 code**。
-未有檔案嗰隻會靜靜哋唔出，唔會爛圖 —— 所以幾時交幾多都得。
+**26 隻全部已經收齊，遊戲已經接住呢個資料夾行緊。**
 
-## 規格（每隻都一樣）
+一隻一個資料夾，資料夾名就係索引 —— 加隻新嘅／重畫舊嘅，
+照住下面個樣放入嚟 push 上 GitHub 就得。
+
+## 資料夾結構（每隻都一樣）
+
+```
+NPC_01_usher-day/
+└── runtime/
+    ├── turnaround/     ← 四面 + 呢個崗位嘅道具動作
+    │   ├── front.webp       ← 遊戲入面出嘅就係佢
+    │   ├── back.webp
+    │   ├── left_side.webp
+    │   ├── right_side.webp
+    │   └── check_ticket.webp …（每隻唔同，睇佢做咩工）
+    └── emotions/       ← 十二個表情，26 隻全部一樣
+        ├── neutral.webp    joyful.webp     excited.webp
+        ├── playful_wink.webp  shy.webp     surprised.webp
+        ├── thinking.webp   determined.webp apologetic.webp
+        └── sad.webp        worried.webp    sleepy.webp
+```
+
+`front.webp` 係一定要有嘅 —— 櫃枱同廣場出嘅就係佢。
+其他缺咗會靜靜哋唔出，唔會爛圖。
+
+## 規格
 
 | | |
 |---|---|
-| 格式 | `.webp`（`.png` 都得） |
-| 底 | **透明** |
+| 格式 | `.webp`，**透明底** |
 | 高度 | **512 px** 左右，闊度隨佢 |
-| 姿勢 | 企定、面向鏡頭或者略側、**全身** |
-| ⚠️ 位置 | **腳底要貼住圖片最底邊**，下面留白會令佢浮喺半空 |
+| ⚠️ 位置 | **腳底貼住圖片最底邊**，下面留白會令佢浮喺半空 |
+| ⚠️ 逐隻出 | 一隻一個資料夾，唔好交藍圖 |
 
-## 崗位（20 隻 = 10 個崗位 × 早更／晚更）
+## 26 隻
 
-```
-usher-day.webp              紅熊貓        戲院大堂接待處
-usher-night.webp            黑貓
-librarian-day.webp          白兔          圖書館重溫枱
-librarian-night.webp        貓頭鷹
-studio-game-day.webp        邊境牧羊犬    Studio 中央八角枱（小遊戲）
-studio-game-night.webp      水獺
-studio-words-day.webp       六角恐龍      Studio 教學板（詞彙）
-studio-words-night.webp     玄鳳鸚鵡
-cafe-day.webp               羊駝          Buddy Café 甜品櫃
-cafe-night.webp             刺蝟
-stall-card-day.webp         松鼠          碼頭市集 · 自我介紹卡
-stall-card-night.webp       耳廓狐
-stall-child-day.webp        海狸          碼頭市集 · 新增孩子檔案
-stall-child-night.webp      企鵝
-stall-pay-day.webp          柴犬          碼頭市集 · 付款訂閱
-stall-pay-night.webp        水豚
-stall-lost-day.webp         小象          碼頭市集 · 失物認領
-stall-lost-night.webp       浣熊
-stall-security-day.webp     德國牧羊犬    碼頭市集 · 保安亭
-stall-security-night.webp   獾
-```
+### 崗位（10 個 × 早更／晚更）
 
-**最急：** `usher-day.webp` 同 `usher-night.webp`。
-戲院接待處已經有對白、有聲，就係差個樣。
+| 資料夾 | 崗位 | 角色 |
+|---|---|---|
+| `NPC_01_usher-day` | 戲院大堂接待處 | 紅熊貓 |
+| `NPC_02_usher-night` | 同上（晚更） | 黑貓 |
+| `NPC_03_librarian-day` | 圖書館重溫枱 | 白兔 |
+| `NPC_04_librarian-night` | 同上（晚更） | 貓頭鷹 |
+| `NPC_05_studio-day` | Studio 小遊戲枱 | 邊境牧羊犬 |
+| `NPC_06_studio-night` | 同上（晚更） | 水獺 |
+| `NPC_07_stall-card-day` | 市集 · 自我介紹卡 | 松鼠 |
+| `NPC_08_stall-card-night` | 同上（晚更） | 耳廓狐 |
+| `NPC_09_stall-child-day` | 市集 · 新增孩子檔案 | 海狸 |
+| `NPC_10_stall-child-night` | 同上（晚更） | 企鵝 |
+| `NPC_11_stall-pay-day` | 市集 · 付款訂閱 | 柴犬 |
+| `NPC_12_stall-pay-night` | 同上（晚更） | 水豚 |
+| `NPC_13_stall-lost-day` | 市集 · 失物認領 | 小象 |
+| `NPC_14_stall-lost-night` | 同上（晚更） | 浣熊 |
+| `NPC_15_stall-security-day` | 市集 · 保安亭 | 德國牧羊犬 |
+| `NPC_16_stall-security-night` | 同上（晚更） | 獾 |
+| `NPC_17_cafe-day` | Buddy Café 甜品櫃 | 羊駝 |
+| `NPC_18_cafe-night` | 同上（晚更） | 刺蝟 |
+| `NPC_19_studio-extra-day` | Studio 教學板（詞彙） | 六角恐龍 |
+| `NPC_20_studio-extra-night` | 同上（晚更） | 玄鳳鸚鵡 |
 
-## 閒人（6 隻，冇早晚更）
+⚠️ **`studio` 同 `studio-extra` 唔好調亂：**
+`NPC_05/06`（攞搖桿嗰對）係**小遊戲枱**，程式入面叫 `studio-game`；
+`NPC_19/20`（攞「Aa」字卡嗰對）係**教學板**，程式入面叫 `studio-words`。
+兩邊對照表喺 `src/lib/babble.ts` 嘅 `NPC_FOLDERS`。
 
-```
-idle-deer.webp          梅花鹿      小鎮廣場
-idle-koala.webp         樹熊        小鎮廣場
-idle-frog.webp          青蛙        小鎮廣場
-idle-ferret.webp        雪貂        小鎮廣場
-idle-hamster.webp       倉鼠        小屋區入口
-idle-guinea-pig.webp    天竺鼠      小屋區入口
-```
+### 閒人（6 隻，冇早晚更）
+
+| 資料夾 | 角色 | 企喺 |
+|---|---|---|
+| `NPC_21_neighbour-hamster` | 倉鼠 | 小屋區入口 |
+| `NPC_22_neighbour-guineapig` | 天竺鼠 | 小屋區入口 |
+| `NPC_23_plaza-deer` | 梅花鹿 | 小鎮廣場 |
+| `NPC_24_plaza-koala` | 樹熊 | 小鎮廣場 |
+| `NPC_25_plaza-frog` | 青蛙 | 小鎮廣場 |
+| `NPC_26_plaza-ferret` | 雪貂 | 小鎮廣場 |
 
 閒人冇崗位冇任務，企喺度、撳得、會講句閒話。
 
-## ⚠️ 唔好交藍圖
+## 改完之後要行一次
 
-一隻一個檔。藍圖係米白色底、每隻得 150–200 px 高，
-裁出嚟要去底色而且放大會濛。直接出透明底大圖靚好多。
+```
+node scripts/index-npc-art.mjs
+```
+
+佢會由呢個資料夾本身寫返 `src/data/npcArtIndex.json`，
+測試就係攞嗰份對 —— 有隻角色冇 push 上嚟會即刻 fail，
+唔會等到開個空櫃枱先發現。
