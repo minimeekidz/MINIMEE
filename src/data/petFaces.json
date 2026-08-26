@@ -1,0 +1,43 @@
+{
+  "note": "Written by scripts/cut-pet-emotions.mjs from Em's two vision boards per pet. Re-run after adding or recutting a pet.",
+  "pets": [
+    "sunshine-sheep",
+    "bao-hamster",
+    "milk-cat",
+    "watermelon-shiba",
+    "wave-penguin",
+    "aviator-chick",
+    "yarn-granny-mouse",
+    "heart-bunny",
+    "cowboy-pup",
+    "super-pig",
+    "spin-hedgehog",
+    "kimono-calico"
+  ],
+  "faces": [
+    "neutral",
+    "gentle_smile",
+    "happy",
+    "big_laugh",
+    "excited",
+    "love",
+    "kiss_affection",
+    "shy",
+    "sad",
+    "worried",
+    "pout",
+    "surprised",
+    "shocked",
+    "confused",
+    "dizzy",
+    "determined",
+    "angry",
+    "frustrated",
+    "exhausted",
+    "sleepy",
+    "crying",
+    "grateful",
+    "encouragement",
+    "secretive"
+  ]
+}
