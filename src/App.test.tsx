@@ -3,7 +3,11 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
-import { HEROES, TOWN_PETS } from "./lib/characters";
+import {
+  HERO_EXPRESSIONS, HERO_FOLDERS, HERO_POSES, HEROES, heroExpression, heroPose,
+  TOWN_PETS,
+} from "./lib/characters";
+import heroArtIndex from "./data/heroArtIndex.json";
 import { arrivalPoint, hotspotNear, isDaytime, isDawn, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground, zoneBackgroundLayers } from "./lib/world";
 import { actionsAt, DAILY_QUIZ_SLOTS, FRAGMENTS_FOR_MASTERY, FRIEND_LEVELS, LEVEL_STEP, levelProgress, MAX_LEVEL, MAX_POINTS, PET_ACTIONS, QUIZ_POINT, QUIZ_TRIES, VISIT_POINT } from "./lib/petFriends";
 import { PET_PROFILES, profileFor, quizLine } from "./lib/petBible";
@@ -604,6 +608,40 @@ describe("MINIMEE route shells", () => {
     // Distinct ids and distinct art, or two entries would render identically.
     expect(new Set(HEROES.map(h => h.art)).size).toBe(6);
     expect(new Set(TOWN_PETS.map(p => p.art)).size).toBe(12);
+  });
+
+  it("has a folder on disk for all six heroes, every one the same shape", () => {
+    // heroArtIndex.json is written from the folder itself by
+    // scripts/index-hero-art.mjs, so this compares the cast against what
+    // actually shipped rather than against a hand-kept list.
+    const onDisk = (heroArtIndex as {
+      folders: Record<string, { motion: string[]; expressions: string[] }>;
+    }).folders;
+
+    const ids = Object.keys(HERO_FOLDERS);
+    expect(ids).toHaveLength(HEROES.length);
+    // Two heroes never share a folder — that would be one child in two capes.
+    expect(new Set(Object.values(HERO_FOLDERS)).size).toBe(ids.length);
+    expect(Object.keys(onDisk)).toHaveLength(ids.length);
+
+    for (const id of ids) {
+      const art = onDisk[HERO_FOLDERS[id]];
+      expect(art, `missing art for ${id}`).toBeDefined();
+      // All sixteen frames and all twelve faces, for all six, so a panel can
+      // ask for one without knowing which hero the child picked.
+      expect([...art.motion].sort(), id).toEqual([...HERO_POSES].sort());
+      expect([...art.expressions].sort(), id).toEqual([...HERO_EXPRESSIONS].sort());
+    }
+
+    // Every hero's portrait is their standing frame, and the paths point where
+    // the files actually are.
+    for (const hero of HEROES) expect(hero.art).toBe(heroPose(hero.id));
+    expect(heroPose("girl-a"))
+      .toBe("/assets/heroes/A_GIRL/runtime/motion/A_GIRL_front_idle.webp");
+    expect(heroPose("boy-c", "walk_left_a"))
+      .toBe("/assets/heroes/C_BOY/runtime/motion/C_BOY_walk_left_a.webp");
+    expect(heroExpression("girl-b", "laugh"))
+      .toBe("/assets/heroes/B_GIRL/runtime/expressions/B_GIRL_laugh.webp");
   });
 
   it("scatters the pets rather than piling them in one corner", () => {
