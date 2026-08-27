@@ -1725,6 +1725,43 @@ footer div { display: flex; gap: 20px; }
 .game-home-cards { margin-bottom: 22px; }
 .game-home-cards h2 { margin: 0 0 10px; font-size: 17px; }
 .game-home-tab { display: inline-block; padding: 4px 14px; border: 3px solid #2c2140; border-radius: 999px; background: var(--lavender); }
+/* The featured card — a real one, opened up enough to read. */
+.game-home-feature {
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-bottom: 12px; padding: 14px;
+  border: 3px solid var(--wood, #6b4a2c); border-radius: 16px 20px 16px 22px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 42%),
+    var(--paper-cream, #fdf6e6);
+  color: inherit; text-decoration: none;
+  box-shadow: 0 8px 0 rgba(20,12,6,.22);
+}
+.game-home-feature:hover { transform: translateY(-2px); }
+.game-home-feature img {
+  flex: 0 0 auto; width: 92px; height: 92px; object-fit: contain; object-position: bottom;
+  border: 3px solid var(--paper-edge, #e2cfa8); border-radius: 14px;
+  background: rgba(255,255,255,.6); image-rendering: pixelated;
+}
+.game-home-feature > div { min-width: 0; display: grid; gap: 5px; }
+.game-home-feature strong { font-size: 19px; }
+.feature-line { margin: 0; font-size: 14px; font-weight: 800; color: var(--ink-warm, #4a3826); }
+.feature-about { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-soft, #8a7458); }
+.feature-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.feature-chip {
+  padding: 3px 9px; border-radius: 999px;
+  border: 2px solid var(--paper-edge, #e2cfa8); background: #fff;
+  font-size: 12px; font-weight: 800;
+}
+.feature-chip.dream { border-color: var(--gold, #e6b64c); background: #fdf1d3; }
+.feature-go {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 12px; font-weight: 900; color: var(--wood, #6b4a2c);
+}
+.game-home-card .card-face {
+  width: 34px; height: 34px; object-fit: contain; object-position: bottom;
+  image-rendering: pixelated; float: right; margin-left: 8px;
+}
+
 .game-home-card-row { display: grid; gap: 9px; }
 .game-home-card { display: flex; flex-direction: column; gap: 2px; padding: 11px 14px; border: 3px solid #2c2140; border-radius: 9px; background: #fff; color: inherit; text-decoration: none; }
 .game-home-card-name { font-size: 17px; font-weight: 900; }

@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { sceneArt, SCENES } from "../lib/scenes";
-import { MapPin, Play, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronRight, MapPin, Play, ShieldCheck, Sparkles } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { serviceSchema, useStructuredData } from "../lib/seo";
 import { PLANS } from "../lib/plans";
+import { usePublishedCards } from "../lib/kidCardStore";
 import { EXAMPLE_CARDS } from "../lib/kidCard";
 
 // The front door.
@@ -28,6 +29,22 @@ export function GameHome() {
   // Signed in goes straight to the town; signed out gets the demo world, so
   // the first tap is always into the game and never into a form.
   const enter = session ? "/parent/dashboard" : "/play";
+
+  // Real published cards lead; the bundled examples stand in only while no
+  // family has released one, so a fresh install still shows something.
+  const published = usePublishedCards(3);
+  const shown = published.length > 0
+    ? published
+    : EXAMPLE_CARDS.slice(0, 3).map(card => ({
+      slug: card.slug, nickname: card.nickname, tagline: card.tagline,
+      about: card.about, likes: card.likes, dreamJob: card.dreamJob, avatar: card.avatar,
+    }));
+  // The fullest card goes on the cover: the one with the most of itself
+  // filled in is the one that shows what a card can be.
+  const feature = [...shown].sort((a, b) =>
+    (b.about.length + b.tagline.length + b.likes.length * 6)
+    - (a.about.length + a.tagline.length + a.likes.length * 6))[0];
+  const others = shown.filter(card => card.slug !== feature?.slug);
 
   return (
     <div className="game-home">
@@ -59,16 +76,44 @@ export function GameHome() {
           ))}
         </section>
 
-        <section className="game-home-cards" aria-label="示範自我介紹卡">
-          <h2><span className="game-home-tab">睇下真實嘅卡</span></h2>
-          <div className="game-home-card-row">
-            {EXAMPLE_CARDS.slice(0, 3).map(card => (
-              <Link className="game-home-card" to={`/kid/${card.slug}`} key={card.slug}>
-                <span className="game-home-card-name">{card.nickname}</span>
-                <small>{card.tagline}</small>
-              </Link>
-            ))}
-          </div>
+        {/* The cards on the front page are real ones, made in MINIMEE and
+            released by their own parent — Em: 「我想用我自己去創作嘅 name 卡
+            擺喺封面做example，順便有少少介紹自己」. A card written into the
+            source is a mock-up of the product; a published one is the
+            product. Until a family has released one, the two bundled examples
+            still answer, so the page is never empty. */}
+        <section className="game-home-cards" aria-label="真實嘅自我介紹卡">
+          <h2><span className="game-home-tab">真人整嘅卡</span></h2>
+
+          {feature && (
+            <Link className="game-home-feature" to={`/kid/${feature.slug}`}>
+              {feature.avatar && <img src={feature.avatar} alt="" loading="lazy" />}
+              <div>
+                <strong>{feature.nickname}</strong>
+                {feature.tagline && <p className="feature-line">{feature.tagline}</p>}
+                {feature.about && <p className="feature-about">{feature.about}</p>}
+                <div className="feature-chips">
+                  {feature.dreamJob && <span className="feature-chip dream">🌟 {feature.dreamJob}</span>}
+                  {feature.likes.slice(0, 4).map(like => (
+                    <span className="feature-chip" key={like}>{like}</span>
+                  ))}
+                </div>
+                <span className="feature-go">打開佢張卡 <ChevronRight size={14} /></span>
+              </div>
+            </Link>
+          )}
+
+          {others.length > 0 && (
+            <div className="game-home-card-row">
+              {others.map(card => (
+                <Link className="game-home-card" to={`/kid/${card.slug}`} key={card.slug}>
+                  {card.avatar && <img className="card-face" src={card.avatar} alt="" loading="lazy" />}
+                  <span className="game-home-card-name">{card.nickname}</span>
+                  <small>{card.tagline || card.about}</small>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="game-home-notes">

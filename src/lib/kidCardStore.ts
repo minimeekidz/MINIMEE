@@ -64,6 +64,56 @@ export type CardLookup =
   | { state: "found"; card: KidCard }
   | { state: "missing" };
 
+/** A published card, cut down to what a preview on the front page shows. */
+export interface CardPreview {
+  slug: string;
+  nickname: string;
+  tagline: string;
+  about: string;
+  likes: string[];
+  dreamJob: string;
+  avatar: string;
+}
+
+/**
+ * The real cards families have published, newest last.
+ *
+ * The front page used to advertise two cards that were written into the
+ * source — Em: 「我想用我自己去創作嘅name卡擺喺封面做example」. A made-up card
+ * is a mock-up of the product; a real one is the product. These are the same
+ * rows `/kid/:slug` serves and they carry the same `published` gate, so
+ * nothing appears here that a parent has not already released.
+ */
+export function usePublishedCards(limit = 3): CardPreview[] {
+  const [cards, setCards] = useState<CardPreview[]>([]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let alive = true;
+    void supabase
+      .from("kid_cards")
+      .select("slug, display_name, tagline, about, likes, dream_job, avatar_url")
+      .eq("published", true)
+      .order("created_at", { ascending: true })
+      .limit(limit)
+      .then(({ data }) => {
+        if (!alive || !data) return;
+        setCards((data as Record<string, unknown>[]).map(row => ({
+          slug: row.slug as string,
+          nickname: (row.display_name as string) ?? "",
+          tagline: (row.tagline as string) ?? "",
+          about: (row.about as string) ?? "",
+          likes: (row.likes as string[]) ?? [],
+          dreamJob: (row.dream_job as string) ?? "",
+          avatar: (row.avatar_url as string) ?? "",
+        })));
+      });
+    return () => { alive = false; };
+  }, [limit]);
+
+  return cards;
+}
+
 // Resolves /kid/:slug. Real published cards win; the two bundled examples
 // answer for their own slugs so the marketing links keep working even before
 // any family has published one.
