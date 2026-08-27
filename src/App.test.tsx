@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { mintLostToken, mintSlug } from "./lib/kidCardStore";
 import {
-  HERO_EXPRESSIONS, HERO_FOLDERS, HERO_POSES, HEROES, heroExpression, heroPose,
-  TOWN_PETS,
+  HERO_EXPRESSIONS, HERO_FOLDERS, HERO_POSES, HEROES, heroExpression, heroFrame,
+  heroPose, petFace, petFrame, PET_FACES, TOWN_PETS, type PetFace,
 } from "./lib/characters";
 import heroArtIndex from "./data/heroArtIndex.json";
 import { arrivalPoint, hotspotNear, isDaytime, isDawn, isWalkable, nearestWalkable, ROOM_ART, ROOM_DOORS, ROOM_PARENT, ZONES, zoneBackground, zoneBackgroundLayers } from "./lib/world";
@@ -30,7 +30,7 @@ import {
 } from "./lib/petMoods";
 import { SFX_NAMES } from "./lib/sfx";
 import sceneIndex from "./data/sceneIndex.json";
-import { petFrame } from "./lib/characters";
+import petFaces from "./data/petFaces.json";
 import petFrames from "./data/petFrames.json";
 import { cardLink, slugFromScan } from "./lib/friends";
 import {
@@ -2573,5 +2573,62 @@ describe("房入面有個人", () => {
     }, { timeout: 4000 });
     expect(opened).toEqual([seat.id]);
     expect(screen.getByRole("button", { name: "起身" })).toBeInTheDocument();
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+
+describe("角色圖：情緒同動作", () => {
+  it("never builds a hero path with a hole in it", () => {
+    // A child with no hero chosen rendered /assets/heroes//runtime/motion/
+    // _front_idle.webp. The SPA serves index.html for anything it does not
+    // recognise, so that came back 200 with HTML in it: no broken-image icon,
+    // no 404 in the network tab, just an empty patch of street where the
+    // child should have been.
+    for (const id of [null, undefined, "", "not-a-hero"]) {
+      const path = heroPose(id as string | null);
+      expect(path, JSON.stringify(id)).not.toContain("//runtime");
+      expect(path, JSON.stringify(id)).toMatch(
+        /^\/assets\/heroes\/[A-Z_]+\/runtime\/motion\/[A-Z_]+_front_idle\.webp$/);
+    }
+  });
+
+  it("picks a drawn frame for every direction, and never mirrors one", () => {
+    // Em drew left and right separately for the heroes as she did for the
+    // pets, so nothing in the game flips a sprite — a mirrored cape puts its
+    // clasp on the wrong shoulder.
+    expect(heroFrame({ facing: "left", moving: true, step: 0 })).toBe("walk_left_a");
+    expect(heroFrame({ facing: "left", moving: true, step: 1 })).toBe("walk_left_b");
+    expect(heroFrame({ facing: "right", moving: true, step: 0 })).toBe("walk_right_a");
+    expect(heroFrame({ facing: "up", moving: true, step: 0 })).toBe("walk_back");
+    expect(heroFrame({ facing: "down", moving: true, step: 0 })).toBe("walk_front");
+
+    expect(heroFrame({ facing: "left", moving: false, step: 0 })).toBe("left_idle");
+    expect(heroFrame({ facing: "up", moving: false, step: 0 })).toBe("back_idle");
+
+    // Sitting is drawn, not a squashed standing sprite.
+    expect(heroFrame({ facing: "left", moving: false, seated: true, step: 0 })).toBe("sit_side");
+    expect(heroFrame({ facing: "down", moving: false, seated: true, step: 0 })).toBe("sit_front");
+  });
+
+  it("has all 24 faces on disk for all 12 pets", () => {
+    // Cut from Em's vision boards rather than shipped as files, so this is
+    // what notices a board that failed to slice.
+    expect(petFaces.pets).toHaveLength(12);
+    expect(petFaces.faces).toHaveLength(24);
+    const onDisk = new Set(
+      petFaces.pets.flatMap(pet => petFaces.faces.map(face => petFace(pet, face as PetFace))));
+    for (const pet of TOWN_PETS) {
+      for (const face of PET_FACES) {
+        expect(onDisk.has(petFace(pet.id, face)), `${pet.id} ${face}`).toBe(true);
+      }
+    }
+  });
+
+  it("gives every mood a face that exists", () => {
+    for (const mood of MOOD_IDS) {
+      expect(PET_FACES, `${mood} face`).toContain(MOODS[mood].face);
+    }
   });
 });

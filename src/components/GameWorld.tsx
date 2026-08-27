@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { findHero, petFrame, TOWN_PETS, type PetFacing, type TownPet } from "../lib/characters";
+import {
+  findHero, heroFrame, heroPose, petFace, petFrame, TOWN_PETS,
+  type PetFacing, type TownPet,
+} from "../lib/characters";
 import {
   driftMood, MOOD_TICK_MS, MOODS, pickMoodLine, pickThought, startingMood,
   THINK_TICK_MS, THOUGHT_MS, type Mood,
@@ -75,6 +78,8 @@ interface Wanderer {
   step: 0 | 1;
   /** How this one is feeling. Drifts on its own; colours voice and thoughts. */
   mood: Mood;
+  /** Walking or standing. Standing is when the drawn face shows. */
+  moving: boolean;
   /** The sticker over its head right now, or nothing — which is most of the
    *  time. Em: 「唔使長期都有句句子喺上面」. */
   thought: string | null;
@@ -140,7 +145,10 @@ export function GameWorld({
   const arriveFrom = useRef<{ room?: string; zone?: string }>(openedAt.current.from);
 
   const [pos, setPos] = useState<Point>(() => arrivalPoint(zone, openedAt.current.from));
-  const [facing, setFacing] = useState<"left" | "right">("right");
+  // Four ways now, not two: Em drew walking toward the camera and away from
+  // it as well as across, so the child can actually turn their back on you.
+  const [facing, setFacing] = useState<PetFacing>("down");
+  const [heroStep, setHeroStep] = useState<0 | 1>(0);
   const [moving, setMoving] = useState(false);
   const [fading, setFading] = useState(false);
   const [near, setNear] = useState<Hotspot | null>(null);
@@ -233,7 +241,7 @@ export function GameWorld({
         ?? zone.spawn;
       return {
         pet, x: spot.x, y: spot.y, goal: spot, facing: "down", step: 0,
-        mood: startingMood(pet.id), thought: null,
+        moving: false, mood: startingMood(pet.id), thought: null,
       };
     }));
   }, [zone]);
@@ -261,20 +269,20 @@ export function GameWorld({
           // frame 0 — a pet frozen mid-stride reads as a broken animation.
           const dx = heroAt.current.x - walker.x;
           const dy = heroAt.current.y - walker.y;
-          return { ...walker, facing: facingFor(dx, dy, walker.facing), step: 0 };
+          return { ...walker, facing: facingFor(dx, dy, walker.facing), step: 0, moving: false };
         }
         const dx = walker.goal.x - walker.x;
         const dy = walker.goal.y - walker.y;
         const distance = Math.hypot(dx, dy);
-        if (distance < 0.004) return { ...walker, goal: roam(zone, walker) };
+        if (distance < 0.004) return { ...walker, moving: false, goal: roam(zone, walker) };
         const aspect = map.w / map.h;
         const nx = walker.x + (dx / distance) * PET_SPEED;
         const ny = walker.y + (dy / distance) * PET_SPEED * aspect;
         // Pets obey the paths too. A neighbour standing in the sea would give
         // the game away faster than anything else on screen.
-        if (!isWalkable(zone, nx, ny)) return { ...walker, goal: roam(zone, walker) };
+        if (!isWalkable(zone, nx, ny)) return { ...walker, moving: false, goal: roam(zone, walker) };
         return {
-          ...walker, x: nx, y: ny,
+          ...walker, x: nx, y: ny, moving: true,
           facing: facingFor(dx, dy, walker.facing),
           step: (Math.floor(tick / PET_STEP_TICKS) % 2) as 0 | 1,
         };
@@ -396,9 +404,22 @@ export function GameWorld({
     previous.current = pos;
     const walked = Math.hypot(dx, dy) > 0.0001;
     setMoving(walked);
-    if (dx > 0.0002) setFacing("right");
-    else if (dx < -0.0002) setFacing("left");
+    // Sideways wins ties: a child crossing the screen reads better in profile
+    // than head-on, and most of this town is walked left to right.
+    if (Math.abs(dx) >= Math.abs(dy) * 0.7) {
+      if (dx > 0.0002) setFacing("right");
+      else if (dx < -0.0002) setFacing("left");
+    } else if (dy > 0.0002) setFacing("down");
+    else if (dy < -0.0002) setFacing("up");
   }, [pos]);
+
+  // Two frames, alternating, only while actually walking. A hero frozen
+  // mid-stride reads as a broken animation rather than as standing still.
+  useEffect(() => {
+    if (!moving) { setHeroStep(0); return; }
+    const timer = window.setInterval(() => setHeroStep(step => (step === 0 ? 1 : 0)), 150);
+    return () => window.clearInterval(timer);
+  }, [moving]);
 
   useEffect(() => {
     const spot = hotspotNear(zone, pos.x, pos.y);
@@ -611,10 +632,14 @@ export function GameWorld({
             className={nearPet?.pet.id === walker.pet.id ? "world-npc close" : "world-npc"}
             onClick={event => { event.stopPropagation(); meetPet(walker); }}
           >
-            {/* Em drew all four directions, so nothing is mirrored here —
-                the bunny's bow and the calico's markings are on one side. */}
+            {/* Standing still, a pet wears the face of whatever mood it is
+                in; walking, it uses the four drawn directions. Em drew every
+                direction separately, so nothing here is mirrored — the
+                bunny's bow and the calico's markings are on one side. */}
             <img
-              src={petFrame(walker.pet.id, walker.facing, walker.step)}
+              src={walker.moving
+                ? petFrame(walker.pet.id, walker.facing, walker.step)
+                : petFace(walker.pet.id, MOODS[walker.mood].face)}
               alt={walker.pet.nameZh}
               style={{ height: `${HERO_H * 0.62 * map.h}px` }}
               onError={event => {
@@ -629,13 +654,17 @@ export function GameWorld({
 
       <img
         className={seated ? "world-hero sitting" : moving ? "world-hero walking" : "world-hero"}
-        src={hero.art}
+        src={heroPose(heroId ?? "", heroFrame({
+          facing, moving, seated: Boolean(seated), step: heroStep,
+        }))}
         alt={hero.nameZh}
         style={{
           ...place(pos.x, pos.y),
           zIndex: 3 + Math.round(pos.y * 100),
           height: `${HERO_H * map.h}px`,
-          transform: `translate(-50%, -100%) scaleX(${facing === "left" ? -1 : 1})`,
+          // No scaleX. Em drew left and right as separate frames, and a
+          // mirrored cape puts its clasp on the wrong shoulder.
+          transform: "translate(-50%, -100%)",
         }}
       />
     </div>

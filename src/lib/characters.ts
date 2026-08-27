@@ -61,23 +61,38 @@ export const HERO_EXPRESSIONS = [
 ] as const;
 export type HeroExpression = (typeof HERO_EXPRESSIONS)[number];
 
+/** The ids in the order they are offered, first one being the default. */
+export const HERO_IDS = ["girl-a", "boy-a", "girl-b", "boy-b", "boy-c", "girl-c"];
+
 /**
- * One pose out of a hero's motion set.
+ * Em's folder for a hero id, falling back to the first hero.
  *
- * An id with no folder still returns a path rather than throwing: the call
- * sites draw it into an `<img>`, and a missing frame is better as a gap than
- * as a crash.
+ * An unknown or empty id has to land on a real folder, not on a path with a
+ * hole in it. A child with no hero chosen yet used to render
+ * `/assets/heroes//runtime/motion/_front_idle.webp`, and because the SPA
+ * serves index.html for anything it does not recognise that came back as a
+ * 200 of HTML — so there was no broken-image icon and no 404 to notice, just
+ * an empty patch of street where the child should have been.
  */
-export function heroPose(id: string, pose: HeroPose = "front_idle"): string {
-  const folder = HERO_FOLDERS[id] ?? id;
+function heroFolder(id: string | null | undefined): string {
+  if (id && HERO_FOLDERS[id]) return HERO_FOLDERS[id];
+  if (id && Object.values(HERO_FOLDERS).includes(id)) return id;
+  return HERO_FOLDERS[HERO_IDS[0]];
+}
+
+/** One pose out of a hero's motion set. */
+export function heroPose(id: string | null | undefined, pose: HeroPose = "front_idle"): string {
+  const folder = heroFolder(id);
   return `/assets/heroes/${folder}/runtime/motion/${folder}_${pose}.webp`;
 }
 
 /** The same hero, pulling one of the twelve faces. */
-export function heroExpression(id: string, expression: HeroExpression): string {
-  const folder = HERO_FOLDERS[id] ?? id;
+export function heroExpression(id: string | null | undefined, expression: HeroExpression): string {
+  const folder = heroFolder(id);
   return `/assets/heroes/${folder}/runtime/expressions/${folder}_${expression}.webp`;
 }
+
+
 
 export const HEROES: Hero[] = [
   { id: "girl-a", nameZh: "粉紅英雄", art: heroPose("girl-a") },
@@ -92,6 +107,29 @@ export function findHero(id: string | null | undefined): Hero {
   return HEROES.find(hero => hero.id === id) ?? HEROES[0];
 }
 
+/**
+ * Which frame a hero should be showing.
+ *
+ * Facing and moving are what the game already knows; this turns them into one
+ * of the sixteen drawn poses. Nothing is mirrored — Em drew left and right
+ * separately for the pets and for the heroes, and a flipped sprite puts a
+ * cape's clasp on the wrong shoulder.
+ */
+export function heroFrame(
+  { facing, moving, seated, step }:
+  { facing: PetFacing; moving: boolean; seated?: boolean; step: 0 | 1 },
+): HeroPose {
+  if (seated) return facing === "left" || facing === "right" ? "sit_side" : "sit_front";
+  if (!moving) {
+    return facing === "left" ? "left_idle"
+      : facing === "right" ? "right_idle"
+      : facing === "up" ? "back_idle" : "front_idle";
+  }
+  if (facing === "left") return step === 0 ? "walk_left_a" : "walk_left_b";
+  if (facing === "right") return step === 0 ? "walk_right_a" : "walk_right_b";
+  return facing === "up" ? "walk_back" : "walk_front";
+}
+
 /** Which way a pet is walking, in the words Em's sheets use. */
 export type PetFacing = "down" | "up" | "left" | "right";
 
@@ -104,6 +142,23 @@ export type PetFacing = "down" | "up" | "left" | "right";
  */
 export function petFrame(id: string, facing: PetFacing, frame: 0 | 1): string {
   return `/assets/pets/${id}/${facing}-${frame + 1}.webp`;
+}
+
+/**
+ * The 24 faces every pet ships with, cut from Em's two vision boards by
+ * `scripts/cut-pet-emotions.mjs`.
+ */
+export const PET_FACES = [
+  "neutral", "gentle_smile", "happy", "big_laugh", "excited", "love",
+  "kiss_affection", "shy", "sad", "worried", "pout", "surprised",
+  "shocked", "confused", "dizzy", "determined", "angry", "frustrated",
+  "exhausted", "sleepy", "crying", "grateful", "encouragement", "secretive",
+] as const;
+export type PetFace = (typeof PET_FACES)[number];
+
+/** One of a pet's faces — a standing pose, front on, with an expression. */
+export function petFace(id: string, face: PetFace): string {
+  return `/assets/pets/${id}/faces/${face}.webp`;
 }
 
 export interface TownPet {

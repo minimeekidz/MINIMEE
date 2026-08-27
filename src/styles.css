@@ -1248,9 +1248,9 @@ footer div { display: flex; gap: 20px; }
   transition: none;
 }
 .interior-hero.walking { animation: marker-bob .42s steps(2) infinite; }
-/* Sitting is a real state, not a sentence about sitting: the sprite settles
-   onto the cushion and stays there until they get up. */
-.interior-hero.sitting { translate: 0 6%; scale: 1 .93; }
+/* Sitting is a drawn pose now — Em shipped sit_front and sit_side — so this
+   no longer squashes a standing sprite to fake it. */
+.interior-hero.sitting { translate: 0 4%; }
 
 .interior-stand {
   position: fixed; left: 50%; bottom: 18px; translate: -50% 0; z-index: 24;

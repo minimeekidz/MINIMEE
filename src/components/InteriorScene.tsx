@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { Interior, InteriorFrame, InteriorSpot } from "../lib/interiors";
-import { findHero } from "../lib/characters";
+import { findHero, heroFrame, heroPose, type PetFacing } from "../lib/characters";
 import { isDaytime } from "../lib/world";
 import { play } from "../lib/sfx";
 
@@ -76,7 +76,8 @@ export function InteriorScene({
     : { x: 0.5, y: 0.9 };
 
   const [pos, setPos] = useState<Point>(entrance);
-  const [facing, setFacing] = useState<1 | -1>(1);
+  const [facing, setFacing] = useState<PetFacing>("down");
+  const [step, setStep] = useState<0 | 1>(0);
   const [seated, setSeated] = useState<InteriorSpot | null>(null);
   const [walking, setWalking] = useState(false);
   const goal = useRef<Point | null>(null);
@@ -102,6 +103,13 @@ export function InteriorScene({
     onSpot(spot);
   }, [onSpot]);
 
+  // The walk cycle, only while walking.
+  useEffect(() => {
+    if (!walking) { setStep(0); return; }
+    const timer = window.setInterval(() => setStep(value => (value === 0 ? 1 : 0)), 150);
+    return () => window.clearInterval(timer);
+  }, [walking]);
+
   useEffect(() => {
     let running = true;
     let frame = 0;
@@ -119,7 +127,11 @@ export function InteriorScene({
           arrive();
           return to;
         }
-        if (Math.abs(dx) > 0.002) setFacing(dx < 0 ? -1 : 1);
+        // Sideways wins ties, same as outdoors, so a child crossing a room
+        // reads in profile rather than head-on.
+        if (Math.abs(dx) >= Math.abs(dy) * 0.7) {
+          if (Math.abs(dx) > 0.002) setFacing(dx < 0 ? "left" : "right");
+        } else setFacing(dy < 0 ? "up" : "down");
         return { x: current.x + (dx / distance) * STEP, y: current.y + (dy / distance) * STEP };
       });
       frame = window.requestAnimationFrame(tick);
@@ -222,12 +234,16 @@ export function InteriorScene({
           className={
             seated ? "interior-hero sitting" : walking ? "interior-hero walking" : "interior-hero"
           }
-          src={hero.art}
+          src={heroPose(heroId ?? "", heroFrame({
+            facing, moving: walking, seated: Boolean(seated), step,
+          }))}
           alt={hero.nameZh}
           style={{
             left: `${pos.x * 100}%`, top: `${pos.y * 100}%`,
             zIndex: 4 + Math.round(pos.y * 100),
-            transform: `translate(-50%, -100%) scaleX(${facing})`,
+            // Not mirrored: sitting sideways and walking left are drawn, and a
+            // flipped sprite would put the cape's clasp on the wrong shoulder.
+            transform: "translate(-50%, -100%)",
           }}
         />
       </div>
