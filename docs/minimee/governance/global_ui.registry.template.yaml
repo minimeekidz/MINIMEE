@@ -1,0 +1,40 @@
+registry_version: 1
+coordinate_space: normalized_screen
+logical_reference_viewport: [1080, 1920]
+
+safe_area:
+  top_hud: {y_min: 0.00, y_max: 0.12}
+  left_rail: {x_min: 0.00, x_max: 0.12}
+  right_rail: {x_min: 0.88, x_max: 1.00}
+  dock_collapsed: {y_min: 0.93, y_max: 1.00}
+
+controls:
+  player_profile:
+    anchor: top_left
+    x: 0.055
+    y: 0.045
+  settings:
+    anchor: top_right
+    x: 0.945
+    y: 0.050
+  activity:
+    anchor: left
+    x: 0.060
+    y: 0.270
+  current_quest:
+    anchor: left
+    x: 0.060
+    y: 0.345
+  scene_map:
+    anchor: bottom_right
+    x: 0.90
+    y: 0.84
+  dock_handle:
+    anchor: bottom_center
+    x: 0.50
+    y: 0.965
+
+notes:
+  - Values are starter anchors and must be calibrated against an approved UI master.
+  - Effective child touch targets should remain at least 44pt; prefer 48-56pt.
+  - UI uses normalized screen coordinates; world objects never use this registry.
