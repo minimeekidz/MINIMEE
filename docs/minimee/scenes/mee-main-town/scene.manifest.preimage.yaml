@@ -1,0 +1,113 @@
+manifest_version: 0.1
+status: DRAFT_PREIMAGE_SCAFFOLD
+lock_state: UNLOCKED
+purpose: "Pre-image geometry contract only. This is NOT the formal locked scene manifest."
+
+scene:
+  scene_id: PENDING_CANONICAL_ID
+  canonical_name: "Mee主城鎮"
+  scene_type: gameplay_map
+  logical_viewport: [1080, 1920]
+  primary_orientation: "9:16"
+  gameplay_camera: "old-GTA-style high-angle top-down"
+  geometry_master: day
+  geometry_status: DRAFT_PREIMAGE_SCAFFOLD
+  world_bounds: PENDING_AFTER_APPROVED_DAY_GEOMETRY_MASTER
+  camera_bounds: PENDING_AFTER_APPROVED_DAY_GEOMETRY_MASTER
+
+geometry_principles:
+  - "One canonical geometry shared by Day/Night/Weather/Festival variants."
+  - "Do not derive canonical coordinates from screenshot pixels."
+  - "World objects will use one world/tile coordinate system across Mobile/iPad/Desktop."
+  - "Reference images are visual/style anchors only and cannot define routes, doors, portals or collision."
+  - "No final coordinates, collision polygons, hitboxes or permanent Object IDs may be assigned before Day Geometry Master approval."
+
+routes:
+  main_walk_route:
+    status: UNRESOLVED_BLOCKING_TOPOLOGY
+    topology: null
+  secondary_routes:
+    status: PENDING_AFTER_MAIN_TOPOLOGY
+    topology: []
+
+plaza:
+  presence: UNRESOLVED_BLOCKING_TOPOLOGY
+  relative_location: null
+  footprint: null
+
+entrances:
+  status: UNRESOLVED_BLOCKING_TOPOLOGY
+  fixed_count: null
+  entries: []
+
+exits:
+  status: UNRESOLVED_BLOCKING_TOPOLOGY
+  fixed_count: null
+  entries: []
+  canonical_target_scenes: []
+
+portals:
+  status: UNRESOLVED
+  entries: []
+
+fixed_primary_pois:
+  status: UNRESOLVED_BLOCKING_TOPOLOGY
+  entries: []
+  note: "Do not infer POIs or footprints from prototype/reference art."
+
+water_bridge_obstacle_relationships:
+  status: UNRESOLVED_BLOCKING_TOPOLOGY
+  geometry: null
+
+interactables:
+  status: DEFER_UNTIL_IMAGE_APPROVAL
+  entries: []
+
+npc_anchors:
+  status: DEFER_UNTIL_IMAGE_APPROVAL
+  entries: []
+
+shelter_zones:
+  status: DEFER_UNTIL_IMAGE_APPROVAL
+  entries: []
+
+collision_zones:
+  status: DEFER_UNTIL_IMAGE_APPROVAL
+  polygons: []
+
+object_ids:
+  status: NOT_ASSIGNED
+  permanent_ids: []
+
+coordinates:
+  status: NOT_ASSIGNED
+  world_or_tile_coordinates: []
+  hitboxes: []
+
+ui:
+  safe_area_contract: "docs/minimee/governance/global_ui.safe-area.preimage.yaml"
+  global_registry: PENDING_APPROVED_GLOBAL_UI_REGISTRY
+  scene_specific: []
+
+variant_locks:
+  day_is_geometry_master: true
+  night_geometry_identical: true
+  weather_geometry_identical: true
+  festival_geometry_identical_unless_explicitly_versioned: true
+
+formalization_gate:
+  formal_scene_manifest_may_be_created_only_after:
+    - "Blocking topology decisions are explicitly confirmed or supplied by canonical source-of-truth."
+    - "Mee主城鎮 Day Geometry Master image is approved."
+    - "Exact geometry is mapped into world/tile coordinates."
+    - "Permanent Object IDs are assigned."
+    - "Hitboxes and collision polygons are authored and checked."
+  current_status: BLOCKED_PENDING_TOPOLOGY_DECISIONS
+
+blocking_decisions_required_before_formal_render:
+  - fixed_exit_count
+  - exit_target_canonical_scenes
+  - main_walk_route_topology
+  - main_plaza_presence_and_relative_location
+  - fixed_primary_poi_set_and_relative_footprints
+  - fixed_water_bridge_obstacle_topology
