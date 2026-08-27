@@ -1821,3 +1821,21 @@ footer div { display: flex; gap: 20px; }
 .earned-note h3 { margin: 8px 0 4px; }
 .earned-note p { margin: 0 0 16px; font-size: 15px; color: var(--muted); }
 .earned-actions { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; }
+
+
+/* 小遊戲枱：未揀主題嗰陣直接喺呢度揀。 */
+.game-pick { display: grid; gap: 10px; }
+.game-pick > p { margin: 0; font-size: 14px; font-weight: 800; }
+.game-pick-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.game-pick-card {
+  display: grid; gap: 4px; padding: 8px 6px; cursor: pointer;
+  border: 3px solid var(--paper-edge, #e2cfa8); border-radius: 12px;
+  background: #fff; font: inherit; text-align: center;
+}
+.game-pick-card:hover { border-color: var(--gold, #e6b64c); }
+.game-pick-card img {
+  width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px;
+}
+.game-pick-card strong { font-size: 13px; }
+.game-pick-card small { font-size: 12px; color: var(--ink-soft, #8a7458); }
+.game-pick-card.done { border-color: var(--gold, #e6b64c); background: #fffaf0; }

@@ -281,9 +281,41 @@ export function InteriorPage() {
                     .flatMap(tray => tray.words)}
                   onEarned={() => { void collection.refresh(); }}
                 />
-              : <p className="panel-empty">
-                  揀咗條片先。去戲院大堂接待處同職員講聲就得。
-                </p>
+              : (
+                // Walking to the game table without having chosen a film used
+                // to be a dead end that told the child to go to the cinema.
+                // The film is still the way in — the words come from it — but
+                // a child who has already watched one should be able to come
+                // back and play without repeating the errand, so this month's
+                // three are offered right here.
+                <div className="game-pick">
+                  <p>今個月有三個主題。揀一個玩：</p>
+                  <div className="game-pick-row">
+                    {wallTrays.map(tray => (
+                      <button
+                        key={tray.themeId}
+                        type="button"
+                        className={tray.owned ? "game-pick-card done" : "game-pick-card"}
+                        onClick={() => navigate(
+                          `/parent/children/${childId}/inside/studio`
+                          + `?theme=${tray.themeId}&ask=1`)}
+                      >
+                        {/* A theme with no poster shows the name alone rather
+                            than a broken frame. */}
+                        {posterFor(tray.themeId) && (
+                          <img src={posterFor(tray.themeId)!} alt="" loading="lazy" />
+                        )}
+                        <strong>{tray.theme}</strong>
+                        <small>{tray.owned ? "✓ 砌好咗" : `${tray.earned}/4 塊碎片`}</small>
+                      </button>
+                    ))}
+                  </div>
+                  {wallTrays.length === 0 && (
+                    <p className="panel-empty">今個月仲未上主題。</p>
+                  )}
+                  <p className="panel-note">冇睇過條片都玩得，不過睇咗會易好多。</p>
+                </div>
+              )
           )}
           {open.target === "past-words" && (
             <>
