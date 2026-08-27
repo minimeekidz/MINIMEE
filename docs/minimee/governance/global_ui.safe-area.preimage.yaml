@@ -1,0 +1,62 @@
+contract_version: 0.1
+status: DRAFT_PREIMAGE_CONTRACT
+lock_state: UNLOCKED
+purpose: "Conservative screen-space exclusion contract for gameplay art generation before an approved global_ui.registry.yaml exists."
+
+coordinate_space: normalized_screen
+logical_reference_viewport: [1080, 1920]
+primary_orientation: "9:16"
+
+source_supported_safe_areas:
+  top_hud:
+    y_min: 0.00
+    y_max: 0.12
+    status: SOURCE_SUPPORTED_DRAFT
+  left_utility_rail:
+    x_min: 0.00
+    x_max: 0.12
+    status: SOURCE_SUPPORTED_DRAFT
+  right_utility_rail:
+    x_min: 0.88
+    x_max: 1.00
+    status: SOURCE_SUPPORTED_DRAFT
+
+adaptive_dock:
+  behavior:
+    collapsed_by_default: true
+    overlays_gameplay: true
+    resizes_or_zooms_camera: false
+  collapsed_starter_slot:
+    y_min: 0.93
+    y_max: 1.00
+    status: TEMPLATE_STARTER_NOT_LOCKED
+  expanded_occupancy:
+    status: DYNAMIC_NOT_LOCKED
+    note: "Exact expanded Dock height/anchors require approved UI master calibration."
+
+preimage_generation_exclusion:
+  bottom_reserved_y:
+    y_min: 0.86
+    y_max: 1.00
+    status: CONSERVATIVE_TEMPORARY
+    reason: "Uses the Scene System bottom global-nav safety band as a conservative art-composition exclusion until Adaptive Dock geometry is formally calibrated."
+  rule: "Do not place critical doors, exits, NPC anchors, interaction objects or route decision points inside this exclusion band. Decorative background may continue behind overlay UI."
+
+interaction_safety:
+  minimum_effective_hitbox_pt: 44
+  preferred_child_hitbox_pt: "48-56"
+
+not_locked_do_not_assume:
+  - exact_dock_height_when_expanded
+  - exact_global_ui_anchor_values
+  - exact_scene_map_button_anchor
+  - exact_primary_action_anchor
+  - final_notch_dynamic_island_inset_values
+  - device_specific_safe_area_pixels
+
+formalization_gate:
+  required_before_lock:
+    - "Approved global UI master"
+    - "Calibrated global_ui.registry.yaml"
+    - "Mobile QA at 360 CSS px minimum width"
+  current_status: DRAFT_ONLY
