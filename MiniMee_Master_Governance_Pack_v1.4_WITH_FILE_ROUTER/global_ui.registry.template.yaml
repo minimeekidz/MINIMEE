@@ -1,0 +1,47 @@
+global_ui:
+  coordinate_system: normalized_screen
+  safe_area_aware: true
+
+  player_profile:
+    anchor: top_left
+    x: 0.055
+    y: 0.045
+
+  settings:
+    anchor: top_right
+    x: 0.945
+    y: 0.050
+
+  activity:
+    anchor: left
+    x: 0.060
+    y: 0.270
+
+  current_quest:
+    anchor: left
+    x: 0.060
+    y: 0.345
+
+  primary_action:
+    anchor: bottom_center
+    x: 0.500
+    y: 0.760
+
+  scene_map:
+    anchor: bottom_left
+    x: 0.285
+    y: 0.825
+
+  gameplay_help:
+    anchor: bottom_right
+    x: 0.715
+    y: 0.825
+
+  footer:
+    anchor: bottom_center
+    x: 0.500
+    y: 0.945
+
+notes:
+  - These are starter normalized anchors only; lock final values after the first approved UI master.
+  - Do not convert them into fixed screenshot pixels.
