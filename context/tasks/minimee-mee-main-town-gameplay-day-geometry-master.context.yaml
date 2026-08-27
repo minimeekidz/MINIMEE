@@ -1,0 +1,132 @@
+snapshot_version: 1
+project_id: MiniMee
+task_id: minimee-mee-main-town-gameplay-day-geometry-master
+task_scope: "MiniMee / Mee主城鎮 / Gameplay Day Geometry Master"
+task_type: gameplay_scene_geometry_master
+target_scene:
+  canonical_name: "Mee主城鎮"
+  canonical_scene_id: PENDING_CANONICAL_ID
+compiled_at: "2026-08-28"
+compiled_by: "GPT-5.6 Sol"
+repo: "minimeekidz/MINIMEE"
+repo_ref: "main"
+cache_policy: cache_first_delta_refresh
+
+source_files:
+  - path: AGENTS.md
+    sha: f6d42d6162a1dc62e5f2d7b02be1b71a4c79585d
+    status: refreshed_due_to_hash_change
+  - path: MINIMEE_FILE_ROUTER.md
+    sha: ae485287e5dcec0f8fea4ae1e6789488a7803f61
+    status: refreshed_due_to_hash_change
+  - path: docs/minimee/governance/CONTEXT_CACHE_POLICY.md
+    sha: 42d77e851d15fd85889eade27553f0ce23eb7323
+    status: newly_added_and_loaded
+  - path: docs/minimee/governance/SKILL_v1.3.md
+    sha: 6811e3d5161797aaec37bc728628340a932c9383
+    status: cache_hit_unchanged
+  - path: docs/minimee/art/MINIMEE_VISUAL_DIRECTION_BIBLE.md
+    sha: 2a97ea44ade9a9efe5153a090f7c2b73fdc984ec
+    status: cache_hit_unchanged
+  - path: docs/minimee/art/MINIMEE_GAMEPLAY_ART_LOCK.md
+    sha: d5b055686dcf8056d02d9db7c7fc0d3b92a5e707
+    status: cache_hit_unchanged
+  - path: docs/minimee/art/MINIMEE_SCENE_PROMPT_LOCK.md
+    sha: b5187f9d17f6aa8e4cbf41b03a9239ccad514905
+    status: cache_hit_unchanged
+  - path: docs/minimee/art/MINIMEE_STYLE_REFERENCE_INDEX.md
+    sha: e626a0a511e2de92d7f5d911ecf63d8c0ea1003f
+    status: cache_hit_unchanged
+  - path: docs/minimee/art/MINIMEE_REFERENCE_SELECTION_POLICY.md
+    sha: 6c21cdfdc24a155788ce1e0eca24f22d4da58d75
+    status: cache_hit_unchanged
+  - path: docs/minimee/art/MINIMEE_COORDINATE_POLICY.md
+    sha: 117146c4c0c25a930fd924ec26016e94e6e6d370
+    status: cache_hit_unchanged
+  - path: docs/minimee/governance/ADAPTIVE_DOCK_INTERACTION_UI.md
+    sha: a5135a98356385c3ee89618467328ba2ab43d471
+    status: cache_hit_unchanged
+  - path: docs/minimee/governance/global_ui.registry.template.yaml
+    sha: 9b9a90a75352a76b87eeda6a5a95b8d32b39bee1
+    status: cache_hit_unchanged_template_only
+  - path: docs/minimee/governance/scene.manifest.template.yaml
+    sha: b63f6724425ea1a1ee3df42dfd63a407dcf202eb
+    status: cache_hit_unchanged_template_only
+  - path: MiniMee_Master_Governance_Pack_v1.4_WITH_FILE_ROUTER/MINIMEE_SCENE_SYSTEM_SPEC_v1.2.md
+    sha: 270664bcbbb81449b5a6bd9823edc4cca11333f7
+    status: cache_hit_unchanged
+  - path: MiniMee_Master_Governance_Pack_v1.4_WITH_FILE_ROUTER/MINIMEE_SCENE_SYSTEM_v1.3_ADDENDUM.md
+    sha: dd68c4bca68be55a17595beeecc6a39ae0fb237d
+    status: cache_hit_unchanged
+
+canonical_decisions:
+  brand: MiniMee
+  scene_name: "Mee主城鎮"
+  orientation: "9:16 mobile-first"
+  logical_reference_viewport: [1080, 1920]
+  gameplay_camera: "old-GTA-style high-angle top-down"
+  art_direction: "premium 16-bit pixel art"
+  geometry_master_variant: day
+  day_night_weather_geometry_rule: "geometry-identical across variants"
+  world_coordinate_rule: "one canonical world/tile coordinate system across devices"
+  screen_ui_coordinate_rule: "normalized coordinates + anchors + safe areas"
+  dock_behavior: "collapsible; collapsed by default; overlays gameplay; does not resize/zoom camera"
+  reference_authority: "visual/style only; never geometry authority unless explicitly designated by canonical manifest"
+
+geometry_status: DRAFT_PREIMAGE_SCAFFOLD
+geometry_lock_status: UNLOCKED
+formal_scene_manifest_status: NOT_CREATED
+
+ui_safe_area_status:
+  status: DRAFT_CONTRACT_NOT_LOCKED
+  source_supported:
+    top_hud_y: [0.00, 0.12]
+    left_utility_rail_x: [0.00, 0.12]
+    right_utility_rail_x: [0.88, 1.00]
+  starter_only_not_locked:
+    dock_collapsed_y: [0.93, 1.00]
+  conservative_generation_exclusion_until_ui_master:
+    bottom_y: [0.86, 1.00]
+  note: "Exact Dock/global UI anchors remain uncalibrated until an approved UI master/global registry exists."
+
+current_blocker:
+  status: BLOCKED_FOR_FORMAL_GEOMETRY
+  reason: "No canonical Mee主城鎮 scene.manifest.yaml or approved global_ui.registry.yaml exists in main. Formal scene topology cannot be invented from prototypes/chat memory."
+
+unresolved_do_not_assume:
+  - fixed_exit_count
+  - exit_target_canonical_scenes
+  - entrance_exit_edge_ownership_and_relative_placement
+  - main_walk_route_topology
+  - main_plaza_presence_and_relative_location
+  - fixed_primary_poi_set
+  - fixed_primary_poi_relative_footprints
+  - fixed_water_bridge_obstacle_topology
+  - permanent_object_ids
+  - exact_world_coordinates
+  - hitboxes
+  - collision_polygons
+  - npc_anchors
+  - shelter_zones
+  - exact_camera_bounds
+  - final_global_ui_anchor_values
+
+reference_bundle:
+  policy: "3-6 curated references only"
+  identity_or_style_candidates:
+    - "minimee小小冒險小鎮.png"
+    - "relevant Mee主城鎮 exterior/entrance visual anchor if physically available"
+    - "pixel_boy_hero.png"
+    - "pixel_girl.png"
+  authority: visual_only
+
+scope_history:
+  - scope: "MiniMee / Mee主城鎮 / Gameplay Day Geometry Master"
+    status: active_original
+  - scope: "MiniMee / Mee主城鎮 / Gameplay Day + Night Formal"
+    requested_at: "2026-08-28"
+    status: material_scope_change_pending_topology_resolution
+
+invalidation:
+  status: PARTIAL
+  reason: "Router/AGENTS changed to cache-first policy and user expanded output scope to Day+Night formal. Stable art/scene rules remain cache hits."
