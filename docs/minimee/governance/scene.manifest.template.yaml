@@ -1,0 +1,31 @@
+scene:
+  scene_id: REPLACE_ME
+  canonical_name: REPLACE_ME
+  scene_type: gameplay_map
+  logical_viewport: [1080, 1920]
+  geometry_status: draft
+  geometry_master: day
+  world_bounds:
+    min: [0, 0]
+    max: [100, 100]
+
+routes:
+  main_walk_route: []
+  secondary_routes: []
+
+entrances: []
+exits: []
+portals: []
+interactables: []
+npc_anchors: []
+shelter_zones: []
+collision_zones: []
+
+ui:
+  global_registry: global_ui.registry.yaml
+  scene_specific: []
+
+variant_locks:
+  night_geometry_identical: true
+  weather_geometry_identical: true
+  festival_geometry_identical_unless_versioned: true
