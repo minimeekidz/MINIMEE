@@ -1,5 +1,5 @@
-manifest_version: 0.1
-status: DRAFT_PREIMAGE_SCAFFOLD
+manifest_version: 0.2
+status: DRAFT_PREIMAGE_TOPOLOGY_CONFIRMED
 lock_state: UNLOCKED
 purpose: "Pre-image geometry contract only. This is NOT the formal locked scene manifest."
 
@@ -11,7 +11,7 @@ scene:
   primary_orientation: "9:16"
   gameplay_camera: "old-GTA-style high-angle top-down"
   geometry_master: day
-  geometry_status: DRAFT_PREIMAGE_SCAFFOLD
+  geometry_status: TOPOLOGY_CONFIRMED_AWAITING_APPROVED_DAY_GEOMETRY_MASTER
   world_bounds: PENDING_AFTER_APPROVED_DAY_GEOMETRY_MASTER
   camera_bounds: PENDING_AFTER_APPROVED_DAY_GEOMETRY_MASTER
 
@@ -21,43 +21,161 @@ geometry_principles:
   - "World objects will use one world/tile coordinate system across Mobile/iPad/Desktop."
   - "Reference images are visual/style anchors only and cannot define routes, doors, portals or collision."
   - "No final coordinates, collision polygons, hitboxes or permanent Object IDs may be assigned before Day Geometry Master approval."
+  - "Main routes must remain visibly wider and clearer than secondary routes; decoration must never create route choke points."
+  - "Critical doors, exits, route decision points and interaction anchors must remain outside the temporary bottom HUD/Dock exclusion band."
 
 routes:
   main_walk_route:
-    status: UNRESOLVED_BLOCKING_TOPOLOGY
-    topology: null
+    status: TOPOLOGY_CONFIRMED
+    topology:
+      type: "central_cross_spine_plus_plaza_ring_plus_branch_routes"
+      navigation_anchor: "central_main_plaza"
+      components:
+        - "north primary spine: central plaza -> Mee工作學習總部 boundary connection"
+        - "west primary spine: central plaza -> 小屋區 boundary connection"
+        - "east primary spine: central plaza -> 港口市場 boundary connection"
+        - "southwest branch: central plaza -> 河畔公園 side-boundary connection"
+        - "southeast branch: central plaza -> Mee電影院 side-boundary connection"
+        - "continuous walkable ring around the central plaza landmark"
+      readability_contract:
+        - "Player should be able to return to the central plaza from every major connection without relying on a minimap."
+        - "Primary routes remain visually wider than secondary routes."
+        - "Trees, benches, flower beds, signs, stalls, event decorations and NPC anchors may frame routes but may not block them."
+        - "Avoid decorative dead ends except at intentional POI interaction pockets."
   secondary_routes:
-    status: PENDING_AFTER_MAIN_TOPOLOGY
-    topology: []
+    status: TOPOLOGY_CONFIRMED
+    topology:
+      - "central plaza -> Buddy Cafe⨯Gether portal building"
+      - "central plaza -> Mee珍藏館 portal building"
+      - "central plaza -> stage access"
+      - "central plaza -> bulletin board interaction pocket"
+      - "central plaza -> quick-map/navigation interaction pocket"
+      - "short frontage paths serving non-primary decorative shopfronts and seating pockets"
 
 plaza:
-  presence: UNRESOLVED_BLOCKING_TOPOLOGY
-  relative_location: null
-  footprint: null
+  presence: FIXED
+  relative_location: "central, slightly above vertical midpoint to preserve lower HUD/Dock composition space"
+  footprint:
+    type: "large civic plaza"
+    circulation: "continuous walkable ring around central landmark"
+    fixed_geometry_elements:
+      - "central MiniMee fountain / landmark"
+      - "large usable activity stage on the north side facing the plaza"
+      - "bulletin board interaction pocket"
+      - "quick-map/navigation interaction pocket"
+    composition_rule: "Plaza paving and pedestrian circulation are primary; grass and planting are framing landscape, not the dominant ground treatment."
 
 entrances:
-  status: UNRESOLVED_BLOCKING_TOPOLOGY
-  fixed_count: null
-  entries: []
+  status: TOPOLOGY_CONFIRMED
+  fixed_count: 5
+  entries:
+    - direction: "north"
+      role: "bidirectional scene-boundary connection"
+      canonical_target_scene: "Mee工作學習總部"
+      presentation: "clear headquarters approach / facade or gate identity"
+    - direction: "west"
+      role: "bidirectional scene-boundary connection"
+      canonical_target_scene: "小屋區"
+      presentation: "residential street transition"
+    - direction: "east"
+      role: "bidirectional scene-boundary connection"
+      canonical_target_scene: "港口市場"
+      presentation: "town street gradually cues market/harbour direction without turning Mee主城鎮 into a harbour scene"
+    - direction: "southwest side boundary"
+      role: "bidirectional scene-boundary connection"
+      canonical_target_scene: "河畔公園"
+      presentation: "greener pedestrian transition, kept clear of bottom HUD/Dock exclusion"
+    - direction: "southeast side boundary"
+      role: "bidirectional scene-boundary connection"
+      canonical_target_scene: "Mee電影院"
+      presentation: "cinema approach / facade identity, kept clear of bottom HUD/Dock exclusion"
 
 exits:
-  status: UNRESOLVED_BLOCKING_TOPOLOGY
-  fixed_count: null
-  entries: []
-  canonical_target_scenes: []
+  status: TOPOLOGY_CONFIRMED
+  fixed_count: 5
+  entries:
+    - direction: "north"
+      canonical_target_scene: "Mee工作學習總部"
+    - direction: "west"
+      canonical_target_scene: "小屋區"
+    - direction: "east"
+      canonical_target_scene: "港口市場"
+    - direction: "southwest side boundary"
+      canonical_target_scene: "河畔公園"
+    - direction: "southeast side boundary"
+      canonical_target_scene: "Mee電影院"
+  canonical_target_scenes:
+    - "Mee工作學習總部"
+    - "小屋區"
+    - "港口市場"
+    - "河畔公園"
+    - "Mee電影院"
 
 portals:
-  status: UNRESOLVED
-  entries: []
+  status: TOPOLOGY_CONFIRMED_PREIMAGE
+  entries:
+    - canonical_target_scene: "Buddy Cafe⨯Gether"
+      relative_location: "northwest side of main-town civic core"
+      type: "fixed recognizable portal building / POI entrance"
+    - canonical_target_scene: "Mee珍藏館"
+      relative_location: "northeast side of main-town civic core"
+      type: "fixed recognizable portal building / POI entrance"
+  note: "These are two additional destination connections inside Mee主城鎮, in addition to the five major boundary routes. Permanent portal Object IDs are assigned only after approved Day Geometry Master mapping."
 
 fixed_primary_pois:
-  status: UNRESOLVED_BLOCKING_TOPOLOGY
-  entries: []
-  note: "Do not infer POIs or footprints from prototype/reference art."
+  status: TOPOLOGY_CONFIRMED_PREIMAGE
+  entries:
+    - name: "Mee工作學習總部入口建築"
+      relative_footprint: "north / upper civic axis"
+      geometry_role: "major boundary landmark"
+    - name: "Mee電影院入口建築"
+      relative_footprint: "southeast civic edge"
+      geometry_role: "major boundary landmark"
+    - name: "Buddy Cafe⨯Gether"
+      relative_footprint: "northwest civic edge"
+      geometry_role: "fixed portal building"
+    - name: "Mee珍藏館"
+      relative_footprint: "northeast civic edge"
+      geometry_role: "fixed portal building"
+    - name: "主廣場"
+      relative_footprint: "central, slightly upper"
+      geometry_role: "world hub / navigation anchor"
+    - name: "MiniMee Fountain / Landmark"
+      relative_footprint: "center of main plaza"
+      geometry_role: "fixed civic landmark with full walk-around circulation"
+    - name: "大型活動舞台"
+      relative_footprint: "north side of main plaza, facing inward"
+      geometry_role: "walkable / usable fixed stage footprint"
+    - name: "公告板"
+      relative_footprint: "one side of plaza circulation ring"
+      geometry_role: "fixed interactable footprint; exact Object ID deferred"
+    - name: "Quick Map / Navigation interaction point"
+      relative_footprint: "opposite-side plaza interaction pocket"
+      geometry_role: "fixed interactable footprint; exact Object ID deferred"
+  note: "Secondary shopfronts, stalls, benches, lamps, mailboxes, flower boxes and seasonal decoration are not primary POIs and may not displace the primary topology."
 
 water_bridge_obstacle_relationships:
-  status: UNRESOLVED_BLOCKING_TOPOLOGY
-  geometry: null
+  status: TOPOLOGY_CONFIRMED
+  geometry:
+    environmental_water_body: false
+    bridge_required: false
+    allowed_fixed_decorative_water: "central MiniMee fountain only"
+    rationale: "River identity belongs to 河畔公園 and harbour/water identity belongs to 港口市場; Mee主城鎮 remains a civic town hub."
+
+visual_landmark_contract:
+  status: CONFIRMED_FOR_DAY_MASTER_ART_DIRECTION
+  source_priority:
+    - "docs/minimee/art/MINIMEE_VISUAL_DIRECTION_BIBLE.md"
+    - "docs/minimee/art/MINIMEE_GAMEPLAY_ART_LOCK.md"
+    - "docs/minimee/art/MINIMEE_SCENE_PROMPT_LOCK.md"
+    - "docs/minimee/art/MINIMEE_STYLE_REFERENCE_INDEX.md"
+  requirements:
+    - "The result must read as MiniMee, not as a generic pixel town, farm-game town or medieval-RPG plaza."
+    - "Major destination buildings require distinct silhouettes and scene-specific functional cues while sharing one MiniMee architectural family."
+    - "Use premium, child-first, warm, playful, collectible handcrafted detail without cluttering walkable routes."
+    - "Use plaza paving, pedestrian streets, deliberate flower beds and landscaped pockets instead of filling unused space with generic grass."
+    - "Decorative density may enrich the scene but cannot hide doors, exits, route decisions or interaction approaches."
+  reference_rule: "Reference/prototype/entrance images control visual identity only; this preimage manifest controls topology."
 
 interactables:
   status: DEFER_UNTIL_IMAGE_APPROVAL
@@ -97,17 +215,21 @@ variant_locks:
 
 formalization_gate:
   formal_scene_manifest_may_be_created_only_after:
-    - "Blocking topology decisions are explicitly confirmed or supplied by canonical source-of-truth."
     - "Mee主城鎮 Day Geometry Master image is approved."
-    - "Exact geometry is mapped into world/tile coordinates."
+    - "Exact approved geometry is mapped into world/tile coordinates."
     - "Permanent Object IDs are assigned."
+    - "Doors, interactables, NPC anchors and shelter zones are authored."
     - "Hitboxes and collision polygons are authored and checked."
-  current_status: BLOCKED_PENDING_TOPOLOGY_DECISIONS
+    - "Main/secondary route geometry and all five boundary connections plus two portal connections are verified against the approved Day Master."
+  current_status: TOPOLOGY_CONFIRMED_READY_FOR_DAY_GEOMETRY_MASTER
 
-blocking_decisions_required_before_formal_render:
-  - fixed_exit_count
-  - exit_target_canonical_scenes
-  - main_walk_route_topology
-  - main_plaza_presence_and_relative_location
-  - fixed_primary_poi_set_and_relative_footprints
-  - fixed_water_bridge_obstacle_topology
+blocking_decisions_required_before_formal_render: []
+
+resolved_preimage_topology_decisions:
+  fixed_boundary_connection_count: 5
+  additional_internal_portal_connections: 2
+  total_destination_connections: 7
+  main_walk_route_topology: "central cross spine + plaza ring + southwest/southeast branch routes"
+  main_plaza_presence_and_relative_location: "fixed; central, slightly upper"
+  fixed_primary_poi_set: "confirmed above"
+  fixed_water_bridge_obstacle_topology: "no environmental water body or bridge; central decorative fountain only"
