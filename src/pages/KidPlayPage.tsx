@@ -83,7 +83,7 @@ export function KidPlayPage() {
         // The zone is carried in so the room's way out is the door the child
         // actually came through — 小鎮中心 and Hero Studio both open onto the
         // cinema and the library now.
-        ? interiorPath(child.id, roomId, { kind: "zone", target: fromZone })
+        ? interiorPath(child.id, roomId, [{ kind: "zone", target: fromZone }])
         : `/parent/children/${child.id}/room/${roomId}`)}
       onEnterStall={stallId => {
         const stall = WHARF_STALLS.find(candidate => candidate.id === stallId);

@@ -74,6 +74,17 @@ export interface Interior {
   /** Where leaving goes back to, and which side the door is drawn on. */
   back: { kind: "zone" | "room"; target: string; side: "left" | "right" | "bottom" };
   spots: InteriorSpot[];
+  /**
+   * The part of the picture that is floor.
+   *
+   * Interiors used to have no character in them at all — Em: 「就算入到每一
+   * 間房，人物都係跟住入去，唔會剩係得個畫面或者按鈕而沒有角色」. A rectangle
+   * rather than a walk mask: these rooms are one enclosed space with a clear
+   * band of floor across the bottom, and fifteen hand-authored masks would be
+   * fifteen more things to keep in step with the art for no visible gain.
+   */
+  floor?: { x0: number; x1: number; y0: number; y1: number };
+
   /** Blank rectangles in the art for the app to fill. */
   frames?: InteriorFrame[];
   /** 碼頭市集's rooms sit behind the parent PIN. */
@@ -99,6 +110,7 @@ export const INTERIORS: Record<string, Interior> = {
     name: "MEE 珍藏館",
     art: sceneArt(SCENES.albumHall),
     back: { kind: "zone", target: "town-centre", side: "bottom" },
+    floor: { x0: 0.20, x1: 0.80, y0: 0.62, y1: 0.94 },
     spots: [
       { id: "all-cards", label: "中央展示櫃", x: 0.465, y: 0.370, kind: "panel", target: "all-cards", hint: "一禁就睇晒" },
       { id: "to-fragments", label: "碎片拼合室", x: 0.105, y: 0.335, kind: "room", target: "fragment-room", hint: "儲碎片砌卡" },
@@ -118,6 +130,7 @@ export const INTERIORS: Record<string, Interior> = {
     name: "卡冊展示室",
     art: sceneArt(SCENES.albumBooks),
     back: { kind: "room", target: "album-hall", side: "right" },
+    floor: { x0: 0.14, x1: 0.86, y0: 0.74, y1: 0.94 },
     spots: [
       { id: "books", label: "轉盤揀卡冊", x: 0.500, y: 0.395, kind: "panel", target: "books", hint: "轉一轉揀一本" },
     ],
@@ -139,6 +152,7 @@ export const INTERIORS: Record<string, Interior> = {
     name: "碎片拼合室",
     art: sceneArt(SCENES.fragmentRoom),
     back: { kind: "room", target: "album-hall", side: "right" },
+    floor: { x0: 0.26, x1: 0.74, y0: 0.50, y1: 0.66 },
     spots: [
       { id: "tray-1", label: "第一組", x: 0.225, y: 0.310, kind: "panel", target: "tray-1", hint: "四塊砌一張" },
       { id: "tray-2", label: "第二組", x: 0.500, y: 0.300, kind: "panel", target: "tray-2", hint: "四塊砌一張" },
@@ -146,10 +160,12 @@ export const INTERIORS: Record<string, Interior> = {
     ],
     // The four gems under each mount. Lit from the fragments actually held,
     // so the room itself is the progress bar rather than a panel about it.
+    // Measured onto the painted gem strips themselves, so a lit gem lights
+    // the one in the picture rather than sitting in a row underneath it.
     frames: [
-      { id: "tray-1", kind: "tray", x: 0.118, y: 0.347, w: 0.216, h: 0.038 },
-      { id: "tray-2", kind: "tray", x: 0.400, y: 0.324, w: 0.212, h: 0.037 },
-      { id: "tray-3", kind: "tray", x: 0.672, y: 0.347, w: 0.216, h: 0.038 },
+      { id: "tray-1", kind: "tray", x: 0.140, y: 0.353, w: 0.205, h: 0.032 },
+      { id: "tray-2", kind: "tray", x: 0.390, y: 0.332, w: 0.202, h: 0.032 },
+      { id: "tray-3", kind: "tray", x: 0.645, y: 0.355, w: 0.203, h: 0.032 },
     ],
   },
 
@@ -170,6 +186,7 @@ export const INTERIORS: Record<string, Interior> = {
     art: sceneArt(SCENES.studio),
     artNight: sceneArt(SCENES.studio, { night: true }),
     back: { kind: "zone", target: "town-centre", side: "bottom" },
+    floor: { x0: 0.13, x1: 0.87, y0: 0.66, y1: 0.92 },
     spots: [
       { id: "current-words", label: "教學板", x: 0.505, y: 0.300, kind: "panel", target: "current-words", hint: "今期學嘅字" },
       { id: "theme-game", label: "小遊戲枱", x: 0.475, y: 0.545, kind: "panel", target: "theme-game", hint: "睇完片就嚟呢度" },
@@ -197,6 +214,7 @@ export const INTERIORS: Record<string, Interior> = {
     art: sceneArt(SCENES.library),
     artNight: sceneArt(SCENES.library, { night: true }),
     back: { kind: "room", target: "studio", side: "bottom" },
+    floor: { x0: 0.16, x1: 0.84, y0: 0.63, y1: 0.92 },
     spots: [
       { id: "past-words", label: "重溫枱", x: 0.500, y: 0.500, kind: "panel", target: "past-words", hint: "由頭睇返" },
       { id: "seat-doll", label: "小布偶椅", x: 0.385, y: 0.625, kind: "seat", target: "doll",
@@ -225,6 +243,7 @@ export const INTERIORS: Record<string, Interior> = {
     name: "戲院大堂",
     art: sceneArt(SCENES.cinemaLobby),
     back: { kind: "room", target: "studio", side: "bottom" },
+    floor: { x0: 0.10, x1: 0.62, y0: 0.63, y1: 0.94 },
     spots: [
       { id: "tickets", label: "接待處", x: 0.365, y: 0.378, kind: "panel", target: "tickets", hint: "同職員揀套片" },
       { id: "to-hall", label: "1 號廳", x: 0.685, y: 0.320, kind: "room", target: "cinema-hall", hint: "當期影片" },
@@ -236,10 +255,14 @@ export const INTERIORS: Record<string, Interior> = {
         note: "望住入場門嗰邊。有人行過都見到，好似真係喺戲院等緊入場咁。" },
     ],
     frames: [
-      { id: "marquee", kind: "marquee", x: 0.160, y: 0.140, w: 0.410, h: 0.042 },
-      { id: "poster-1", kind: "poster", x: 0.207, y: 0.203, w: 0.100, h: 0.150 },
-      { id: "poster-2", kind: "poster", x: 0.317, y: 0.203, w: 0.103, h: 0.150 },
-      { id: "poster-3", kind: "poster", x: 0.437, y: 0.203, w: 0.103, h: 0.150 },
+      // Re-measured off the painting at 2.5% gridlines. The old numbers put
+      // the posters half a frame low and a frame and a half too tall, which
+      // was invisible while a CSS collision was throwing them off the wall
+      // entirely.
+      { id: "marquee", kind: "marquee", x: 0.163, y: 0.140, w: 0.402, h: 0.040 },
+      { id: "poster-1", kind: "poster", x: 0.190, y: 0.223, w: 0.092, h: 0.102 },
+      { id: "poster-2", kind: "poster", x: 0.313, y: 0.223, w: 0.090, h: 0.102 },
+      { id: "poster-3", kind: "poster", x: 0.432, y: 0.223, w: 0.091, h: 0.102 },
     ],
   },
 
@@ -250,6 +273,7 @@ export const INTERIORS: Record<string, Interior> = {
     name: "戲院 1 號廳",
     art: sceneArt(SCENES.cinemaHall),
     back: { kind: "room", target: "cinema-lobby", side: "bottom" },
+    floor: { x0: 0.38, x1: 0.60, y0: 0.62, y1: 0.94 },
     frames: [
       { id: "screen", kind: "screen", x: 0.245, y: 0.117, w: 0.512, h: 0.298 },
     ],
@@ -269,6 +293,7 @@ export const INTERIORS: Record<string, Interior> = {
     name: "戲院 2 號廳",
     art: sceneArt(SCENES.cinemaHall2),
     back: { kind: "room", target: "cinema-lobby", side: "bottom" },
+    floor: { x0: 0.38, x1: 0.60, y0: 0.62, y1: 0.94 },
     frames: [
       { id: "screen", kind: "screen", x: 0.240, y: 0.170, w: 0.518, h: 0.230 },
     ],
@@ -300,6 +325,7 @@ export const INTERIORS: Record<string, Interior> = {
     art: sceneArt(SCENES.cafe),
     artNight: sceneArt(SCENES.cafe, { night: true }),
     back: { kind: "zone", target: "town-centre", side: "bottom" },
+    floor: { x0: 0.16, x1: 0.84, y0: 0.61, y1: 0.92 },
     spots: [
       { id: "friend-scan", label: "換好友 code", x: 0.470, y: 0.455, kind: "panel", target: "friend-scan", hint: "面對面坐低換" },
       { id: "pet-news", label: "小寵物消息板", x: 0.800, y: 0.140, kind: "panel", target: "pet-news", hint: "小鎮最新趣聞" },
@@ -331,6 +357,7 @@ export const INTERIORS: Record<string, Interior> = {
     art: sceneArt(SCENES.myHome),
     artNight: sceneArt(SCENES.myHome, { night: true }),
     back: { kind: "zone", target: "village-gate", side: "bottom" },
+    floor: { x0: 0.20, x1: 0.80, y0: 0.66, y1: 0.92 },
     spots: [
       { id: "update-card", label: "貼紙枱", x: 0.185, y: 0.470, kind: "panel", target: "update-card", hint: "整靚我張卡" },
       { id: "about-me", label: "我張卡", x: 0.740, y: 0.505, kind: "panel", target: "about-me", hint: "睇下寫咗啲乜" },
@@ -365,6 +392,31 @@ export function encodeEntrance(from: Entrance): string {
 }
 
 /**
+ * The doors held open behind you, nearest first.
+ *
+ * One entrance was not enough. 小鎮中心 → 戲院大堂 → 2 號廳 → back put you in
+ * the lobby recording 2 號廳 as the way in, so the lobby's exit led back into
+ * the hall and the hall's exit led back to the lobby: a child could bounce
+ * between two rooms and never reach the street. Em: 「戲院冇出口」.
+ *
+ * A trail fixes it because it is what actually happened — each room you walk
+ * through pushes its own way in, and walking out pops one off.
+ */
+export type Trail = Entrance[];
+
+/** Deepest first, joined by `>`: `room:cinema-lobby>zone:town-centre`. */
+export function encodeTrail(trail: Trail): string {
+  return trail.map(encodeEntrance).join(">");
+}
+
+/** Capped so a child circling two rooms cannot grow the URL without limit. */
+const TRAIL_MAX = 8;
+
+export function pushTrail(trail: Trail, from: Entrance): Trail {
+  return [from, ...trail].slice(0, TRAIL_MAX);
+}
+
+/**
  * Read an entrance back off the URL.
  *
  * Anything unrecognised returns null rather than throwing: this value comes
@@ -381,9 +433,19 @@ export function decodeEntrance(raw: string | null): Entrance | null {
   return { kind, target };
 }
 
-/** The link that opens an interior, carrying the door it was opened from. */
-export function interiorPath(childId: string, roomId: string, from: Entrance): string {
-  return `/parent/children/${childId}/inside/${roomId}?from=${encodeEntrance(from)}`;
+/** Read a whole trail back, dropping anything that does not parse. */
+export function decodeTrail(raw: string | null): Trail {
+  if (!raw) return [];
+  return raw.split(">")
+    .map(decodeEntrance)
+    .filter((entrance): entrance is Entrance => entrance !== null)
+    .slice(0, TRAIL_MAX);
+}
+
+/** The link that opens an interior, carrying the doors held open behind it. */
+export function interiorPath(childId: string, roomId: string, trail: Trail): string {
+  const query = trail.length > 0 ? `?from=${encodeURIComponent(encodeTrail(trail))}` : "";
+  return `/parent/children/${childId}/inside/${roomId}${query}`;
 }
 
 // --- 碼頭市集 --------------------------------------------------------------

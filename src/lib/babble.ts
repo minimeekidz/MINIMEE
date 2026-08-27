@@ -161,6 +161,21 @@ export const SYLLABLE_SHAPES = Object.freeze([
 ]);
 
 let context: AudioContext | null = null;
+
+/**
+ * The one AudioContext everything shares.
+ *
+ * Browsers cap how many a page may hold, and a second one would also mean a
+ * second thing to resume after the first tap. Sound effects (`sfx.ts`) borrow
+ * this one. Returns null before the first user gesture, and callers treat
+ * that as "no sound yet" rather than an error.
+ */
+export function audioContext(): AudioContext | null {
+  if (typeof window === "undefined" || !("AudioContext" in window)) return null;
+  context ??= new AudioContext();
+  if (context.state === "suspended") void context.resume().catch(() => {});
+  return context.state === "closed" ? null : context;
+}
 let speechGeneration = 0;
 const activeOscillators = new Set<OscillatorNode>();
 const MUTE_KEY = "minimee.babble.muted";
@@ -245,7 +260,15 @@ function scheduleBlip(
  * wall of voices. Browsers that have not received a user gesture simply stay
  * quiet; subtitles and interaction continue normally.
  */
-export async function speak(id: string, line: string): Promise<void> {
+/** Colouring laid over a character's own voice — a mood, not a new voice. */
+export interface VoiceColour {
+  /** Multiplies the pitch. Above 1 is brighter, below is drowsier. */
+  pitch?: number;
+  /** Multiplies the gap between syllables. Above 1 is slower. */
+  pace?: number;
+}
+
+export async function speak(id: string, line: string, colour?: VoiceColour): Promise<void> {
   if (!line || babbleMuted()) return;
   if (typeof window === "undefined" || !("AudioContext" in window)) return;
 
@@ -255,7 +278,13 @@ export async function speak(id: string, line: string): Promise<void> {
 
   stopActiveSpeech();
   const generation = speechGeneration;
-  const shape = babbleFor(id, line);
+  const base = babbleFor(id, line);
+  // A pet that is sleepy is the same pet, slower and lower. Colouring the
+  // shape keeps every character recognisable across moods, which is the whole
+  // point of casting them in the first place.
+  const shape: Babble = colour
+    ? { ...base, pitch: base.pitch * (colour.pitch ?? 1), gap: base.gap * (colour.pace ?? 1) }
+    : base;
   const start = context.currentTime + 0.018;
 
   shape.blips.forEach((syllableIndex, step) => {
